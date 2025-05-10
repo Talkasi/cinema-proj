@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить все залы
@@ -14,9 +16,9 @@ import (
 // @Success 200 {array} Hall
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /halls [get]
-func GetHalls(db *sql.DB) http.HandlerFunc {
+func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, name, capacity, equipment_type_id, description FROM halls")
+		rows, err := db.Query(context.Background(), "SELECT id, name, capacity, equipment_type_id, description FROM halls")
 		if err != nil {
 			http.Error(w, "Ошибка при получении залов", http.StatusInternalServerError)
 			return
@@ -44,11 +46,11 @@ func GetHalls(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Зал не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /halls/{id} [get]
-func GetHallByID(db *sql.DB) http.HandlerFunc {
+func GetHallByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var h Hall
-		err := db.QueryRow("SELECT id, name, capacity, equipment_type_id, description FROM halls WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, name, capacity, equipment_type_id, description FROM halls WHERE id = $1", id).
 			Scan(&h.ID, &h.Name, &h.Capacity, &h.EquipmentType, &h.Description)
 
 		if err == sql.ErrNoRows {
@@ -71,7 +73,7 @@ func GetHallByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный JSON"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /halls [post]
-func CreateHall(db *sql.DB) http.HandlerFunc {
+func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var h Hall
 		if err := json.NewDecoder(r.Body).Decode(&h); err != nil {
@@ -80,7 +82,7 @@ func CreateHall(db *sql.DB) http.HandlerFunc {
 		}
 		h.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO halls (id, name, capacity, equipment_type_id, description) VALUES ($1, $2, $3, $4, $5)",
+		_, err := db.Exec(context.Background(), "INSERT INTO halls (id, name, capacity, equipment_type_id, description) VALUES ($1, $2, $3, $4, $5)",
 			h.ID, h.Name, h.Capacity, h.EquipmentType, h.Description)
 		if err != nil {
 			http.Error(w, "Ошибка при создании зала", http.StatusInternalServerError)
@@ -101,7 +103,7 @@ func CreateHall(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Зал не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /halls/{id} [put]
-func UpdateHall(db *sql.DB) http.HandlerFunc {
+func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var h Hall
@@ -111,13 +113,13 @@ func UpdateHall(db *sql.DB) http.HandlerFunc {
 		}
 		h.ID = id
 
-		res, err := db.Exec("UPDATE halls SET name=$1, capacity=$2, equipment_type_id=$3, description=$4 WHERE id=$5",
+		res, err := db.Exec(context.Background(), "UPDATE halls SET name=$1, capacity=$2, equipment_type_id=$3, description=$4 WHERE id=$5",
 			h.Name, h.Capacity, h.EquipmentType, h.Description, h.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Зал не найден", http.StatusNotFound)
 			return
@@ -133,15 +135,15 @@ func UpdateHall(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Зал не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /halls/{id} [delete]
-func DeleteHall(db *sql.DB) http.HandlerFunc {
+func DeleteHall(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		res, err := db.Exec("DELETE FROM halls WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM halls WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Зал не найден", http.StatusNotFound)
 			return

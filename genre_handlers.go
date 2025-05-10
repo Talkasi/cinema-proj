@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить все жанры
@@ -15,9 +17,9 @@ import (
 // @Success 200 {array} Genre
 // @Failure 500 {string} string "Внутренняя ошибка"
 // @Router /genres [get]
-func GetGenres(db *sql.DB) http.HandlerFunc {
+func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, name, description FROM genres")
+		rows, err := db.Query(context.Background(), "SELECT id, name, description FROM genres")
 		if err != nil {
 			http.Error(w, "Ошибка при получении жанров", http.StatusInternalServerError)
 			return
@@ -46,11 +48,11 @@ func GetGenres(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Жанр не найден"
 // @Failure 500 {string} string "Внутренняя ошибка"
 // @Router /genres/{id} [get]
-func GetGenreByID(db *sql.DB) http.HandlerFunc {
+func GetGenreByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var g Genre
-		err := db.QueryRow("SELECT id, name, description FROM genres WHERE id = $1", id).Scan(&g.ID, &g.Name, &g.Description)
+		err := db.QueryRow(context.Background(), "SELECT id, name, description FROM genres WHERE id = $1", id).Scan(&g.ID, &g.Name, &g.Description)
 		if err == sql.ErrNoRows {
 			http.Error(w, "Жанр не найден", http.StatusNotFound)
 			return
@@ -72,7 +74,7 @@ func GetGenreByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Некорректный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /genres [post]
-func CreateGenre(db *sql.DB) http.HandlerFunc {
+func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var g Genre
 		if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
@@ -81,7 +83,7 @@ func CreateGenre(db *sql.DB) http.HandlerFunc {
 		}
 		g.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO genres (id, name, description) VALUES ($1, $2, $3)", g.ID, g.Name, g.Description)
+		_, err := db.Exec(context.Background(), "INSERT INTO genres (id, name, description) VALUES ($1, $2, $3)", g.ID, g.Name, g.Description)
 		if err != nil {
 			http.Error(w, "Ошибка при вставке жанра", http.StatusInternalServerError)
 			return
@@ -103,7 +105,7 @@ func CreateGenre(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Жанр не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /genres/{id} [put]
-func UpdateGenre(db *sql.DB) http.HandlerFunc {
+func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var g Genre
@@ -113,12 +115,12 @@ func UpdateGenre(db *sql.DB) http.HandlerFunc {
 		}
 		g.ID = id
 
-		res, err := db.Exec("UPDATE genres SET name=$1, description=$2 WHERE id=$3", g.Name, g.Description, g.ID)
+		res, err := db.Exec(context.Background(), "UPDATE genres SET name=$1, description=$2 WHERE id=$3", g.Name, g.Description, g.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении жанра", http.StatusInternalServerError)
 			return
 		}
-		affected, _ := res.RowsAffected()
+		affected := res.RowsAffected()
 		if affected == 0 {
 			http.Error(w, "Жанр не найден", http.StatusNotFound)
 			return
@@ -135,15 +137,15 @@ func UpdateGenre(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Жанр не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /genres/{id} [delete]
-func DeleteGenre(db *sql.DB) http.HandlerFunc {
+func DeleteGenre(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		res, err := db.Exec("DELETE FROM genres WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM genres WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении жанра", http.StatusInternalServerError)
 			return
 		}
-		affected, _ := res.RowsAffected()
+		affected := res.RowsAffected()
 		if affected == 0 {
 			http.Error(w, "Жанр не найден", http.StatusNotFound)
 			return

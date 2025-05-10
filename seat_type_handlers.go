@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить все типы мест
@@ -14,9 +16,9 @@ import (
 // @Success 200 {array} SeatType
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seat-types [get]
-func GetSeatTypes(db *sql.DB) http.HandlerFunc {
+func GetSeatTypes(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, name, description FROM seat_types")
+		rows, err := db.Query(context.Background(), "SELECT id, name, description FROM seat_types")
 		if err != nil {
 			http.Error(w, "Ошибка при получении типов мест", http.StatusInternalServerError)
 			return
@@ -44,11 +46,11 @@ func GetSeatTypes(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Тип места не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seat-types/{id} [get]
-func GetSeatTypeByID(db *sql.DB) http.HandlerFunc {
+func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var st SeatType
-		err := db.QueryRow("SELECT id, name, description FROM seat_types WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, name, description FROM seat_types WHERE id = $1", id).
 			Scan(&st.ID, &st.Name, &st.Description)
 
 		if err == sql.ErrNoRows {
@@ -71,7 +73,7 @@ func GetSeatTypeByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seat-types [post]
-func CreateSeatType(db *sql.DB) http.HandlerFunc {
+func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var st SeatType
 		if err := json.NewDecoder(r.Body).Decode(&st); err != nil {
@@ -80,7 +82,7 @@ func CreateSeatType(db *sql.DB) http.HandlerFunc {
 		}
 		st.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO seat_types (id, name, description) VALUES ($1, $2, $3)",
+		_, err := db.Exec(context.Background(), "INSERT INTO seat_types (id, name, description) VALUES ($1, $2, $3)",
 			st.ID, st.Name, st.Description)
 		if err != nil {
 			http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
@@ -102,7 +104,7 @@ func CreateSeatType(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Тип не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seat-types/{id} [put]
-func UpdateSeatType(db *sql.DB) http.HandlerFunc {
+func UpdateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var st SeatType
@@ -112,13 +114,13 @@ func UpdateSeatType(db *sql.DB) http.HandlerFunc {
 		}
 		st.ID = id
 
-		res, err := db.Exec("UPDATE seat_types SET name=$1, description=$2 WHERE id=$3",
+		res, err := db.Exec(context.Background(), "UPDATE seat_types SET name=$1, description=$2 WHERE id=$3",
 			st.Name, st.Description, st.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Тип места не найден", http.StatusNotFound)
 			return
@@ -134,15 +136,15 @@ func UpdateSeatType(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Тип не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seat-types/{id} [delete]
-func DeleteSeatType(db *sql.DB) http.HandlerFunc {
+func DeleteSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
-		res, err := db.Exec("DELETE FROM seat_types WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM seat_types WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Тип места не найден", http.StatusNotFound)
 			return

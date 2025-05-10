@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить всех пользователей
@@ -15,9 +17,9 @@ import (
 // @Success 200 {array} User
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /users [get]
-func GetUsers(db *sql.DB) http.HandlerFunc {
+func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, name, email, birth_date, is_blocked FROM users")
+		rows, err := db.Query(context.Background(), "SELECT id, name, email, birth_date, is_blocked FROM users")
 		if err != nil {
 			http.Error(w, "Ошибка при получении пользователей", http.StatusInternalServerError)
 			return
@@ -45,11 +47,11 @@ func GetUsers(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Пользователь не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /users/{id} [get]
-func GetUserByID(db *sql.DB) http.HandlerFunc {
+func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var u User
-		err := db.QueryRow("SELECT id, name, email, birth_date, is_blocked FROM users WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, name, email, birth_date, is_blocked FROM users WHERE id = $1", id).
 			Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked)
 
 		if err == sql.ErrNoRows {
@@ -72,7 +74,7 @@ func GetUserByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /users [post]
-func CreateUser(db *sql.DB) http.HandlerFunc {
+func CreateUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var u User
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -81,7 +83,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 		}
 		u.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO users (id, name, email, password_hash, birth_date, is_blocked) VALUES ($1, $2, $3, $4, $5, $6)",
+		_, err := db.Exec(context.Background(), "INSERT INTO users (id, name, email, password_hash, birth_date, is_blocked) VALUES ($1, $2, $3, $4, $5, $6)",
 			u.ID, u.Name, u.Email, u.PasswordHash, u.BirthDate, u.IsBlocked)
 		if err != nil {
 			http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
@@ -101,7 +103,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 // // @Failure 400 {string} string "Неверный запрос"
 // // @Failure 500 {string} string "Ошибка сервера"
 // // @Router /register [post]
-// func RegisterUser(db *sql.DB) http.HandlerFunc {
+// func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 // 	return func(w http.ResponseWriter, r *http.Request) {
 // 		var u User
 // 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -111,7 +113,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 
 // 		// Проверка на существование пользователя с таким email
 // 		var existingUser User
-// 		err := db.QueryRow("SELECT id FROM users WHERE email = $1", u.Email).Scan(&existingUser.ID)
+// 		err := db.QueryRow(context.Background(), "SELECT id FROM users WHERE email = $1", u.Email).Scan(&existingUser.ID)
 // 		if err != sql.ErrNoRows {
 // 			http.Error(w, "Пользователь с таким email уже существует", http.StatusBadRequest)
 // 			return
@@ -126,7 +128,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 // 		u.PasswordHash = string(hash)
 // 		u.ID = uuid.New().String()
 
-// 		_, err = db.Exec("INSERT INTO users (id, role_id, name, email, password_hash, birth_date, is_blocked) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+// 		_, err = db.Exec(context.Background(), "INSERT INTO users (id, role_id, name, email, password_hash, birth_date, is_blocked) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 // 			u.ID, u.RoleID, u.Name, u.Email, u.PasswordHash, u.BirthDate, u.IsBlocked)
 // 		if err != nil {
 // 			http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
@@ -147,7 +149,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 // // @Failure 401 {string} string "Неверный email или пароль"
 // // @Failure 500 {string} string "Ошибка сервера"
 // // @Router /login [post]
-// func LoginUser(db *sql.DB) http.HandlerFunc {
+// func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 // 	return func(w http.ResponseWriter, r *http.Request) {
 // 		var credentials struct {
 // 			Email    string `json:"email"`
@@ -159,7 +161,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 // 		}
 
 // 		var u User
-// 		err := db.QueryRow("SELECT id, password_hash FROM users WHERE email = $1", credentials.Email).
+// 		err := db.QueryRow(context.Background(), "SELECT id, password_hash FROM users WHERE email = $1", credentials.Email).
 // 			Scan(&u.ID, &u.PasswordHash)
 
 // 		if err == sql.ErrNoRows {
@@ -193,7 +195,7 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Пользователь не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /users/{id} [put]
-func UpdateUser(db *sql.DB) http.HandlerFunc {
+func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var u User
@@ -203,13 +205,13 @@ func UpdateUser(db *sql.DB) http.HandlerFunc {
 		}
 		u.ID = id
 
-		res, err := db.Exec("UPDATE users SET name=$1, email=$2, birth_date=$3, is_blocked=$4 WHERE id=$5",
+		res, err := db.Exec(context.Background(), "UPDATE users SET name=$1, email=$2, birth_date=$3, is_blocked=$4 WHERE id=$5",
 			u.Name, u.Email, u.BirthDate, u.IsBlocked, u.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Пользователь не найден", http.StatusNotFound)
 			return
@@ -225,15 +227,15 @@ func UpdateUser(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Пользователь не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /users/{id} [delete]
-func DeleteUser(db *sql.DB) http.HandlerFunc {
+func DeleteUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
-		res, err := db.Exec("DELETE FROM users WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM users WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("ошибка при удалении %v", err), http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Пользователь не найден", http.StatusNotFound)
 			return
@@ -252,7 +254,7 @@ func DeleteUser(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сохранения пользователя"
 // @Router /register [post]
-func RegisterUser(db *sql.DB) http.HandlerFunc {
+func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user UserRegister
 		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -261,7 +263,7 @@ func RegisterUser(db *sql.DB) http.HandlerFunc {
 		}
 
 		var err error
-		_, err = db.Exec("INSERT INTO users (email, password_hash, birth_date, name) VALUES ($1, $2, $3, $4)",
+		_, err = db.Exec(context.Background(), "INSERT INTO users (email, password_hash, birth_date, name) VALUES ($1, $2, $3, $4)",
 			user.Email, user.PasswordHash, user.BirthDate, user.Name)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("ошибка сохранения пользователя: %v", err), http.StatusInternalServerError)
@@ -283,7 +285,7 @@ func RegisterUser(db *sql.DB) http.HandlerFunc {
 // @Failure 401 {string} string "Неверное имя пользователя или пароль"
 // @Failure 500 {string} string "Ошибка генерации токена"
 // @Router /login [post]
-func LoginUser(db *sql.DB) http.HandlerFunc {
+func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user UserLogin
 		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -292,7 +294,7 @@ func LoginUser(db *sql.DB) http.HandlerFunc {
 		}
 
 		var passwordHash string
-		err := db.QueryRow("SELECT password_hash FROM users WHERE email = $1", user.Email).Scan(&passwordHash)
+		err := db.QueryRow(context.Background(), "SELECT password_hash FROM users WHERE email = $1", user.Email).Scan(&passwordHash)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("неверное имя пользователя или пароль %v", err), http.StatusUnauthorized)
 			return

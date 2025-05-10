@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить все статусы билетов
@@ -14,9 +16,9 @@ import (
 // @Success 200 {array} TicketStatus
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /ticket-statuses [get]
-func GetTicketStatuses(db *sql.DB) http.HandlerFunc {
+func GetTicketStatuses(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, name FROM ticket_statuses")
+		rows, err := db.Query(context.Background(), "SELECT id, name FROM ticket_statuses")
 		if err != nil {
 			http.Error(w, "Ошибка при получении статусов билетов", http.StatusInternalServerError)
 			return
@@ -44,11 +46,11 @@ func GetTicketStatuses(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Статус билета не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /ticket-statuses/{id} [get]
-func GetTicketStatusByID(db *sql.DB) http.HandlerFunc {
+func GetTicketStatusByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var ts TicketStatus
-		err := db.QueryRow("SELECT id, name FROM ticket_statuses WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, name FROM ticket_statuses WHERE id = $1", id).
 			Scan(&ts.ID, &ts.Name)
 
 		if err == sql.ErrNoRows {
@@ -71,7 +73,7 @@ func GetTicketStatusByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /ticket-statuses [post]
-func CreateTicketStatus(db *sql.DB) http.HandlerFunc {
+func CreateTicketStatus(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var ts TicketStatus
 		if err := json.NewDecoder(r.Body).Decode(&ts); err != nil {
@@ -80,7 +82,7 @@ func CreateTicketStatus(db *sql.DB) http.HandlerFunc {
 		}
 		ts.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO ticket_statuses (id, name) VALUES ($1, $2)",
+		_, err := db.Exec(context.Background(), "INSERT INTO ticket_statuses (id, name) VALUES ($1, $2)",
 			ts.ID, ts.Name)
 		if err != nil {
 			http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
@@ -102,7 +104,7 @@ func CreateTicketStatus(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Статус не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /ticket-statuses/{id} [put]
-func UpdateTicketStatus(db *sql.DB) http.HandlerFunc {
+func UpdateTicketStatus(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var ts TicketStatus
@@ -112,13 +114,13 @@ func UpdateTicketStatus(db *sql.DB) http.HandlerFunc {
 		}
 		ts.ID = id
 
-		res, err := db.Exec("UPDATE ticket_statuses SET name=$1 WHERE id=$2",
+		res, err := db.Exec(context.Background(), "UPDATE ticket_statuses SET name=$1 WHERE id=$2",
 			ts.Name, ts.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Статус не найден", http.StatusNotFound)
 			return
@@ -134,15 +136,15 @@ func UpdateTicketStatus(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Статус не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /ticket-statuses/{id} [delete]
-func DeleteTicketStatus(db *sql.DB) http.HandlerFunc {
+func DeleteTicketStatus(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
-		res, err := db.Exec("DELETE FROM ticket_statuses WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM ticket_statuses WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Статус не найден", http.StatusNotFound)
 			return

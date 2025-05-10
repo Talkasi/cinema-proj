@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Создать билет
@@ -17,7 +19,7 @@ import (
 // @Failure 400 {string} string "Неверный JSON"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /tickets [post]
-func CreateTicket(db *sql.DB) http.HandlerFunc {
+func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var t Ticket
 		if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
@@ -26,7 +28,7 @@ func CreateTicket(db *sql.DB) http.HandlerFunc {
 		}
 		t.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status_id, price) VALUES ($1, $2, $3, $4, $5)",
+		_, err := db.Exec(context.Background(), "INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status_id, price) VALUES ($1, $2, $3, $4, $5)",
 			t.ID, t.MovieShowID, t.SeatID, t.StatusID, t.Price)
 		if err != nil {
 			http.Error(w, "Ошибка при создании", http.StatusInternalServerError)
@@ -44,11 +46,11 @@ func CreateTicket(db *sql.DB) http.HandlerFunc {
 // @Success 200 {array} Ticket
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats/{movie_show_id} [get]
-func GetTicketsByMovieShowID(db *sql.DB) http.HandlerFunc {
+func GetTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		movieShowID := r.PathValue("movie_show_id")
 
-		rows, err := db.Query(`
+		rows, err := db.Query(context.Background(), `
 			SELECT t.id, t.movie_show_id, t.seat_id, t.ticket_status_id, t.price
 			FROM tickets t
 			WHERE t.movie_show_id = ?`, movieShowID)
@@ -79,11 +81,11 @@ func GetTicketsByMovieShowID(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Билет не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /tickets/{id} [get]
-func GetTicketByID(db *sql.DB) http.HandlerFunc {
+func GetTicketByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var t Ticket
-		err := db.QueryRow("SELECT id, movie_show_id, seat_id, ticket_status_id, price FROM tickets WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, movie_show_id, seat_id, ticket_status_id, price FROM tickets WHERE id = $1", id).
 			Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.StatusID, &t.Price)
 
 		if err == sql.ErrNoRows {
@@ -107,7 +109,7 @@ func GetTicketByID(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Билет не найден"
 // @Failure 500 {string} string "Ошибка"
 // @Router /tickets/{id} [put]
-func UpdateTicket(db *sql.DB) http.HandlerFunc {
+func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var t Ticket
@@ -117,13 +119,13 @@ func UpdateTicket(db *sql.DB) http.HandlerFunc {
 		}
 		t.ID = id
 
-		res, err := db.Exec("UPDATE tickets SET movie_show_id=$1, seat_id=$2, ticket_status_id=$3, price=$4 WHERE id=$5",
+		res, err := db.Exec(context.Background(), "UPDATE tickets SET movie_show_id=$1, seat_id=$2, ticket_status_id=$3, price=$4 WHERE id=$5",
 			t.MovieShowID, t.SeatID, t.StatusID, t.Price, t.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Билет не найден", http.StatusNotFound)
 			return
@@ -139,15 +141,15 @@ func UpdateTicket(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /tickets/{id} [delete]
-func DeleteTicket(db *sql.DB) http.HandlerFunc {
+func DeleteTicket(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		res, err := db.Exec("DELETE FROM tickets WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM tickets WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Билет не найден", http.StatusNotFound)
 			return

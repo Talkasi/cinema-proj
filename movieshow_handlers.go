@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить все показы фильмов
@@ -14,9 +16,9 @@ import (
 // @Success 200 {array} MovieShow
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movie-shows [get]
-func GetMovieShows(db *sql.DB) http.HandlerFunc {
+func GetMovieShows(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, movie_id, hall_id, start_time, language FROM movie_shows")
+		rows, err := db.Query(context.Background(), "SELECT id, movie_id, hall_id, start_time, language FROM movie_shows")
 		if err != nil {
 			http.Error(w, "Ошибка при получении показов фильмов", http.StatusInternalServerError)
 			return
@@ -44,11 +46,11 @@ func GetMovieShows(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Показ фильма не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movie-shows/{id} [get]
-func GetMovieShowByID(db *sql.DB) http.HandlerFunc {
+func GetMovieShowByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var ms MovieShow
-		err := db.QueryRow("SELECT id, movie_id, hall_id, start_time, language FROM movie_shows WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, movie_id, hall_id, start_time, language FROM movie_shows WHERE id = $1", id).
 			Scan(&ms.ID, &ms.MovieID, &ms.HallID, &ms.StartTime, &ms.Language)
 
 		if err == sql.ErrNoRows {
@@ -71,7 +73,7 @@ func GetMovieShowByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movie-shows [post]
-func CreateMovieShow(db *sql.DB) http.HandlerFunc {
+func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var ms MovieShow
 		if err := json.NewDecoder(r.Body).Decode(&ms); err != nil {
@@ -80,7 +82,7 @@ func CreateMovieShow(db *sql.DB) http.HandlerFunc {
 		}
 		ms.ID = uuid.New().String()
 
-		_, err := db.Exec("INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language) VALUES ($1, $2, $3, $4, $5)",
+		_, err := db.Exec(context.Background(), "INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language) VALUES ($1, $2, $3, $4, $5)",
 			ms.ID, ms.MovieID, ms.HallID, ms.StartTime, ms.Language)
 		if err != nil {
 			http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
@@ -102,7 +104,7 @@ func CreateMovieShow(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Показ не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movie-shows/{id} [put]
-func UpdateMovieShow(db *sql.DB) http.HandlerFunc {
+func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var ms MovieShow
@@ -112,13 +114,13 @@ func UpdateMovieShow(db *sql.DB) http.HandlerFunc {
 		}
 		ms.ID = id
 
-		res, err := db.Exec("UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4 WHERE id=$5",
+		res, err := db.Exec(context.Background(), "UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4 WHERE id=$5",
 			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, ms.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Показ не найден", http.StatusNotFound)
 			return
@@ -134,15 +136,15 @@ func UpdateMovieShow(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Показ не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movie-shows/{id} [delete]
-func DeleteMovieShow(db *sql.DB) http.HandlerFunc {
+func DeleteMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
-		res, err := db.Exec("DELETE FROM movie_shows WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM movie_shows WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
 			return
 		}
-		rows, _ := res.RowsAffected()
+		rows := res.RowsAffected()
 		if rows == 0 {
 			http.Error(w, "Показ не найден", http.StatusNotFound)
 			return

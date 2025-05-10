@@ -1,14 +1,14 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	_ "cw/docs"
 )
@@ -16,25 +16,26 @@ import (
 var IsTestMode bool
 
 var (
-	TestGuestDB *sql.DB
-	TestUserDB  *sql.DB
-	TestAdminDB *sql.DB
+	TestGuestDB *pgxpool.Pool
+	TestUserDB  *pgxpool.Pool
+	TestAdminDB *pgxpool.Pool
 )
 
 func InitTestDB() error {
 	var err error
+	ctx := context.Background()
 
-	TestGuestDB, err = sql.Open("pgx", "user=guest_test dbname=cinema_test password=guest111 sslmode=disable")
+	TestGuestDB, err = pgxpool.New(ctx, "user=guest_test dbname=cinema_test password=guest111 sslmode=disable")
 	if err != nil {
 		return fmt.Errorf("ошибка подключения гостя: %v", err)
 	}
 
-	TestUserDB, err = sql.Open("pgx", "user=ruser_test dbname=cinema_test password=user111 sslmode=disable")
+	TestUserDB, err = pgxpool.New(ctx, "user=ruser_test dbname=cinema_test password=user111 sslmode=disable")
 	if err != nil {
 		return fmt.Errorf("ошибка подключения пользователя: %v", err)
 	}
 
-	TestAdminDB, err = sql.Open("pgx", "user=admin_test dbname=cinema_test password=admin555 sslmode=disable")
+	TestAdminDB, err = pgxpool.New(ctx, "user=admin_test dbname=cinema_test password=admin555 sslmode=disable")
 	if err != nil {
 		return fmt.Errorf("ошибка подключения администратора: %v", err)
 	}
@@ -79,27 +80,29 @@ type Claims struct {
 var SecretKey = []byte("secret_key")
 
 var (
-	GuestDB *sql.DB
-	UserDB  *sql.DB
-	AdminDB *sql.DB
+	GuestDB *pgxpool.Pool
+	UserDB  *pgxpool.Pool
+	AdminDB *pgxpool.Pool
 )
 
 func InitDB() error {
 	var err error
 
-	GuestDB, err = sql.Open("pgx", "user=guest dbname=cinema password=guest111 sslmode=disable")
+	ctx := context.Background()
+
+	GuestDB, err = pgxpool.New(ctx, "user=guest dbname=cinema password=guest111 sslmode=disable")
 	if err != nil {
 		return fmt.Errorf("ошибка подключения гостя: %v", err)
 	}
 	// defer GuestDB.Close()
 
-	UserDB, err = sql.Open("pgx", "user=ruser dbname=cinema password=user111 sslmode=disable")
+	UserDB, err = pgxpool.New(ctx, "user=ruser dbname=cinema password=user111 sslmode=disable")
 	if err != nil {
 		return fmt.Errorf("ошибка подключения пользователя: %v", err)
 	}
 	// defer UserDB.Close()
 
-	AdminDB, err = sql.Open("pgx", "user=admin dbname=cinema password=admin555 sslmode=disable")
+	AdminDB, err = pgxpool.New(ctx, "user=admin dbname=cinema password=admin555 sslmode=disable")
 	if err != nil {
 		return fmt.Errorf("ошибка подключения администратора: %v", err)
 	}
@@ -131,10 +134,10 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func ClearTable(db *sql.DB, tableName string) error {
+func ClearTable(db *pgxpool.Pool, tableName string) error {
 	query := fmt.Sprintf("TRUNCATE TABLE %s CASCADE", tableName)
 
-	_, err := db.Exec(query)
+	_, err := db.Exec(context.Background(), query)
 	if err != nil {
 		return fmt.Errorf("failed to clear table %s: %w", tableName, err)
 	}
@@ -154,10 +157,10 @@ func GenerateToken(email, role string) (string, error) {
 	return token.SignedString(SecretKey)
 }
 
-func RoleBasedHandler(handler func(db *sql.DB) http.HandlerFunc) http.HandlerFunc {
+func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		role := r.Header.Get("Role")
-		var db *sql.DB
+		var db *pgxpool.Pool
 
 		switch role {
 		case "admin":

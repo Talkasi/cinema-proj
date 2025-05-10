@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // @Summary Получить все отзывы
@@ -14,9 +16,9 @@ import (
 // @Success 200 {array} Review
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /reviews [get]
-func GetReviews(db *sql.DB) http.HandlerFunc {
+func GetReviews(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query("SELECT id, user_id, movie_id, rating, review_comment FROM reviews")
+		rows, err := db.Query(context.Background(), "SELECT id, user_id, movie_id, rating, review_comment FROM reviews")
 		if err != nil {
 			http.Error(w, "Ошибка при получении отзывов", http.StatusInternalServerError)
 			return
@@ -44,11 +46,11 @@ func GetReviews(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Отзыв не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /reviews/{id} [get]
-func GetReviewByID(db *sql.DB) http.HandlerFunc {
+func GetReviewByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var review Review
-		err := db.QueryRow("SELECT id, user_id, movie_id, rating, review_comment FROM reviews WHERE id = $1", id).
+		err := db.QueryRow(context.Background(), "SELECT id, user_id, movie_id, rating, review_comment FROM reviews WHERE id = $1", id).
 			Scan(&review.ID, &review.UserID, &review.MovieID, &review.Rating, &review.Comment)
 
 		if err == sql.ErrNoRows {
@@ -71,7 +73,7 @@ func GetReviewByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /reviews [post]
-func CreateReview(db *sql.DB) http.HandlerFunc {
+func CreateReview(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var review Review
 		if err := json.NewDecoder(r.Body).Decode(&review); err != nil {
@@ -80,7 +82,7 @@ func CreateReview(db *sql.DB) http.HandlerFunc {
 		}
 		review.ID = uuid.New().String()
 
-		_, err := db.Exec(`
+		_, err := db.Exec(context.Background(), `
 			INSERT INTO reviews (id, user_id, movie_id, rating, review_comment)
 			VALUES ($1, $2, $3, $4, $5)`,
 			review.ID, review.UserID, review.MovieID, review.Rating, review.Comment)
@@ -105,7 +107,7 @@ func CreateReview(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Отзыв не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /reviews/{id} [put]
-func UpdateReview(db *sql.DB) http.HandlerFunc {
+func UpdateReview(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		var review Review
@@ -115,7 +117,7 @@ func UpdateReview(db *sql.DB) http.HandlerFunc {
 		}
 		review.ID = id
 
-		res, err := db.Exec(`
+		res, err := db.Exec(context.Background(), `
 			UPDATE reviews SET user_id=$1, movie_id=$2, rating=$3, review_comment=$4
 			WHERE id=$5`,
 			review.UserID, review.MovieID, review.Rating, review.Comment, id)
@@ -123,7 +125,7 @@ func UpdateReview(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Ошибка при обновлении отзыва", http.StatusInternalServerError)
 			return
 		}
-		count, _ := res.RowsAffected()
+		count := res.RowsAffected()
 		if count == 0 {
 			http.Error(w, "Отзыв не найден", http.StatusNotFound)
 			return
@@ -140,16 +142,16 @@ func UpdateReview(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Отзыв не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /reviews/{id} [delete]
-func DeleteReview(db *sql.DB) http.HandlerFunc {
+func DeleteReview(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 
-		res, err := db.Exec("DELETE FROM reviews WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM reviews WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении отзыва", http.StatusInternalServerError)
 			return
 		}
-		count, _ := res.RowsAffected()
+		count := res.RowsAffected()
 		if count == 0 {
 			http.Error(w, "Отзыв не найден", http.StatusNotFound)
 			return

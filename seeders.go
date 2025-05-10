@@ -1,11 +1,12 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -86,13 +87,13 @@ func NewRouter() *http.ServeMux {
 	return mux
 }
 
-func CreateAll(db *sql.DB) error {
+func CreateAll(db *pgxpool.Pool) error {
 	schemaSQL, err := os.ReadFile("./schemas/create.sql")
 	if err != nil {
 		return fmt.Errorf("ошибка чтения SQL файла: %v", err)
 	}
 
-	_, err = db.Exec(string(schemaSQL))
+	_, err = db.Exec(context.Background(), string(schemaSQL))
 	if err != nil {
 		return fmt.Errorf("ошибка выполнения SQL схемы: %v", err)
 	}
@@ -100,13 +101,13 @@ func CreateAll(db *sql.DB) error {
 	return nil
 }
 
-func DeleteAll(db *sql.DB) error {
+func DeleteAll(db *pgxpool.Pool) error {
 	schemaSQL, err := os.ReadFile("./schemas/delete.sql")
 	if err != nil {
 		return fmt.Errorf("ошибка чтения SQL файла: %v", err)
 	}
 
-	_, err = db.Exec(string(schemaSQL))
+	_, err = db.Exec(context.Background(), string(schemaSQL))
 	if err != nil {
 		return fmt.Errorf("ошибка выполнения SQL схемы: %v", err)
 	}
@@ -114,7 +115,7 @@ func DeleteAll(db *sql.DB) error {
 	return nil
 }
 
-func SeedAll(db *sql.DB) error {
+func SeedAll(db *pgxpool.Pool) error {
 	if err := SeedGenres(db); err != nil {
 		return fmt.Errorf("ошибка при вставке жанров: %v", err)
 	}
@@ -134,9 +135,9 @@ func SeedAll(db *sql.DB) error {
 	return nil
 }
 
-func SeedGenres(db *sql.DB) error {
+func SeedGenres(db *pgxpool.Pool) error {
 	for _, g := range GenresData {
-		_, err := db.Exec(`INSERT INTO genres (name, description)
+		_, err := db.Exec(context.Background(), `INSERT INTO genres (name, description)
 			VALUES ($1, $2)
 			ON CONFLICT (name) DO NOTHING`, g.Name, g.Description)
 		if err != nil {
@@ -146,9 +147,9 @@ func SeedGenres(db *sql.DB) error {
 	return nil
 }
 
-func SeedEquipmentTypes(db *sql.DB) error {
+func SeedEquipmentTypes(db *pgxpool.Pool) error {
 	for _, e := range EquipmentTypesData {
-		_, err := db.Exec(`INSERT INTO equipment_types (name, description)
+		_, err := db.Exec(context.Background(), `INSERT INTO equipment_types (name, description)
 			VALUES ($1, $2)
 			ON CONFLICT (name) DO NOTHING`, e.Name, e.Description)
 		if err != nil {
@@ -158,9 +159,9 @@ func SeedEquipmentTypes(db *sql.DB) error {
 	return nil
 }
 
-func SeedSeatTypes(db *sql.DB) error {
+func SeedSeatTypes(db *pgxpool.Pool) error {
 	for _, s := range SeatTypesData {
-		_, err := db.Exec(`INSERT INTO seat_types (name, description)
+		_, err := db.Exec(context.Background(), `INSERT INTO seat_types (name, description)
 			VALUES ($1, $2)
 			ON CONFLICT (name) DO NOTHING`, s.Name, s.Description)
 		if err != nil {
@@ -170,9 +171,9 @@ func SeedSeatTypes(db *sql.DB) error {
 	return nil
 }
 
-func SeedTicketStatuses(db *sql.DB) error {
+func SeedTicketStatuses(db *pgxpool.Pool) error {
 	for _, status := range TicketStatusesData {
-		_, err := db.Exec(`INSERT INTO ticket_status (name)
+		_, err := db.Exec(context.Background(), `INSERT INTO ticket_status (name)
 			VALUES ($1)
 			ON CONFLICT (name) DO NOTHING`, status.Name)
 		if err != nil {

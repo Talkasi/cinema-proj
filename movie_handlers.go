@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func fetchGenresByMovieID(db *sql.DB, movieID string) []Genre {
-	rows, err := db.Query(`
+func fetchGenresByMovieID(db *pgxpool.Pool, movieID string) []Genre {
+	rows, err := db.Query(context.Background(), `
 		SELECT g.id, g.name, g.description
 		FROM genres g
 		JOIN movies_genres mg ON g.id = mg.genre_id
@@ -28,9 +30,9 @@ func fetchGenresByMovieID(db *sql.DB, movieID string) []Genre {
 	return genres
 }
 
-func insertMovieGenres(db *sql.DB, movieID string, genres []Genre) error {
+func insertMovieGenres(db *pgxpool.Pool, movieID string, genres []Genre) error {
 	for _, g := range genres {
-		if _, err := db.Exec("INSERT INTO movies_genres (movie_id, genre_id) VALUES ($1, $2)", movieID, g.ID); err != nil {
+		if _, err := db.Exec(context.Background(), "INSERT INTO movies_genres (movie_id, genre_id) VALUES ($1, $2)", movieID, g.ID); err != nil {
 			return err
 		}
 	}
@@ -43,9 +45,9 @@ func insertMovieGenres(db *sql.DB, movieID string, genres []Genre) error {
 // @Success 200 {array} Movie
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movies [get]
-func GetMovies(db *sql.DB) http.HandlerFunc {
+func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query(`
+		rows, err := db.Query(context.Background(), `
 			SELECT m.id, m.title, m.duration, m.rating, m.description, m.age_limit, m.box_office_revenue, m.release_date
 			FROM movies m`)
 		if err != nil {
@@ -77,11 +79,11 @@ func GetMovies(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Фильм не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movies/{id} [get]
-func GetMovieByID(db *sql.DB) http.HandlerFunc {
+func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var m Movie
-		err := db.QueryRow(`
+		err := db.QueryRow(context.Background(), `
 			SELECT id, title, duration, rating, description, age_limit, box_office_revenue, release_date
 			FROM movies WHERE id = $1`, id).
 			Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOffice, &m.ReleaseDate)
@@ -107,7 +109,7 @@ func GetMovieByID(db *sql.DB) http.HandlerFunc {
 // @Failure 400 {string} string "Неверный запрос"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movies [post]
-func CreateMovie(db *sql.DB) http.HandlerFunc {
+func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var m Movie
 		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
@@ -116,7 +118,7 @@ func CreateMovie(db *sql.DB) http.HandlerFunc {
 		}
 		m.ID = uuid.New().String()
 
-		_, err := db.Exec(`
+		_, err := db.Exec(context.Background(), `
 			INSERT INTO movies (id, title, duration, rating, description, age_limit, box_office_revenue, release_date)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
 			m.ID, m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOffice, m.ReleaseDate)
@@ -146,7 +148,7 @@ func CreateMovie(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Фильм не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movies/{id} [put]
-func UpdateMovie(db *sql.DB) http.HandlerFunc {
+func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		var m Movie
@@ -156,7 +158,7 @@ func UpdateMovie(db *sql.DB) http.HandlerFunc {
 		}
 		m.ID = id
 
-		res, err := db.Exec(`
+		res, err := db.Exec(context.Background(), `
 			UPDATE movies SET title=$1, duration=$2, rating=$3, description=$4, age_limit=$5, box_office_revenue=$6, release_date=$7
 			WHERE id=$8`,
 			m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOffice, m.ReleaseDate, id)
@@ -164,14 +166,14 @@ func UpdateMovie(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return
 		}
-		count, _ := res.RowsAffected()
+		count := res.RowsAffected()
 		if count == 0 {
 			http.Error(w, "Фильм не найден", http.StatusNotFound)
 			return
 		}
 
 		// пересохраняем жанры
-		db.Exec("DELETE FROM movies_genres WHERE movie_id = $1", m.ID)
+		db.Exec(context.Background(), "DELETE FROM movies_genres WHERE movie_id = $1", m.ID)
 		insertMovieGenres(db, m.ID, m.Genres)
 
 		json.NewEncoder(w).Encode(m)
@@ -185,17 +187,17 @@ func UpdateMovie(db *sql.DB) http.HandlerFunc {
 // @Failure 404 {string} string "Фильм не найден"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /movies/{id} [delete]
-func DeleteMovie(db *sql.DB) http.HandlerFunc {
+func DeleteMovie(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		db.Exec("DELETE FROM movies_genres WHERE movie_id = $1", id)
+		db.Exec(context.Background(), "DELETE FROM movies_genres WHERE movie_id = $1", id)
 
-		res, err := db.Exec("DELETE FROM movies WHERE id = $1", id)
+		res, err := db.Exec(context.Background(), "DELETE FROM movies WHERE id = $1", id)
 		if err != nil {
 			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
 			return
 		}
-		count, _ := res.RowsAffected()
+		count := res.RowsAffected()
 		if count == 0 {
 			http.Error(w, "Фильм не найден", http.StatusNotFound)
 			return
