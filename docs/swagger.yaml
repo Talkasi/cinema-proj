@@ -1,0 +1,1689 @@
+definitions:
+  main.EquipmentType:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.Genre:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.Hall:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      equipment_type_id:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.Movie:
+    properties:
+      age_limit:
+        type: integer
+      box_office_revenue:
+        type: number
+      description:
+        type: string
+      duration:
+        description: формат "HH:MM:SS"
+        type: string
+      genres:
+        items:
+          $ref: '#/definitions/main.Genre'
+        type: array
+      id:
+        type: string
+      rating:
+        type: number
+      release_date:
+        description: формат "YYYY-MM-DD"
+        type: string
+      title:
+        type: string
+    type: object
+  main.MovieShow:
+    properties:
+      hall_id:
+        type: string
+      id:
+        type: string
+      language:
+        type: string
+      movie_id:
+        type: string
+      start_time:
+        description: формат "HH:MM:SS"
+        type: string
+    type: object
+  main.Review:
+    properties:
+      id:
+        type: string
+      movie_id:
+        type: string
+      rating:
+        type: number
+      review_comment:
+        type: string
+      user_id:
+        type: string
+    type: object
+  main.Seat:
+    properties:
+      hall_id:
+        type: string
+      id:
+        type: string
+      row_number:
+        type: integer
+      seat_number:
+        type: integer
+      seat_type_id:
+        type: string
+    type: object
+  main.SeatType:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.Ticket:
+    properties:
+      id:
+        type: string
+      movie_show_id:
+        type: string
+      price:
+        type: number
+      seat_id:
+        type: string
+      ticket_status_id:
+        type: string
+    type: object
+  main.TicketStatus:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.User:
+    properties:
+      birth_date:
+        description: формат "YYYY-MM-DD"
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_blocked:
+        type: boolean
+      name:
+        type: string
+    type: object
+  main.UserLogin:
+    properties:
+      email:
+        type: string
+      password-hash:
+        type: string
+    type: object
+  main.UserRegister:
+    properties:
+      birth_date:
+        description: формат "YYYY-MM-DD"
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      password-hash:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is a sample
+  title: Your API Title
+  version: "1.0"
+paths:
+  /equipment-types:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.EquipmentType'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить все типы оборудования
+      tags:
+      - equipment-types
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Тип оборудования
+        in: body
+        name: equipment_type
+        required: true
+        schema:
+          $ref: '#/definitions/main.EquipmentType'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.EquipmentType'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Создать тип оборудования
+      tags:
+      - equipment-types
+  /equipment-types/{id}:
+    delete:
+      parameters:
+      - description: ID типа оборудования
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Тип не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Удалить тип оборудования
+      tags:
+      - equipment-types
+    get:
+      parameters:
+      - description: ID типа оборудования
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.EquipmentType'
+        "404":
+          description: Тип оборудования не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить тип оборудования по ID
+      tags:
+      - equipment-types
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID типа оборудования
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные типа
+        in: body
+        name: equipment_type
+        required: true
+        schema:
+          $ref: '#/definitions/main.EquipmentType'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.EquipmentType'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Тип не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Обновить тип оборудования
+      tags:
+      - equipment-types
+  /genres:
+    get:
+      description: Возвращает список всех жанров
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Genre'
+            type: array
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Получить все жанры
+      tags:
+      - genres
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый жанр в базу данных
+      parameters:
+      - description: Новый жанр
+        in: body
+        name: genre
+        required: true
+        schema:
+          $ref: '#/definitions/main.Genre'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Genre'
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать жанр
+      tags:
+      - genres
+  /genres/{id}:
+    delete:
+      description: Удаляет жанр по ID
+      parameters:
+      - description: ID жанра
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Жанр не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить жанр
+      tags:
+      - genres
+    get:
+      description: Возвращает жанр по его UUID
+      parameters:
+      - description: ID жанра
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Genre'
+        "404":
+          description: Жанр не найден
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Получить жанр по ID
+      tags:
+      - genres
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий жанр по ID
+      parameters:
+      - description: ID жанра
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные жанра
+        in: body
+        name: genre
+        required: true
+        schema:
+          $ref: '#/definitions/main.Genre'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Genre'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Жанр не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить жанр
+      tags:
+      - genres
+  /halls:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Hall'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все залы
+      tags:
+      - halls
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Новый зал
+        in: body
+        name: hall
+        required: true
+        schema:
+          $ref: '#/definitions/main.Hall'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Hall'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать зал
+      tags:
+      - halls
+  /halls/{id}:
+    delete:
+      parameters:
+      - description: ID зала
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Зал не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить зал
+      tags:
+      - halls
+    get:
+      parameters:
+      - description: ID зала
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Hall'
+        "404":
+          description: Зал не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить зал по ID
+      tags:
+      - halls
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID зала
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные
+        in: body
+        name: hall
+        required: true
+        schema:
+          $ref: '#/definitions/main.Hall'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Hall'
+        "404":
+          description: Зал не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить зал
+      tags:
+      - halls
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Логин пользователя с именем пользователя и паролем
+      parameters:
+      - description: Пользователь
+        in: body
+        name: user_login
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токен авторизации
+          schema:
+            type: string
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "401":
+          description: Неверное имя пользователя или пароль
+          schema:
+            type: string
+        "500":
+          description: Ошибка генерации токена
+          schema:
+            type: string
+      summary: Логин пользователя
+  /movie-shows:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.MovieShow'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все показы фильмов
+      tags:
+      - movie-shows
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Показ фильма
+        in: body
+        name: movie_show
+        required: true
+        schema:
+          $ref: '#/definitions/main.MovieShow'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.MovieShow'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать показ фильма
+      tags:
+      - movie-shows
+  /movie-shows/{id}:
+    delete:
+      parameters:
+      - description: ID показа фильма
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Показ не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить показ фильма
+      tags:
+      - movie-shows
+    get:
+      parameters:
+      - description: ID показа фильма
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.MovieShow'
+        "404":
+          description: Показ фильма не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить показ фильма по ID
+      tags:
+      - movie-shows
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID показа фильма
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные показа
+        in: body
+        name: movie_show
+        required: true
+        schema:
+          $ref: '#/definitions/main.MovieShow'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.MovieShow'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Показ не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить показ фильма
+      tags:
+      - movie-shows
+  /movies:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Movie'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все фильмы
+      tags:
+      - movies
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Новый фильм
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/main.Movie'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Movie'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать фильм
+      tags:
+      - movies
+  /movies/{id}:
+    delete:
+      parameters:
+      - description: ID фильма
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Фильм не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить фильм
+      tags:
+      - movies
+    get:
+      parameters:
+      - description: ID фильма
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Movie'
+        "404":
+          description: Фильм не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить фильм по ID
+      tags:
+      - movies
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID фильма
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные фильма
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/main.Movie'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Movie'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "404":
+          description: Фильм не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить фильм
+      tags:
+      - movies
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрация нового пользователя с именем пользователя и паролем
+      parameters:
+      - description: Пользователь
+        in: body
+        name: user_register
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserRegister'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Пользователь зарегистрирован
+          schema:
+            type: string
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сохранения пользователя
+          schema:
+            type: string
+      summary: Регистрация нового пользователя
+  /reviews:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Review'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все отзывы
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Новый отзыв
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/main.Review'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Review'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать отзыв
+      tags:
+      - reviews
+  /reviews/{id}:
+    delete:
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Отзыв не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить отзыв
+      tags:
+      - reviews
+    get:
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Review'
+        "404":
+          description: Отзыв не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить отзыв по ID
+      tags:
+      - reviews
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные отзыва
+        in: body
+        name: review
+        required: true
+        schema:
+          $ref: '#/definitions/main.Review'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Review'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "404":
+          description: Отзыв не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить отзыв
+      tags:
+      - reviews
+  /seat-types:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.SeatType'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все типы мест
+      tags:
+      - seat-types
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Тип места
+        in: body
+        name: seat_type
+        required: true
+        schema:
+          $ref: '#/definitions/main.SeatType'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.SeatType'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать тип места
+      tags:
+      - seat-types
+  /seat-types/{id}:
+    delete:
+      parameters:
+      - description: ID типа места
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Тип не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить тип места
+      tags:
+      - seat-types
+    get:
+      parameters:
+      - description: ID типа места
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.SeatType'
+        "404":
+          description: Тип места не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить тип места по ID
+      tags:
+      - seat-types
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID типа места
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные типа
+        in: body
+        name: seat_type
+        required: true
+        schema:
+          $ref: '#/definitions/main.SeatType'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.SeatType'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Тип не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить тип места
+      tags:
+      - seat-types
+  /seats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Seat'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все места
+      tags:
+      - seats
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Новое место
+        in: body
+        name: seat
+        required: true
+        schema:
+          $ref: '#/definitions/main.Seat'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Seat'
+      summary: Создать место
+      tags:
+      - seats
+  /seats/{id}:
+    delete:
+      parameters:
+      - description: ID места
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Место не найдено
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить место
+      tags:
+      - seats
+    get:
+      parameters:
+      - description: ID места
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Seat'
+        "404":
+          description: Место не найдено
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить место по ID
+      tags:
+      - seats
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID места
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные места
+        in: body
+        name: seat
+        required: true
+        schema:
+          $ref: '#/definitions/main.Seat'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Seat'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Место не найдено
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить место
+      tags:
+      - seats
+  /seats/{movie_show_id}:
+    get:
+      parameters:
+      - description: ID показа фильма
+        in: path
+        name: movie_show_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Ticket'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все билеты для показа фильма по ID
+      tags:
+      - seats
+  /ticket-statuses:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.TicketStatus'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все статусы билетов
+      tags:
+      - ticket-statuses
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Статус билета
+        in: body
+        name: ticket_status
+        required: true
+        schema:
+          $ref: '#/definitions/main.TicketStatus'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.TicketStatus'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать статус билета
+      tags:
+      - ticket-statuses
+  /ticket-statuses/{id}:
+    delete:
+      parameters:
+      - description: ID статуса билета
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Статус не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить статус билета
+      tags:
+      - ticket-statuses
+    get:
+      parameters:
+      - description: ID статуса билета
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.TicketStatus'
+        "404":
+          description: Статус билета не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить статус билета по ID
+      tags:
+      - ticket-statuses
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID статуса билета
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные статуса
+        in: body
+        name: ticket_status
+        required: true
+        schema:
+          $ref: '#/definitions/main.TicketStatus'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.TicketStatus'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Статус не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить статус билета
+      tags:
+      - ticket-statuses
+  /tickets:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Билет
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/main.Ticket'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.Ticket'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать билет
+      tags:
+      - tickets
+  /tickets/{id}:
+    delete:
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить билет
+      tags:
+      - tickets
+    get:
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Ticket'
+        "404":
+          description: Билет не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить билет по ID
+      tags:
+      - tickets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённый билет
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/main.Ticket'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Ticket'
+        "404":
+          description: Билет не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка
+          schema:
+            type: string
+      summary: Обновить билет
+      tags:
+      - tickets
+  /users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.User'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить всех пользователей
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Пользователь
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.User'
+        "400":
+          description: Неверный запрос
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создать пользователя
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Удалено
+          schema:
+            type: string
+        "404":
+          description: Пользователь не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить пользователя
+      tags:
+      - users
+    get:
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+        "404":
+          description: Пользователь не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить пользователя по ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+        "400":
+          description: Неверный JSON
+          schema:
+            type: string
+        "404":
+          description: Пользователь не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Обновить пользователя
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
