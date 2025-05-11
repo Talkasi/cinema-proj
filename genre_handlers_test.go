@@ -9,29 +9,29 @@ import (
 	"github.com/google/uuid"
 )
 
-func setupTestEquipmentTypesServer(t *testing.T, clearTable bool) *httptest.Server {
+func setupTestGenresServer(t *testing.T, clearTable bool) *httptest.Server {
 	if clearTable {
-		_ = ClearTable(TestAdminDB, "equipment_types")
+		_ = ClearTable(TestAdminDB, "genres")
 	}
 	return httptest.NewServer(NewRouter())
 }
 
-func getFirstEquipmentTypeID(t *testing.T, ts *httptest.Server, token string) string {
-	req := createRequest(t, "GET", ts.URL+"/equipment-types", token, nil)
+func getFirstGenreID(t *testing.T, ts *httptest.Server, token string) string {
+	req := createRequest(t, "GET", ts.URL+"/genres", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
 
-	var equipmentTypes []EquipmentType
-	parseResponseBody(t, resp, &equipmentTypes)
+	var genres []Genre
+	parseResponseBody(t, resp, &genres)
 
-	if len(equipmentTypes) == 0 {
-		t.Fatal("Expected at least one equipment type, got none")
+	if len(genres) == 0 {
+		t.Fatal("Expected at least one genre, got none")
 	}
 
-	return equipmentTypes[0].ID
+	return genres[0].ID
 }
 
-func TestGetEquipmentTypes(t *testing.T) {
+func TestGetGenres(t *testing.T) {
 	tests := []struct {
 		name           string
 		seedData       bool
@@ -48,28 +48,34 @@ func TestGetEquipmentTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestEquipmentTypesServer(t, true)
+			ts := setupTestGenresServer(t, true)
 			defer ts.Close()
 
 			if tt.seedData {
-				_ = SeedEquipmentTypes(TestAdminDB)
+				SeedGenres(TestAdminDB)
 			}
 
-			req := createRequest(t, "GET", ts.URL+"/equipment-types", generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/genres", generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
-			parseResponseBody(t, resp, nil)
+			if tt.expectedStatus == http.StatusOK {
+				var genres []Genre
+				parseResponseBody(t, resp, &genres)
+
+				if len(genres) == 0 {
+					t.Error("Expected non-empty genres list")
+				}
+			}
 		})
 	}
 }
 
-func TestGetEquipmentTypeByID(t *testing.T) {
-	// Setup for valid ID tests
+func TestGetGenreByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestEquipmentTypesServer(t, true)
-		_ = SeedEquipmentTypes(TestAdminDB)
-		return ts, getFirstEquipmentTypeID(t, ts, "")
+		ts := setupTestGenresServer(t, true)
+		_ = SeedGenres(TestAdminDB)
+		return ts, getFirstGenreID(t, ts, "")
 	}
 
 	tests := []struct {
@@ -81,8 +87,8 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Unknown ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"",
@@ -91,8 +97,8 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Unknown ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"ruser",
@@ -101,35 +107,8 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Unknown ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			"admin",
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID When Empty as Guest",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				return ts, uuid.New().String()
-			},
-			"",
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID When Empty as User",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				return ts, uuid.New().String()
-			},
-			"ruser",
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID When Empty as Admin",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"admin",
@@ -138,8 +117,8 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Invalid ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"",
@@ -148,8 +127,8 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Invalid ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"ruser",
@@ -158,8 +137,8 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Invalid ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"admin",
@@ -190,29 +169,29 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
 
-			req := createRequest(t, "GET", ts.URL+"/equipment-types/"+id, generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/genres/"+id, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusOK {
-				var equipmentType EquipmentType
-				parseResponseBody(t, resp, &equipmentType)
+				var genre Genre
+				parseResponseBody(t, resp, &genre)
 
-				if equipmentType.ID != id {
-					t.Errorf("Expected ID %v; got %v", id, equipmentType.ID)
+				if genre.ID != id {
+					t.Errorf("Expected ID %v; got %v", id, genre.ID)
 				}
 			}
 		})
 	}
 }
 
-func TestCreateEquipmentType(t *testing.T) {
-	validEquipmentType := EquipmentTypeData{
-		Name:        "Test Equipment",
+func TestCreateGenre(t *testing.T) {
+	validGenre := GenreData{
+		Name:        "Test Genre",
 		Description: "Test Description",
 	}
 
-	invalidEquipmentType := EquipmentTypeData{
+	invalidGenre := GenreData{
 		Name:        "",
 		Description: "Test Description",
 	}
@@ -227,21 +206,21 @@ func TestCreateEquipmentType(t *testing.T) {
 		{
 			"Forbidden Guest",
 			"",
-			validEquipmentType,
+			validGenre,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden User",
 			"ruser",
-			validEquipmentType,
+			validGenre,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
 			"admin",
-			validEquipmentType,
+			validGenre,
 			nil,
 			http.StatusCreated,
 		},
@@ -267,56 +246,32 @@ func TestCreateEquipmentType(t *testing.T) {
 			http.StatusBadRequest,
 		},
 		{
-			"Empty field in JSON Guest",
+			"Empty fields in JSON Guest",
 			"",
-			invalidEquipmentType,
+			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty field in JSON User",
+			"Empty fields in JSON User",
 			"ruser",
-			invalidEquipmentType,
+			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty field in JSON Admin",
+			"Empty fields in JSON Admin",
 			"admin",
-			invalidEquipmentType,
+			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Insert Error Guest",
-			"",
-			validEquipmentType,
-			func(t *testing.T) {
-				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name) VALUES ($1)", validEquipmentType.Name)
-				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
-				}
-			},
-			http.StatusForbidden,
-		},
-		{
-			"Insert Error User",
-			"ruser",
-			validEquipmentType,
-			func(t *testing.T) {
-				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name) VALUES ($1)", validEquipmentType.Name)
-				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
-				}
-			},
-			http.StatusForbidden,
-		},
-		{
-			"Insert Error Admin",
+			"Conflict Admin",
 			"admin",
-			validEquipmentType,
+			validGenre,
 			func(t *testing.T) {
-				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name) VALUES ($1)", validEquipmentType.Name)
+				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO genres (name, description) VALUES ($1, $2)", validGenre.Name, validGenre.Description)
 				if err != nil {
 					t.Fatalf("Failed to insert into test database: %v", err)
 				}
@@ -327,14 +282,14 @@ func TestCreateEquipmentType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestEquipmentTypesServer(t, true)
+			ts := setupTestGenresServer(t, true)
 			defer ts.Close()
 
 			if tt.setup != nil {
 				tt.setup(t)
 			}
 
-			req := createRequest(t, "POST", ts.URL+"/equipment-types", generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "POST", ts.URL+"/genres", generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -354,20 +309,23 @@ func TestCreateEquipmentType(t *testing.T) {
 	}
 }
 
-func TestUpdateEquipmentType(t *testing.T) {
-	validUpdateData := EquipmentTypeData{
-		Name:        "Updated Equipment",
+func TestUpdateGenre(t *testing.T) {
+	validUpdateData := GenreData{
+		Name:        "Updated Genre",
 		Description: "Updated Description",
 	}
 
-	// Setup function for tests needing existing equipment type
-	setupExistingEquipment := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestEquipmentTypesServer(t, true)
-		_ = SeedEquipmentTypes(TestAdminDB)
-		return ts, getFirstEquipmentTypeID(t, ts, generateToken(t, "admin"))
+	invalidUpdateData := GenreData{
+		Name:        "",
+		Description: "Updated Description",
 	}
 
-	unknown_id := uuid.NewString()
+	// Setup function for tests needing existing genre
+	setupExistingGenre := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestGenresServer(t, true)
+		_ = SeedGenres(TestAdminDB)
+		return ts, getFirstGenreID(t, ts, "")
+	}
 
 	tests := []struct {
 		name           string
@@ -383,8 +341,8 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -395,8 +353,8 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -407,8 +365,8 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -416,34 +374,36 @@ func TestUpdateEquipmentType(t *testing.T) {
 		{
 			"Unknown UUID as Guest",
 			"",
-			unknown_id,
+			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
-				return ts, unknown_id
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
+				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
 		},
 		{
 			"Unknown UUID as User",
 			"ruser",
-			unknown_id,
+			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				return ts, unknown_id
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
+				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
 		},
 		{
 			"Unknown UUID as Admin",
 			"admin",
-			unknown_id,
+			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				return ts, unknown_id
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
+				return ts, uuid.New().String()
 			},
 			http.StatusNotFound,
 		},
@@ -452,7 +412,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"",
 			"",
 			"invalid-json",
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusBadRequest,
 		},
 		{
@@ -460,7 +420,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"ruser",
 			"",
 			"invalid-json",
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusBadRequest,
 		},
 		{
@@ -468,31 +428,31 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"admin",
 			"",
 			"invalid-json",
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty Name as Guest",
+			"Empty fields in JSON as Guest",
 			"",
 			"",
-			EquipmentTypeData{Name: "", Description: "Test"},
-			setupExistingEquipment,
+			invalidUpdateData,
+			setupExistingGenre,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty Name as User",
+			"Empty fields in JSON as User",
 			"ruser",
 			"",
-			EquipmentTypeData{Name: "", Description: "Test"},
-			setupExistingEquipment,
+			invalidUpdateData,
+			setupExistingGenre,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty Name as Admin",
+			"Empty fields in as Admin",
 			"admin",
 			"",
-			EquipmentTypeData{Name: "", Description: "Test"},
-			setupExistingEquipment,
+			invalidUpdateData,
+			setupExistingGenre,
 			http.StatusBadRequest,
 		},
 		{
@@ -500,7 +460,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"",
 			"",
 			validUpdateData,
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusForbidden,
 		},
 		{
@@ -508,7 +468,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"ruser",
 			"",
 			validUpdateData,
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusForbidden,
 		},
 		{
@@ -516,7 +476,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"admin",
 			"",
 			validUpdateData,
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusOK,
 		},
 	}
@@ -532,19 +492,19 @@ func TestUpdateEquipmentType(t *testing.T) {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "PUT", ts.URL+"/equipment-types/"+effectiveID, generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "PUT", ts.URL+"/genres/"+effectiveID, generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestDeleteEquipmentType(t *testing.T) {
-	// Setup function for tests needing existing equipment type
-	setupExistingEquipment := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestEquipmentTypesServer(t, true)
-		_ = SeedEquipmentTypes(TestAdminDB)
-		return ts, getFirstEquipmentTypeID(t, ts, generateToken(t, "admin"))
+func TestDeleteGenre(t *testing.T) {
+	// Setup function for tests needing existing genre
+	setupExistingGenre := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestGenresServer(t, true)
+		_ = SeedGenres(TestAdminDB)
+		return ts, getFirstGenreID(t, ts, "")
 	}
 
 	tests := []struct {
@@ -559,8 +519,8 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -570,8 +530,8 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"ruser",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -581,8 +541,8 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"admin",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
-				_ = SeedEquipmentTypes(TestAdminDB)
+				ts := setupTestGenresServer(t, true)
+				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusNotFound,
@@ -592,7 +552,7 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestEquipmentTypesServer(t, true), ""
+				return setupTestGenresServer(t, true), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -601,7 +561,7 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"ruser",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestEquipmentTypesServer(t, true), ""
+				return setupTestGenresServer(t, true), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -610,7 +570,7 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"admin",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestEquipmentTypesServer(t, true), ""
+				return setupTestGenresServer(t, true), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -618,21 +578,21 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"Forbidden as Guest",
 			"",
 			"",
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden as User",
 			"ruser",
 			"",
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusForbidden,
 		},
 		{
 			"Success as Admin",
 			"admin",
 			"",
-			setupExistingEquipment,
+			setupExistingGenre,
 			http.StatusNoContent,
 		},
 	}
@@ -648,7 +608,7 @@ func TestDeleteEquipmentType(t *testing.T) {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "DELETE", ts.URL+"/equipment-types/"+effectiveID, generateToken(t, tt.role), nil)
+			req := createRequest(t, "DELETE", ts.URL+"/genres/"+effectiveID, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})

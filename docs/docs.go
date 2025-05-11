@@ -22,6 +22,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает список всех типов оборудования",
                 "produces": [
                     "application/json"
                 ],
@@ -31,12 +32,18 @@ const docTemplate = `{
                 "summary": "Получить все типы оборудования",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список типов оборудования",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/main.EquipmentType"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Типы оборудования не найдены",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "500": {
@@ -53,6 +60,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Создает новый тип оборудования",
                 "consumes": [
                     "application/json"
                 ],
@@ -65,24 +73,30 @@ const docTemplate = `{
                 "summary": "Создать тип оборудования",
                 "parameters": [
                     {
-                        "description": "Тип оборудования",
+                        "description": "Данные типа оборудования",
                         "name": "equipment_type",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.EquipmentType"
+                            "$ref": "#/definitions/main.EquipmentTypeData"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "UUID созданного типа оборудования",
                         "schema": {
-                            "$ref": "#/definitions/main.EquipmentType"
+                            "type": "string"
                         }
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Неверный формат JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
@@ -103,6 +117,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает тип оборудования по его UUID",
                 "produces": [
                     "application/json"
                 ],
@@ -113,7 +128,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа оборудования",
+                        "description": "UUID типа оборудования",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -121,9 +136,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Тип оборудования",
                         "schema": {
                             "$ref": "#/definitions/main.EquipmentType"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -146,6 +167,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Обновляет существующий тип оборудования",
                 "consumes": [
                     "application/json"
                 ],
@@ -159,36 +181,39 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа оборудования",
+                        "description": "UUID типа оборудования",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные типа",
+                        "description": "Обновленные данные типа оборудования",
                         "name": "equipment_type",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.EquipmentType"
+                            "$ref": "#/definitions/main.EquipmentTypeData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.EquipmentType"
-                        }
+                        "description": "Тип оборудования успешно обновлен"
                     },
                     "400": {
-                        "description": "Неверный JSON",
+                        "description": "Неверный формат UUID/JSON или пустые поля",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
-                        "description": "Тип не найден",
+                        "description": "Тип оборудования не найден",
                         "schema": {
                             "type": "string"
                         }
@@ -207,6 +232,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Удаляет тип оборудования по его UUID",
                 "tags": [
                     "equipment-types"
                 ],
@@ -214,7 +240,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа оборудования",
+                        "description": "UUID типа оборудования",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -222,13 +248,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Тип оборудования успешно удален"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
-                        "description": "Тип не найден",
+                        "description": "Тип оборудования не найден",
                         "schema": {
                             "type": "string"
                         }
@@ -244,6 +279,11 @@ const docTemplate = `{
         },
         "/genres": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает список всех жанров",
                 "produces": [
                     "application/json"
@@ -254,7 +294,7 @@ const docTemplate = `{
                 "summary": "Получить все жанры",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список жанров",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -262,8 +302,14 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Жанры не найдены",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Внутренняя ошибка",
+                        "description": "Ошибка сервера",
                         "schema": {
                             "type": "string"
                         }
@@ -271,7 +317,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Добавляет новый жанр в базу данных",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый жанр",
                 "consumes": [
                     "application/json"
                 ],
@@ -284,24 +335,30 @@ const docTemplate = `{
                 "summary": "Создать жанр",
                 "parameters": [
                     {
-                        "description": "Новый жанр",
+                        "description": "Данные жанра",
                         "name": "genre",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Genre"
+                            "$ref": "#/definitions/main.GenreData"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "UUID созданного жанра",
                         "schema": {
-                            "$ref": "#/definitions/main.Genre"
+                            "type": "string"
                         }
                     },
                     "400": {
-                        "description": "Некорректный запрос",
+                        "description": "Неверный формат JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
@@ -317,6 +374,11 @@ const docTemplate = `{
         },
         "/genres/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает жанр по его UUID",
                 "produces": [
                     "application/json"
@@ -328,7 +390,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID жанра",
+                        "description": "UUID жанра",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -336,9 +398,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Жанр",
                         "schema": {
                             "$ref": "#/definitions/main.Genre"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -348,7 +416,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка",
+                        "description": "Ошибка сервера",
                         "schema": {
                             "type": "string"
                         }
@@ -356,7 +424,12 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Обновляет существующий жанр по ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет существующий жанр",
                 "consumes": [
                     "application/json"
                 ],
@@ -370,7 +443,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID жанра",
+                        "description": "UUID жанра",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -381,19 +454,22 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Genre"
+                            "$ref": "#/definitions/main.GenreData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.Genre"
-                        }
+                        "description": "Жанр успешно обновлен"
                     },
                     "400": {
-                        "description": "Неверный JSON",
+                        "description": "Неверный формат UUID/JSON или пустые поля",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
@@ -413,7 +489,12 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удаляет жанр по ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет жанр по его UUID",
                 "tags": [
                     "genres"
                 ],
@@ -421,7 +502,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID жанра",
+                        "description": "UUID жанра",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -429,7 +510,16 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Жанр успешно удален"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
@@ -2362,6 +2452,17 @@ const docTemplate = `{
                 }
             }
         },
+        "main.EquipmentTypeData": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "main.Genre": {
             "type": "object",
             "properties": {
@@ -2369,6 +2470,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.GenreData": {
+            "type": "object",
+            "properties": {
+                "description": {
                     "type": "string"
                 },
                 "name": {

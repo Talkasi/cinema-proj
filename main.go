@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	_ "cw/docs"
@@ -187,4 +189,49 @@ func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.Hand
 
 		handler(db)(w, r)
 	}
+}
+
+func ParseUUIDFromPath(w http.ResponseWriter, pathValue string) (uuid.UUID, bool) {
+	id, err := uuid.Parse(pathValue)
+	if err != nil {
+		http.Error(w, "Неверный формат UUID", http.StatusBadRequest)
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(v); err != nil {
+		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+func HandleDatabaseError(w http.ResponseWriter, err error, entity string) bool {
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Ошибка при работе с %s: %v", entity, err), http.StatusInternalServerError)
+		return true
+	}
+	return false
+}
+
+func CheckRowsAffected(w http.ResponseWriter, rowsAffected int64) bool {
+	if rowsAffected == 0 {
+		http.Error(w, "Данные не найдены", http.StatusNotFound)
+		return false
+	}
+	return true
+}
+
+func ValidateRequiredFields(w http.ResponseWriter, fields map[string]string) bool {
+	for field, value := range fields {
+		if value == "" {
+			http.Error(w, fmt.Sprintf("Поле '%s' не может быть пустым", field), http.StatusBadRequest)
+			return false
+		}
+	}
+	return true
 }

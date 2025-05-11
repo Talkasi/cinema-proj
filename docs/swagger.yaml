@@ -8,11 +8,25 @@ definitions:
       name:
         type: string
     type: object
+  main.EquipmentTypeData:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
   main.Genre:
     properties:
       description:
         type: string
       id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.GenreData:
+    properties:
+      description:
         type: string
       name:
         type: string
@@ -165,15 +179,20 @@ info:
 paths:
   /equipment-types:
     get:
+      description: Возвращает список всех типов оборудования
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список типов оборудования
           schema:
             items:
               $ref: '#/definitions/main.EquipmentType'
             type: array
+        "404":
+          description: Типы оборудования не найдены
+          schema:
+            type: string
         "500":
           description: Ошибка сервера
           schema:
@@ -186,22 +205,27 @@ paths:
     post:
       consumes:
       - application/json
+      description: Создает новый тип оборудования
       parameters:
-      - description: Тип оборудования
+      - description: Данные типа оборудования
         in: body
         name: equipment_type
         required: true
         schema:
-          $ref: '#/definitions/main.EquipmentType'
+          $ref: '#/definitions/main.EquipmentTypeData'
       produces:
       - application/json
       responses:
         "201":
-          description: Created
+          description: UUID созданного типа оборудования
           schema:
-            $ref: '#/definitions/main.EquipmentType'
+            type: string
         "400":
-          description: Неверный запрос
+          description: Неверный формат JSON
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "500":
@@ -215,19 +239,26 @@ paths:
       - equipment-types
   /equipment-types/{id}:
     delete:
+      description: Удаляет тип оборудования по его UUID
       parameters:
-      - description: ID типа оборудования
+      - description: UUID типа оборудования
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Удалено
+          description: Тип оборудования успешно удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "404":
-          description: Тип не найден
+          description: Тип оборудования не найден
           schema:
             type: string
         "500":
@@ -240,8 +271,9 @@ paths:
       tags:
       - equipment-types
     get:
+      description: Возвращает тип оборудования по его UUID
       parameters:
-      - description: ID типа оборудования
+      - description: UUID типа оборудования
         in: path
         name: id
         required: true
@@ -250,9 +282,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Тип оборудования
           schema:
             $ref: '#/definitions/main.EquipmentType'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
         "404":
           description: Тип оборудования не найден
           schema:
@@ -269,31 +305,34 @@ paths:
     put:
       consumes:
       - application/json
+      description: Обновляет существующий тип оборудования
       parameters:
-      - description: ID типа оборудования
+      - description: UUID типа оборудования
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные типа
+      - description: Обновленные данные типа оборудования
         in: body
         name: equipment_type
         required: true
         schema:
-          $ref: '#/definitions/main.EquipmentType'
+          $ref: '#/definitions/main.EquipmentTypeData'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.EquipmentType'
+          description: Тип оборудования успешно обновлен
         "400":
-          description: Неверный JSON
+          description: Неверный формат UUID/JSON или пустые поля
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "404":
-          description: Тип не найден
+          description: Тип оборудования не найден
           schema:
             type: string
         "500":
@@ -312,59 +351,77 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список жанров
           schema:
             items:
               $ref: '#/definitions/main.Genre'
             type: array
-        "500":
-          description: Внутренняя ошибка
-          schema:
-            type: string
-      summary: Получить все жанры
-      tags:
-      - genres
-    post:
-      consumes:
-      - application/json
-      description: Добавляет новый жанр в базу данных
-      parameters:
-      - description: Новый жанр
-        in: body
-        name: genre
-        required: true
-        schema:
-          $ref: '#/definitions/main.Genre'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/main.Genre'
-        "400":
-          description: Некорректный запрос
+        "404":
+          description: Жанры не найдены
           schema:
             type: string
         "500":
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
+      summary: Получить все жанры
+      tags:
+      - genres
+    post:
+      consumes:
+      - application/json
+      description: Создает новый жанр
+      parameters:
+      - description: Данные жанра
+        in: body
+        name: genre
+        required: true
+        schema:
+          $ref: '#/definitions/main.GenreData'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: UUID созданного жанра
+          schema:
+            type: string
+        "400":
+          description: Неверный формат JSON
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
       summary: Создать жанр
       tags:
       - genres
   /genres/{id}:
     delete:
-      description: Удаляет жанр по ID
+      description: Удаляет жанр по его UUID
       parameters:
-      - description: ID жанра
+      - description: UUID жанра
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Удалено
+          description: Жанр успешно удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "404":
@@ -375,13 +432,15 @@ paths:
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Удалить жанр
       tags:
       - genres
     get:
       description: Возвращает жанр по его UUID
       parameters:
-      - description: ID жанра
+      - description: UUID жанра
         in: path
         name: id
         required: true
@@ -390,26 +449,32 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Жанр
           schema:
             $ref: '#/definitions/main.Genre'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
         "404":
           description: Жанр не найден
           schema:
             type: string
         "500":
-          description: Внутренняя ошибка
+          description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Получить жанр по ID
       tags:
       - genres
     put:
       consumes:
       - application/json
-      description: Обновляет существующий жанр по ID
+      description: Обновляет существующий жанр
       parameters:
-      - description: ID жанра
+      - description: UUID жанра
         in: path
         name: id
         required: true
@@ -419,16 +484,18 @@ paths:
         name: genre
         required: true
         schema:
-          $ref: '#/definitions/main.Genre'
+          $ref: '#/definitions/main.GenreData'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.Genre'
+          description: Жанр успешно обновлен
         "400":
-          description: Неверный JSON
+          description: Неверный формат UUID/JSON или пустые поля
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "404":
@@ -439,6 +506,8 @@ paths:
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Обновить жанр
       tags:
       - genres
