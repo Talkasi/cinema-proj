@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/jackc/pgx"
@@ -58,9 +59,12 @@ func isDivisionByZero(err error) bool {
 }
 
 func isDataTypeMismatch(err error) bool {
-	if pgErr, ok := err.(*pgconn.PgError); ok {
-		return pgErr.Code == "42804" // Код ошибки для несоответствия типов данных
+	var pgErr *pgconn.PgError
+
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "42804"
 	}
+
 	return false
 }
 
@@ -96,8 +100,24 @@ func IsError(w http.ResponseWriter, err error) bool {
 			http.Error(w, "Неверный внешний ключ", http.StatusFailedDependency)
 			return true
 		}
+		if isDataTypeMismatch(err) {
+			http.Error(w, "Неверный тип", http.StatusBadRequest)
+			return true
+		}
+		if isDivisionByZero(err) {
+			http.Error(w, "Ошибка деления на ноль", http.StatusBadRequest)
+			return true
+		}
+		if isSyntaxError(err) {
+			http.Error(w, "ОШИБКА SQL ЗАПРОСА", http.StatusInternalServerError)
+			return true
+		}
+		if isNotNullViolation(err) {
+			http.Error(w, "Передан null в обязательный непустой параметр", http.StatusInternalServerError)
+			return true
+		}
 
-		http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Ошибка при вставке %v\n", err), http.StatusInternalServerError)
 		return true
 	}
 

@@ -40,11 +40,11 @@ func TestGetHalls(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "ruser", http.StatusNotFound},
-		{"Empty as Admin", false, "admin", http.StatusNotFound},
+		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
+		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "ruser", http.StatusOK},
-		{"NonEmpty as Admin", true, "admin", http.StatusOK},
+		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
+		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -102,7 +102,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedHalls(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusNotFound,
 		},
 		{
@@ -112,7 +112,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedHalls(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusNotFound,
 		},
 		{
@@ -132,7 +132,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedHalls(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusBadRequest,
 		},
 		{
@@ -142,7 +142,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedHalls(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusBadRequest,
 		},
 		{
@@ -154,13 +154,13 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusOK,
 		},
 	}
@@ -224,21 +224,21 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			validHall,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			validHall,
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Unknown forain key Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			invalidForainKeyHall,
 			nil,
 			http.StatusFailedDependency,
@@ -252,14 +252,14 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -273,21 +273,21 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			invalidHall,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty fields in JSON Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			invalidHall,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Conflict Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			validHall,
 			func(t *testing.T) {
 				_, err := TestAdminDB.Exec(context.Background(),
@@ -374,7 +374,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -386,7 +386,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -410,7 +410,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -422,7 +422,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -442,7 +442,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			"invalid-json",
 			setupExistingHall,
@@ -450,7 +450,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			"invalid-json",
 			setupExistingHall,
@@ -466,7 +466,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			invalidUpdateData,
 			setupExistingHall,
@@ -474,7 +474,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Empty fields in as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			invalidUpdateData,
 			setupExistingHall,
@@ -490,7 +490,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
 			setupExistingHall,
@@ -498,7 +498,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
 			setupExistingHall,
@@ -552,7 +552,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestHallsServer(t, true)
@@ -563,7 +563,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestHallsServer(t, true)
@@ -583,7 +583,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestHallsServer(t, true), "invalid-uuid"
@@ -592,7 +592,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestHallsServer(t, true), "invalid-uuid"
@@ -608,14 +608,14 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			setupExistingHall,
 			http.StatusForbidden,
 		},
 		{
 			"Success as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingHall,
 			http.StatusNoContent,

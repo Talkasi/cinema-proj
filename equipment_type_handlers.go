@@ -3,11 +3,49 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+func validateAllData(w http.ResponseWriter, e EquipmentTypeData) bool {
+	if err := validateName(e.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if err := validateDescription(e.Description); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
+func validateName(name string) error {
+	validNameRegex := regexp.MustCompile(`\S`)
+	if !validNameRegex.MatchString(name) {
+		return errors.New("имя не может быть пустым или состоять только из пробелов")
+	}
+	if len(name) > 100 {
+		return errors.New("имя не может превышать 100 символов")
+	}
+	return nil
+}
+
+func validateDescription(description string) error {
+	validDescriptionRegex := regexp.MustCompile(`\S`)
+	if !validDescriptionRegex.MatchString(description) {
+		return errors.New("описание не может быть пустым или состоять только из пробелов")
+	}
+	if len(description) > 1000 {
+		return errors.New("описание не может превышать 1000 символов")
+	}
+	return nil
+}
 
 // @Summary Получить все типы оборудования
 // @Description Возвращает список всех типов оборудования
@@ -94,10 +132,7 @@ func CreateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !ValidateRequiredFields(w, map[string]string{
-			"name":        e.Name,
-			"description": e.Description,
-		}) {
+		if !validateAllData(w, e) {
 			return
 		}
 
@@ -140,10 +175,7 @@ func UpdateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !ValidateRequiredFields(w, map[string]string{
-			"name":        e.Name,
-			"description": e.Description,
-		}) {
+		if !validateAllData(w, e) {
 			return
 		}
 

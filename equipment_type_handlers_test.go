@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 )
 
-func setupTestEquipmentTypesServer(t *testing.T, clearTable bool) *httptest.Server {
-	// if clearTable {
-	// 	_ = ClearTable(TestAdminDB, "equipment_types")
-	// }
+func setupTestEquipmentTypesServer(t *testing.T) *httptest.Server {
 	err := ClearTable(TestAdminDB, "equipment_types")
 	if err != nil {
 		println(err.Error())
@@ -20,7 +19,7 @@ func setupTestEquipmentTypesServer(t *testing.T, clearTable bool) *httptest.Serv
 	return httptest.NewServer(NewRouter())
 }
 
-func getFirstEquipmentTypeID(t *testing.T, ts *httptest.Server, token string) string {
+func getEquipmentTypeByID(t *testing.T, ts *httptest.Server, token string, index int) EquipmentType {
 	req := createRequest(t, "GET", ts.URL+"/equipment-types", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
@@ -32,7 +31,11 @@ func getFirstEquipmentTypeID(t *testing.T, ts *httptest.Server, token string) st
 		t.Fatal("Expected at least one equipment type, got none")
 	}
 
-	return equipmentTypes[0].ID
+	if index >= len(equipmentTypes) {
+		t.Fatal("Index is greater than length of data array")
+	}
+
+	return equipmentTypes[index]
 }
 
 func TestGetEquipmentTypes(t *testing.T) {
@@ -43,16 +46,16 @@ func TestGetEquipmentTypes(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "ruser", http.StatusNotFound},
-		{"Empty as Admin", false, "admin", http.StatusNotFound},
+		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
+		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "ruser", http.StatusOK},
-		{"NonEmpty as Admin", true, "admin", http.StatusOK},
+		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
+		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestEquipmentTypesServer(t, true)
+			ts := setupTestEquipmentTypesServer(t)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -71,9 +74,9 @@ func TestGetEquipmentTypes(t *testing.T) {
 func TestGetEquipmentTypeByID(t *testing.T) {
 	// Setup for valid ID tests
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestEquipmentTypesServer(t, true)
+		ts := setupTestEquipmentTypesServer(t)
 		_ = SeedEquipmentTypes(TestAdminDB)
-		return ts, getFirstEquipmentTypeID(t, ts, "")
+		return ts, getEquipmentTypeByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -85,7 +88,7 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Unknown ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, uuid.New().String()
 			},
@@ -95,27 +98,27 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Unknown ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusNotFound,
 		},
 		{
 			"Unknown ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusNotFound,
 		},
 		{
 			"Unknown ID When Empty as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				return ts, uuid.New().String()
 			},
 			"",
@@ -124,25 +127,25 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Unknown ID When Empty as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				return ts, uuid.New().String()
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusNotFound,
 		},
 		{
 			"Unknown ID When Empty as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				return ts, uuid.New().String()
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusNotFound,
 		},
 		{
 			"Invalid ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, "invalid-id"
 			},
@@ -152,21 +155,21 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Invalid ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusBadRequest,
 		},
 		{
@@ -178,13 +181,13 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusOK,
 		},
 	}
@@ -221,6 +224,13 @@ func TestCreateEquipmentType(t *testing.T) {
 		Description: "Test Description",
 	}
 
+	setupConflictTest := func(t *testing.T) {
+		_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name, description) VALUES ($1, $2)", validEquipmentType.Name, validEquipmentType.Description)
+		if err != nil {
+			t.Fatalf("Failed to insert into test database: %v", err)
+		}
+	}
+
 	tests := []struct {
 		name           string
 		role           string
@@ -237,14 +247,14 @@ func TestCreateEquipmentType(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			validEquipmentType,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			validEquipmentType,
 			nil,
 			http.StatusCreated,
@@ -258,14 +268,14 @@ func TestCreateEquipmentType(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -279,14 +289,14 @@ func TestCreateEquipmentType(t *testing.T) {
 		},
 		{
 			"Empty field in JSON User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			invalidEquipmentType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty field in JSON Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			invalidEquipmentType,
 			nil,
 			http.StatusBadRequest,
@@ -295,43 +305,28 @@ func TestCreateEquipmentType(t *testing.T) {
 			"Insert Error Guest",
 			"",
 			validEquipmentType,
-			func(t *testing.T) {
-				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name) VALUES ($1)", validEquipmentType.Name)
-				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
-				}
-			},
+			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			validEquipmentType,
-			func(t *testing.T) {
-				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name) VALUES ($1)", validEquipmentType.Name)
-				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
-				}
-			},
+			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			validEquipmentType,
-			func(t *testing.T) {
-				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name) VALUES ($1)", validEquipmentType.Name)
-				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
-				}
-			},
+			setupConflictTest,
 			http.StatusConflict,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestEquipmentTypesServer(t, true)
+			ts := setupTestEquipmentTypesServer(t)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -366,9 +361,9 @@ func TestUpdateEquipmentType(t *testing.T) {
 
 	// Setup function for tests needing existing equipment type
 	setupExistingEquipment := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestEquipmentTypesServer(t, true)
+		ts := setupTestEquipmentTypesServer(t)
 		_ = SeedEquipmentTypes(TestAdminDB)
-		return ts, getFirstEquipmentTypeID(t, ts, generateToken(t, "admin"))
+		return ts, getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 	}
 
 	unknown_id := uuid.NewString()
@@ -387,7 +382,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, ""
 			},
@@ -395,11 +390,11 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, ""
 			},
@@ -407,11 +402,11 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, ""
 			},
@@ -423,7 +418,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			unknown_id,
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, unknown_id
 			},
@@ -431,22 +426,22 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			unknown_id,
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				return ts, unknown_id
 			},
 			http.StatusForbidden,
 		},
 		{
 			"Unknown UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			unknown_id,
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				return ts, unknown_id
 			},
 			http.StatusNotFound,
@@ -461,7 +456,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			"invalid-json",
 			setupExistingEquipment,
@@ -469,7 +464,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			"invalid-json",
 			setupExistingEquipment,
@@ -485,7 +480,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Empty Name as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			EquipmentTypeData{Name: "", Description: "Test"},
 			setupExistingEquipment,
@@ -493,7 +488,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Empty Name as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			EquipmentTypeData{Name: "", Description: "Test"},
 			setupExistingEquipment,
@@ -509,7 +504,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
 			setupExistingEquipment,
@@ -517,7 +512,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
 			setupExistingEquipment,
@@ -546,9 +541,9 @@ func TestUpdateEquipmentType(t *testing.T) {
 func TestDeleteEquipmentType(t *testing.T) {
 	// Setup function for tests needing existing equipment type
 	setupExistingEquipment := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestEquipmentTypesServer(t, true)
+		ts := setupTestEquipmentTypesServer(t)
 		_ = SeedEquipmentTypes(TestAdminDB)
-		return ts, getFirstEquipmentTypeID(t, ts, generateToken(t, "admin"))
+		return ts, getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 	}
 
 	tests := []struct {
@@ -563,7 +558,7 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, uuid.New().String()
 			},
@@ -571,10 +566,10 @@ func TestDeleteEquipmentType(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, uuid.New().String()
 			},
@@ -582,10 +577,10 @@ func TestDeleteEquipmentType(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestEquipmentTypesServer(t, true)
+				ts := setupTestEquipmentTypesServer(t)
 				_ = SeedEquipmentTypes(TestAdminDB)
 				return ts, uuid.New().String()
 			},
@@ -596,25 +591,25 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestEquipmentTypesServer(t, true), ""
+				return setupTestEquipmentTypesServer(t), ""
 			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestEquipmentTypesServer(t, true), ""
+				return setupTestEquipmentTypesServer(t), ""
 			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestEquipmentTypesServer(t, true), ""
+				return setupTestEquipmentTypesServer(t), ""
 			},
 			http.StatusBadRequest,
 		},
@@ -627,14 +622,14 @@ func TestDeleteEquipmentType(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			setupExistingEquipment,
 			http.StatusForbidden,
 		},
 		{
 			"Success as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingEquipment,
 			http.StatusNoContent,
@@ -657,4 +652,133 @@ func TestDeleteEquipmentType(t *testing.T) {
 			defer resp.Body.Close()
 		})
 	}
+}
+
+func TestEquipmentTypeConstraintsCreate(t *testing.T) {
+	tests := []struct {
+		name           string
+		role           string
+		body           EquipmentTypeData
+		expectedStatus int
+	}{
+		{
+			"Empty name",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "   ", Description: "Valid"},
+			http.StatusBadRequest,
+		},
+		{
+			"Empty description",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Valid", Description: "   "},
+			http.StatusBadRequest,
+		},
+		{
+			"Name too long",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
+			http.StatusBadRequest,
+		},
+		{
+			"Description too long",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			http.StatusBadRequest,
+		},
+		{
+			"Special characters in name",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Тест <script>", Description: "Valid"},
+			http.StatusCreated,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := setupTestEquipmentTypesServer(t)
+			defer ts.Close()
+
+			req := createRequest(t, "POST", ts.URL+"/equipment-types", generateToken(t, tt.role), tt.body)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+		})
+	}
+}
+
+func TestEquipmentTypeConstraintsUpdate(t *testing.T) {
+	tests := []struct {
+		name           string
+		role           string
+		body           EquipmentTypeData
+		expectedStatus int
+	}{
+		{
+			"Empty name",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "   ", Description: "Valid"},
+			http.StatusBadRequest,
+		},
+		{
+			"Empty description",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Valid", Description: "   "},
+			http.StatusBadRequest,
+		},
+		{
+			"Name too long",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
+			http.StatusBadRequest,
+		},
+		{
+			"Description too long",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			http.StatusBadRequest,
+		},
+		{
+			"Special characters in name",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Тест <script>", Description: "Valid"},
+			http.StatusOK,
+		},
+		{
+			"Valid update",
+			"CLAIM_ROLE_ADMIN",
+			EquipmentTypeData{Name: "Valid Name", Description: "Valid Description"},
+			http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := setupTestEquipmentTypesServer(t)
+			defer ts.Close()
+			_ = SeedEquipmentTypes(TestAdminDB)
+
+			equipmentTypeID := getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+
+			req := createRequest(t, "PUT", fmt.Sprintf("%s/equipment-types/%s", ts.URL, equipmentTypeID), generateToken(t, tt.role), tt.body)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+		})
+	}
+}
+
+func TestUpdateConflict(t *testing.T) {
+	ts := setupTestEquipmentTypesServer(t)
+	defer ts.Close()
+
+	_ = SeedEquipmentTypes(TestAdminDB)
+	id1 := getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
+	id2 := getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
+
+	updateData := EquipmentTypeData{
+		Name:        id2.Name,
+		Description: "Updated",
+	}
+
+	req := createRequest(t, "PUT", ts.URL+"/equipment-types/"+id1.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), updateData)
+	resp := executeRequest(t, req, http.StatusConflict)
+	defer resp.Body.Close()
 }

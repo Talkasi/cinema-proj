@@ -39,11 +39,11 @@ func TestGetGenres(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "ruser", http.StatusNotFound},
-		{"Empty as Admin", false, "admin", http.StatusNotFound},
+		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
+		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "ruser", http.StatusOK},
-		{"NonEmpty as Admin", true, "admin", http.StatusOK},
+		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
+		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -101,7 +101,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusNotFound,
 		},
 		{
@@ -111,7 +111,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedGenres(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusNotFound,
 		},
 		{
@@ -131,7 +131,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedGenres(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusBadRequest,
 		},
 		{
@@ -141,7 +141,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedGenres(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusBadRequest,
 		},
 		{
@@ -153,13 +153,13 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"ruser",
+			"CLAIM_ROLE_USER",
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			http.StatusOK,
 		},
 	}
@@ -212,14 +212,14 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			validGenre,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			validGenre,
 			nil,
 			http.StatusCreated,
@@ -233,14 +233,14 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -254,21 +254,21 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty fields in JSON Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Conflict Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			validGenre,
 			func(t *testing.T) {
 				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO genres (name, description) VALUES ($1, $2)", validGenre.Name, validGenre.Description)
@@ -349,7 +349,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -361,7 +361,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -385,7 +385,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -397,7 +397,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -417,7 +417,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			"invalid-json",
 			setupExistingGenre,
@@ -425,7 +425,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			"invalid-json",
 			setupExistingGenre,
@@ -441,7 +441,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			invalidUpdateData,
 			setupExistingGenre,
@@ -449,7 +449,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Empty fields in as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			invalidUpdateData,
 			setupExistingGenre,
@@ -465,7 +465,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
 			setupExistingGenre,
@@ -473,7 +473,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
 			setupExistingGenre,
@@ -527,7 +527,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestGenresServer(t, true)
@@ -538,7 +538,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestGenresServer(t, true)
@@ -558,7 +558,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestGenresServer(t, true), "invalid-uuid"
@@ -567,7 +567,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestGenresServer(t, true), "invalid-uuid"
@@ -583,14 +583,14 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"ruser",
+			"CLAIM_ROLE_USER",
 			"",
 			setupExistingGenre,
 			http.StatusForbidden,
 		},
 		{
 			"Success as Admin",
-			"admin",
+			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingGenre,
 			http.StatusNoContent,

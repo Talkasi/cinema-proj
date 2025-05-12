@@ -95,7 +95,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-var SecretKey = []byte("secret_key")
+var SecretKey = []byte("TOKEN_KEY")
 
 var (
 	GuestDB *pgxpool.Pool
@@ -151,7 +151,7 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 
 			r.Header.Set("Role", claims.Role)
 		} else {
-			r.Header.Set("Role", "guest")
+			r.Header.Set("Role", "CLAIM_ROLE_GUEST")
 		}
 
 		next.ServeHTTP(w, r)
@@ -187,12 +187,12 @@ func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.Hand
 		var db *pgxpool.Pool
 
 		switch role {
-		case "admin":
+		case "CLAIM_ROLE_ADMIN":
 			db = AdminDB
 			if IsTestMode {
 				db = TestAdminDB
 			}
-		case "ruser":
+		case "CLAIM_ROLE_USER":
 			db = UserDB
 			if IsTestMode {
 				db = TestUserDB
