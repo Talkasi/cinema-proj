@@ -25,8 +25,3 @@ REVOKE SELECT ON
     users
 FROM cinema_guest;
 REVOKE INSERT ON users FROM cinema_guest;
-
--- Drop all roles
-DROP ROLE IF EXISTS cinema_admin;
-DROP ROLE IF EXISTS cinema_user;
-DROP ROLE IF EXISTS cinema_guest;

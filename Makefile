@@ -20,24 +20,32 @@ TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) pass
 # Инициализация основной БД
 db-init: db-clean
 	@echo "Инициализация основной БД..."
-	@$(PSQL_CONN) -q -f sql/_prepare_db.sql
+	@$(PSQL_CONN) -q -f sql/001_create_app_roles.sql
+	@$(PSQL_CONN) -q -f sql/002_create_main.sql
+	@$(PSQL_CONN) -q -f sql/004_set_app_roles_privileges.sql
 	@echo "Основная БД готова!"
 
 # Очистка основной БД
 db-clean:
 	@echo "Очистка основной БД..."
-	@$(PSQL_CONN) -q -f sql/_clear_all_db.sql || true
+	@$(PSQL_CONN) -q -f sql/revoke_app_roles_privileges.sql || true
+	@$(PSQL_CONN) -q -f sql/drop_main.sql || true
+	@$(PSQL_CONN) -q -f sql/drop_app_roles.sql || true
 
 # Инициализация тестовой БД
 test-init: test-clean
 	@echo "Инициализация тестовой БД..."
-	@$(TEST_PSQL_CONN) -q -f sql/_prepare_test_db.sql
+	@$(TEST_PSQL_CONN) -q -f sql/003_create_test_roles.sql
+	@$(TEST_PSQL_CONN) -q -f sql/002_create_main.sql
+	@$(TEST_PSQL_CONN) -q -f sql/005_set_test_roles_privileges.sql
 	@echo "Тестовая БД готова!"
 
 # Очистка тестовой БД
 test-clean:
 	@echo "Очистка тестовой БД..."
-	@$(TEST_PSQL_CONN) -q -f sql/_clear_all_test_db.sql || true
+	@$(TEST_PSQL_CONN) -q -f sql/revoke_test_roles_privileges.sql || true
+	@$(TEST_PSQL_CONN) -q -f sql/drop_main.sql || true
+	@$(TEST_PSQL_CONN) -q -f sql/drop_test_roles.sql || true
 
 # Запуск приложения
 run: db-init
@@ -47,9 +55,9 @@ run: db-init
 # Запуск тестов
 test: test-init
 	@echo "Запуск тестов..."
-	@go test -cover ./...
+	@go test -cover -count=1 ./...
 
 # Запуск тестов с верификацией
 test-v: test-init
 	@echo "Запуск тестов с верификацией..."
-	@go test -cover -v ./...
+	@go test -cover -count=1 -v ./...

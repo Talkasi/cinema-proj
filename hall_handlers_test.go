@@ -613,10 +613,21 @@ func TestDeleteHall(t *testing.T) {
 			http.StatusForbidden,
 		},
 		{
-			"Success as Admin",
+			"Dependency error as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingHall,
+			http.StatusFailedDependency,
+		},
+		{
+			"Success as Admin",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, getHallByID(t, ts, "", 4).ID
+			},
 			http.StatusNoContent,
 		},
 	}
