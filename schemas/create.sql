@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS equipment_types (
 CREATE TABLE IF NOT EXISTS halls (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     equipment_type_id UUID REFERENCES equipment_types(id),
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
     capacity INT,
     description VARCHAR(1000)
 );

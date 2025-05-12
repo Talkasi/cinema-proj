@@ -134,12 +134,31 @@ func SeedAll(db *pgxpool.Pool) error {
 
 	return nil
 }
-
 func SeedGenres(db *pgxpool.Pool) error {
 	for _, g := range GenresData {
-		_, err := db.Exec(context.Background(), `INSERT INTO genres (name, description)
-			VALUES ($1, $2)
-			ON CONFLICT (name) DO NOTHING`, g.Name, g.Description)
+		_, err := db.Exec(context.Background(), `INSERT INTO genres (id, name, description)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (name) DO UPDATE SET 
+                description = EXCLUDED.description,
+                id = EXCLUDED.id`,
+			g.ID, g.Name, g.Description)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func SeedHalls(db *pgxpool.Pool) error {
+	for _, h := range HallsData {
+		_, err := db.Exec(context.Background(), `INSERT INTO halls (id, name, capacity, equipment_type_id, description)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (id) DO UPDATE SET
+                capacity = EXCLUDED.capacity,
+                equipment_type_id = EXCLUDED.equipment_type_id,
+                description = EXCLUDED.description,
+                name = EXCLUDED.name`,
+			h.ID, h.Name, h.Capacity, h.EquipmentTypeID, h.Description)
 		if err != nil {
 			return err
 		}
@@ -149,9 +168,12 @@ func SeedGenres(db *pgxpool.Pool) error {
 
 func SeedEquipmentTypes(db *pgxpool.Pool) error {
 	for _, e := range EquipmentTypesData {
-		_, err := db.Exec(context.Background(), `INSERT INTO equipment_types (name, description)
-			VALUES ($1, $2)
-			ON CONFLICT (name) DO NOTHING`, e.Name, e.Description)
+		_, err := db.Exec(context.Background(), `INSERT INTO equipment_types (id, name, description)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (name) DO UPDATE SET
+                description = EXCLUDED.description,
+                id = EXCLUDED.id`,
+			e.ID, e.Name, e.Description)
 		if err != nil {
 			return err
 		}
@@ -161,9 +183,12 @@ func SeedEquipmentTypes(db *pgxpool.Pool) error {
 
 func SeedSeatTypes(db *pgxpool.Pool) error {
 	for _, s := range SeatTypesData {
-		_, err := db.Exec(context.Background(), `INSERT INTO seat_types (name, description)
-			VALUES ($1, $2)
-			ON CONFLICT (name) DO NOTHING`, s.Name, s.Description)
+		_, err := db.Exec(context.Background(), `INSERT INTO seat_types (id, name, description)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (name) DO UPDATE SET
+                description = EXCLUDED.description,
+                id = EXCLUDED.id`,
+			s.ID, s.Name, s.Description)
 		if err != nil {
 			return err
 		}
@@ -173,9 +198,11 @@ func SeedSeatTypes(db *pgxpool.Pool) error {
 
 func SeedTicketStatuses(db *pgxpool.Pool) error {
 	for _, status := range TicketStatusesData {
-		_, err := db.Exec(context.Background(), `INSERT INTO ticket_status (name)
-			VALUES ($1)
-			ON CONFLICT (name) DO NOTHING`, status.Name)
+		_, err := db.Exec(context.Background(), `INSERT INTO ticket_status (id, name)
+            VALUES ($1, $2)
+            ON CONFLICT (name) DO UPDATE SET
+                id = EXCLUDED.id`,
+			status.ID, status.Name)
 		if err != nil {
 			return err
 		}

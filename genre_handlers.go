@@ -63,9 +63,10 @@ func GetGenreByID(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var g Genre
+		g.ID = id.String()
 		err := db.QueryRow(context.Background(),
-			"SELECT id, name, description FROM genres WHERE id = $1", id).
-			Scan(&g.ID, &g.Name, &g.Description)
+			"SELECT name, description FROM genres WHERE id = $1", id).
+			Scan(&g.Name, &g.Description)
 
 		if IsError(w, err) {
 			return

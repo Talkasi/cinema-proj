@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/joho/godotenv"
 )
 
 func generateToken(t *testing.T, role string) string {
@@ -85,16 +87,17 @@ func parseResponseBody(t *testing.T, resp *http.Response, v interface{}) {
 
 func TestMain(m *testing.M) {
 	IsTestMode = true
+	err := godotenv.Load("config.env")
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
+	}
+
 	if err := InitTestDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
 	}
 	defer TestGuestDB.Close()
 	defer TestAdminDB.Close()
 	defer TestUserDB.Close()
-
-	if err := CreateAll(TestAdminDB); err != nil {
-		log.Fatal("ошибка создания таблиц БД: ", err)
-	}
 
 	m.Run()
 }

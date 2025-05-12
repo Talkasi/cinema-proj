@@ -92,8 +92,13 @@ func IsError(w http.ResponseWriter, err error) bool {
 			http.Error(w, "Данные не найдены", http.StatusNotFound)
 			return true
 		}
+		if isForeignKeyViolation(err) {
+			http.Error(w, "Неверный внешний ключ", http.StatusFailedDependency)
+			return true
+		}
 
 		http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
+		return true
 	}
 
 	return false

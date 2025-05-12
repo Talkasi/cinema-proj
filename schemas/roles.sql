@@ -83,6 +83,24 @@ GRANT CREATE ON DATABASE cinema_test TO admin_test;
 GRANT USAGE ON SCHEMA public TO admin;
 GRANT CREATE ON SCHEMA public TO admin;
 
+GRANT guest_test TO ruser_test;
+GRANT 
+    SELECT, INSERT, UPDATE 
+ON 
+    tickets,
+    reviews,
+    seats,
+    users,
+    halls
+TO ruser_test;
+
+GRANT ALL PRIVILEGES ON 
+    ALL TABLES IN SCHEMA public 
+TO admin_test;
+
+GRANT CREATE ON DATABASE cinema_test TO admin_test;
+GRANT USAGE ON SCHEMA public TO admin;
+GRANT CREATE ON SCHEMA public TO admin;
 
 -- Предоставьте права на использование схемы
 GRANT USAGE ON SCHEMA public TO admin;

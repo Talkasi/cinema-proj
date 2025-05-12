@@ -63,9 +63,10 @@ func GetEquipmentTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var e EquipmentType
+		e.ID = id.String()
 		err := db.QueryRow(context.Background(),
-			"SELECT id, name, description FROM equipment_types WHERE id = $1", id).
-			Scan(&e.ID, &e.Name, &e.Description)
+			"SELECT name, description FROM equipment_types WHERE id = $1", id).
+			Scan(&e.Name, &e.Description)
 
 		if IsError(w, err) {
 			return

@@ -10,8 +10,12 @@ import (
 )
 
 func setupTestEquipmentTypesServer(t *testing.T, clearTable bool) *httptest.Server {
-	if clearTable {
-		_ = ClearTable(TestAdminDB, "equipment_types")
+	// if clearTable {
+	// 	_ = ClearTable(TestAdminDB, "equipment_types")
+	// }
+	err := ClearTable(TestAdminDB, "equipment_types")
+	if err != nil {
+		println(err.Error())
 	}
 	return httptest.NewServer(NewRouter())
 }

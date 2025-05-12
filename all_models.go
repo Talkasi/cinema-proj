@@ -19,11 +19,11 @@ type Movie struct {
 }
 
 type Hall struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Capacity      int    `json:"capacity"`
-	EquipmentType string `json:"equipment_type_id"`
-	Description   string `json:"description"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Capacity        int    `json:"capacity"`
+	EquipmentTypeID string `json:"equipment_type_id"`
+	Description     string `json:"description"`
 }
 
 type EquipmentType struct {
@@ -98,4 +98,30 @@ type Review struct {
 
 type ErrorResponse struct {
 	Message string `json:"message" example:"Error description"`
+}
+
+type GenreData struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type EquipmentTypeData struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type SeatTypeData struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type TicketStatusData struct {
+	Name string `json:"name"`
+}
+
+type HallData struct {
+	Name            string `json:"name"`
+	Capacity        int    `json:"capacity"`
+	EquipmentTypeID string `json:"equipment_type_id"`
+	Description     string `json:"description"`
 }

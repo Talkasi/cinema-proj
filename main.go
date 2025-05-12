@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 
 	_ "cw/docs"
 )
@@ -27,17 +29,26 @@ func InitTestDB() error {
 	var err error
 	ctx := context.Background()
 
-	TestGuestDB, err = pgxpool.New(ctx, "user=guest_test dbname=cinema_test password=guest111 sslmode=disable")
+	TestGuestDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_GUEST_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_GUEST_PASSWORD")))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения гостя: %v", err)
 	}
 
-	TestUserDB, err = pgxpool.New(ctx, "user=ruser_test dbname=cinema_test password=user111 sslmode=disable")
+	TestUserDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_USER_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_USER_PASSWORD")))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения пользователя: %v", err)
 	}
 
-	TestAdminDB, err = pgxpool.New(ctx, "user=admin_test dbname=cinema_test password=admin555 sslmode=disable")
+	TestAdminDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения администратора: %v", err)
 	}
@@ -53,6 +64,11 @@ func InitTestDB() error {
 // @name Authorization
 func main() {
 	IsTestMode = false
+	err := godotenv.Load("config.env")
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
+	}
+
 	if err := InitDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
 	}
@@ -61,9 +77,9 @@ func main() {
 	defer UserDB.Close()
 	defer GuestDB.Close()
 
-	if err := CreateAll(AdminDB); err != nil {
-		log.Fatal("ошибка создания таблиц БД: ", err)
-	}
+	// if err := CreateAll(AdminDB); err != nil {
+	// 	log.Fatal("ошибка создания таблиц БД: ", err)
+	// }
 
 	if err := SeedAll(AdminDB); err != nil {
 		log.Fatal("ошибка вставки данных: ", err)
@@ -92,23 +108,29 @@ func InitDB() error {
 
 	ctx := context.Background()
 
-	GuestDB, err = pgxpool.New(ctx, "user=guest dbname=cinema password=guest111 sslmode=disable")
+	GuestDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("GUEST_USER"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("GUEST_PASSWORD")))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения гостя: %v", err)
 	}
-	// defer GuestDB.Close()
 
-	UserDB, err = pgxpool.New(ctx, "user=ruser dbname=cinema password=user111 sslmode=disable")
+	UserDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("USER_USER"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("USER_PASSWORD")))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения пользователя: %v", err)
 	}
-	// defer UserDB.Close()
 
-	AdminDB, err = pgxpool.New(ctx, "user=admin dbname=cinema password=admin555 sslmode=disable")
+	AdminDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("ADMIN_USER"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("ADMIN_PASSWORD")))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения администратора: %v", err)
 	}
-	// defer AdminDB.Close()
 
 	return nil
 }
