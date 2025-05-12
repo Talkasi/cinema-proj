@@ -6,11 +6,20 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/joho/godotenv"
 )
+
+func setupTestServer() *httptest.Server {
+	err := ClearAll(TestAdminDB)
+	if err != nil {
+		println(err.Error())
+	}
+	return httptest.NewServer(NewRouter())
+}
 
 func generateToken(t *testing.T, role string) string {
 	token, err := GenerateToken("email", role)
@@ -95,9 +104,11 @@ func TestMain(m *testing.M) {
 	if err := InitTestDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
 	}
-	defer TestGuestDB.Close()
-	defer TestAdminDB.Close()
-	defer TestUserDB.Close()
 
 	m.Run()
+
+	TestAdminDB.Close()
+	TestGuestDB.Close()
+	TestUserDB.Close()
+
 }

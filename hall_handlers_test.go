@@ -9,15 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func setupTestHallsServer(t *testing.T, clearTable bool) *httptest.Server {
-	if clearTable {
-		_ = ClearTable(TestAdminDB, "halls")
-	}
-	SeedEquipmentTypes(TestAdminDB)
-	return httptest.NewServer(NewRouter())
-}
-
-func getFirstHallID(t *testing.T, ts *httptest.Server, token string) string {
+func getHallByID(t *testing.T, ts *httptest.Server, token string, index int) Hall {
 	req := createRequest(t, "GET", ts.URL+"/halls", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
@@ -29,7 +21,11 @@ func getFirstHallID(t *testing.T, ts *httptest.Server, token string) string {
 		t.Fatal("Expected at least one hall, got none")
 	}
 
-	return halls[0].ID
+	if index >= len(halls) {
+		t.Fatal("Index is greater than length of data array")
+	}
+
+	return halls[index]
 }
 
 func TestGetHalls(t *testing.T) {
@@ -49,11 +45,11 @@ func TestGetHalls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestHallsServer(t, true)
+			ts := setupTestServer()
 			defer ts.Close()
 
 			if tt.seedData {
-				SeedHalls(TestAdminDB)
+				SeedAll(TestAdminDB)
 			}
 
 			req := createRequest(t, "GET", ts.URL+"/halls", generateToken(t, tt.role), nil)
@@ -74,9 +70,9 @@ func TestGetHalls(t *testing.T) {
 
 func TestGetHallByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestHallsServer(t, true)
-		_ = SeedHalls(TestAdminDB)
-		return ts, getFirstHallID(t, ts, "")
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, getHallByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -88,8 +84,8 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Unknown ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"",
@@ -98,8 +94,8 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Unknown ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"CLAIM_ROLE_USER",
@@ -108,8 +104,8 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Unknown ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"CLAIM_ROLE_ADMIN",
@@ -118,8 +114,8 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Invalid ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"",
@@ -128,8 +124,8 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Invalid ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"CLAIM_ROLE_USER",
@@ -138,8 +134,8 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Invalid ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"CLAIM_ROLE_ADMIN",
@@ -190,7 +186,7 @@ func TestCreateHall(t *testing.T) {
 	validHall := HallData{
 		Name:            "Test Hall",
 		Capacity:        100,
-		EquipmentTypeID: EquipmentTypesData[7].ID,
+		EquipmentTypeID: EquipmentTypesData[3].ID,
 		Description:     "Test Description",
 	}
 
@@ -233,7 +229,9 @@ func TestCreateHall(t *testing.T) {
 			"Success Admin",
 			"CLAIM_ROLE_ADMIN",
 			validHall,
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusCreated,
 		},
 		{
@@ -290,6 +288,7 @@ func TestCreateHall(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			validHall,
 			func(t *testing.T) {
+				SeedAll(TestAdminDB)
 				_, err := TestAdminDB.Exec(context.Background(),
 					"INSERT INTO halls (name, capacity, equipment_type_id, description) VALUES ($1, $2, $3, $4)",
 					validHall.Name, validHall.Capacity, validHall.EquipmentTypeID, validHall.Description)
@@ -303,7 +302,7 @@ func TestCreateHall(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestHallsServer(t, true)
+			ts := setupTestServer()
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -347,9 +346,9 @@ func TestUpdateHall(t *testing.T) {
 
 	// Setup function for tests needing existing hall
 	setupExistingHall := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestHallsServer(t, true)
-		_ = SeedHalls(TestAdminDB)
-		return ts, getFirstHallID(t, ts, "")
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, getHallByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -366,8 +365,8 @@ func TestUpdateHall(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -378,8 +377,8 @@ func TestUpdateHall(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -390,8 +389,8 @@ func TestUpdateHall(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -402,8 +401,8 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -414,8 +413,8 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -426,8 +425,8 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusNotFound,
@@ -527,9 +526,9 @@ func TestUpdateHall(t *testing.T) {
 func TestDeleteHall(t *testing.T) {
 	// Setup function for tests needing existing hall
 	setupExistingHall := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestHallsServer(t, true)
-		_ = SeedHalls(TestAdminDB)
-		return ts, getFirstHallID(t, ts, "")
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, getHallByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -544,8 +543,8 @@ func TestDeleteHall(t *testing.T) {
 			"",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -555,8 +554,8 @@ func TestDeleteHall(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -566,8 +565,8 @@ func TestDeleteHall(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestHallsServer(t, true)
-				SeedHalls(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusNotFound,
@@ -577,7 +576,7 @@ func TestDeleteHall(t *testing.T) {
 			"",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestHallsServer(t, true), "invalid-uuid"
+				return setupTestServer(), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -586,7 +585,7 @@ func TestDeleteHall(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestHallsServer(t, true), "invalid-uuid"
+				return setupTestServer(), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -595,7 +594,7 @@ func TestDeleteHall(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestHallsServer(t, true), "invalid-uuid"
+				return setupTestServer(), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},

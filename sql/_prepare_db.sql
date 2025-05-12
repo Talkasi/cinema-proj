@@ -1,7 +1,6 @@
 CREATE ROLE cinema_admin WITH LOGIN PASSWORD 'cinema_admin_password';
 CREATE ROLE cinema_user WITH LOGIN PASSWORD 'cinema_user_password';
 CREATE ROLE cinema_guest WITH LOGIN PASSWORD 'cinema_guest_password';
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (
@@ -100,13 +99,13 @@ BEGIN
         FROM movie_shows
         WHERE hall_id = NEW.hall_id
         AND (
-            (start_time < NEW.start_time + new_movie_duration + INTERVAL '10 minutes' 
+            (start_time < NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' 
              AND 
-             start_time + duration + INTERVAL '10 minutes' > NEW.start_time)
+             start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > NEW.start_time)
             OR 
-            (NEW.start_time < start_time + duration + INTERVAL '10 minutes' 
+            (NEW.start_time < start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' 
              AND 
-             NEW.start_time + new_movie_duration + INTERVAL '10 minutes' > start_time)
+             NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > start_time)
         )
     ) THEN
         RAISE EXCEPTION 'Невозможно запланировать показ, поскольку в это время зал будет занят показом другого фильма или будет проводиться уборка';
@@ -131,11 +130,11 @@ CREATE TABLE IF NOT EXISTS seat_types (
 
 CREATE TABLE IF NOT EXISTS seats (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    movie_show_id UUID REFERENCES movie_shows(id),
+    hall_id UUID REFERENCES halls(id),
     seat_type_id UUID REFERENCES seat_types(id),
     row_number INTEGER NOT NULL CHECK (row_number > 0),
     seat_number INTEGER NOT NULL CHECK (seat_number > 0),
-    CONSTRAINT unique_seat UNIQUE (movie_show_id, row_number, seat_number)
+    CONSTRAINT unique_seat UNIQUE (hall_id, row_number, seat_number)
 );
 
 CREATE TYPE ticket_status_enum AS ENUM (
@@ -187,6 +186,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     CONSTRAINT unique_review UNIQUE (user_id, movie_id),
     CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S')
 );
+
 
 GRANT SELECT ON
     movies, 

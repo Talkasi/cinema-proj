@@ -2,21 +2,16 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 )
 
-func setupTestGenresServer(t *testing.T, clearTable bool) *httptest.Server {
-	if clearTable {
-		_ = ClearTable(TestAdminDB, "genres")
-	}
-	return httptest.NewServer(NewRouter())
-}
-
-func getFirstGenreID(t *testing.T, ts *httptest.Server, token string) string {
+func getGenreByID(t *testing.T, ts *httptest.Server, token string, index int) Genre {
 	req := createRequest(t, "GET", ts.URL+"/genres", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
@@ -28,7 +23,11 @@ func getFirstGenreID(t *testing.T, ts *httptest.Server, token string) string {
 		t.Fatal("Expected at least one genre, got none")
 	}
 
-	return genres[0].ID
+	if index >= len(genres) {
+		t.Fatal("Index is greater than length of data array")
+	}
+
+	return genres[index]
 }
 
 func TestGetGenres(t *testing.T) {
@@ -48,11 +47,11 @@ func TestGetGenres(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestGenresServer(t, true)
+			ts := setupTestServer()
 			defer ts.Close()
 
 			if tt.seedData {
-				SeedGenres(TestAdminDB)
+				SeedAll(TestAdminDB)
 			}
 
 			req := createRequest(t, "GET", ts.URL+"/genres", generateToken(t, tt.role), nil)
@@ -73,9 +72,9 @@ func TestGetGenres(t *testing.T) {
 
 func TestGetGenreByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestGenresServer(t, true)
-		_ = SeedGenres(TestAdminDB)
-		return ts, getFirstGenreID(t, ts, "")
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, getGenreByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -87,8 +86,8 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Unknown ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"",
@@ -97,8 +96,8 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Unknown ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"CLAIM_ROLE_USER",
@@ -107,8 +106,8 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Unknown ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"CLAIM_ROLE_ADMIN",
@@ -117,8 +116,8 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Invalid ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"",
@@ -127,8 +126,8 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Invalid ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"CLAIM_ROLE_USER",
@@ -137,8 +136,8 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Invalid ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"CLAIM_ROLE_ADMIN",
@@ -278,11 +277,81 @@ func TestCreateGenre(t *testing.T) {
 			},
 			http.StatusConflict,
 		},
+		{
+			"Name with invalid characters",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Action123!", Description: "Valid"},
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Name with only spaces",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "   ", Description: "Valid"},
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Name exactly 64 chars",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: strings.Repeat("a", 64), Description: "Valid"},
+			nil,
+			http.StatusCreated,
+		},
+		{
+			"Name too long (65 chars)",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: strings.Repeat("a", 65), Description: "Valid"},
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Name with Unicode (кириллица)",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Комедия", Description: "Valid"},
+			nil,
+			http.StatusCreated,
+		},
+		{
+			"Name with hyphen",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Sci-Fi", Description: "Valid"},
+			nil,
+			http.StatusCreated,
+		},
+		{
+			"Empty description",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Valid", Description: ""},
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Description with only spaces",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Valid", Description: "   "},
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Description exactly 1000 chars",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Valid", Description: strings.Repeat("a", 1000)},
+			nil,
+			http.StatusCreated,
+		},
+		{
+			"Description too long (1001 chars)",
+			"CLAIM_ROLE_ADMIN",
+			GenreData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			nil,
+			http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestGenresServer(t, true)
+			ts := setupTestServer()
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -320,11 +389,10 @@ func TestUpdateGenre(t *testing.T) {
 		Description: "Updated Description",
 	}
 
-	// Setup function for tests needing existing genre
 	setupExistingGenre := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestGenresServer(t, true)
-		_ = SeedGenres(TestAdminDB)
-		return ts, getFirstGenreID(t, ts, "")
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, getGenreByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -341,8 +409,8 @@ func TestUpdateGenre(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -353,8 +421,8 @@ func TestUpdateGenre(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -365,8 +433,8 @@ func TestUpdateGenre(t *testing.T) {
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, ""
 			},
 			http.StatusBadRequest,
@@ -377,8 +445,8 @@ func TestUpdateGenre(t *testing.T) {
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -389,8 +457,8 @@ func TestUpdateGenre(t *testing.T) {
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -401,8 +469,8 @@ func TestUpdateGenre(t *testing.T) {
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusNotFound,
@@ -479,6 +547,86 @@ func TestUpdateGenre(t *testing.T) {
 			setupExistingGenre,
 			http.StatusOK,
 		},
+		{
+			"Name with invalid characters",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Action123!", Description: "Valid"},
+			setupExistingGenre,
+			http.StatusBadRequest,
+		},
+		{
+			"Name with only spaces",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "   ", Description: "Valid"},
+			setupExistingGenre,
+			http.StatusBadRequest,
+		},
+		{
+			"Name exactly 64 chars",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: strings.Repeat("a", 64), Description: "Valid"},
+			setupExistingGenre,
+			http.StatusOK,
+		},
+		{
+			"Name too long (65 chars)",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: strings.Repeat("a", 65), Description: "Valid"},
+			setupExistingGenre,
+			http.StatusBadRequest,
+		},
+		{
+			"Name with Unicode (кириллица)",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Комедия новая", Description: "Valid"},
+			setupExistingGenre,
+			http.StatusOK,
+		},
+		{
+			"Name with hyphen",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Sci-Fi", Description: "Valid"},
+			setupExistingGenre,
+			http.StatusOK,
+		},
+		{
+			"Empty description",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Valid", Description: ""},
+			setupExistingGenre,
+			http.StatusBadRequest,
+		},
+		{
+			"Description with only spaces",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Valid", Description: "   "},
+			setupExistingGenre,
+			http.StatusBadRequest,
+		},
+		{
+			"Description exactly 1000 chars",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Valid", Description: strings.Repeat("a", 1000)},
+			setupExistingGenre,
+			http.StatusOK,
+		},
+		{
+			"Description too long (1001 chars)",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			GenreData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			setupExistingGenre,
+			http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
@@ -502,9 +650,9 @@ func TestUpdateGenre(t *testing.T) {
 func TestDeleteGenre(t *testing.T) {
 	// Setup function for tests needing existing genre
 	setupExistingGenre := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestGenresServer(t, true)
-		_ = SeedGenres(TestAdminDB)
-		return ts, getFirstGenreID(t, ts, "")
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, getGenreByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -519,8 +667,8 @@ func TestDeleteGenre(t *testing.T) {
 			"",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -530,8 +678,8 @@ func TestDeleteGenre(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusForbidden,
@@ -541,8 +689,8 @@ func TestDeleteGenre(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestGenresServer(t, true)
-				SeedGenres(TestAdminDB)
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			http.StatusNotFound,
@@ -552,7 +700,7 @@ func TestDeleteGenre(t *testing.T) {
 			"",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestGenresServer(t, true), "invalid-uuid"
+				return setupTestServer(), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -561,7 +709,7 @@ func TestDeleteGenre(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestGenresServer(t, true), "invalid-uuid"
+				return setupTestServer(), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -570,7 +718,7 @@ func TestDeleteGenre(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestGenresServer(t, true), "invalid-uuid"
+				return setupTestServer(), "invalid-uuid"
 			},
 			http.StatusBadRequest,
 		},
@@ -589,10 +737,21 @@ func TestDeleteGenre(t *testing.T) {
 			http.StatusForbidden,
 		},
 		{
-			"Success as Admin",
+			"Dependency error as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingGenre,
+			http.StatusFailedDependency,
+		},
+		{
+			"Success as Admin",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, getGenreByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 6).ID
+			},
 			http.StatusNoContent,
 		},
 	}
@@ -612,5 +771,25 @@ func TestDeleteGenre(t *testing.T) {
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
+	}
+}
+
+func TestCreateGenreDBError(t *testing.T) {
+	ts := setupTestServer()
+	defer ts.Close()
+
+	// Создаем ситуацию с ошибкой БД
+	TestAdminDB.Close()
+	TestGuestDB.Close()
+	TestUserDB.Close()
+
+	req := createRequest(t, "POST", ts.URL+"/genres",
+		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		GenreData{Name: "Test", Description: "Test"})
+	resp := executeRequest(t, req, http.StatusInternalServerError)
+	defer resp.Body.Close()
+
+	if err := InitTestDB(); err != nil {
+		log.Fatal("ошибка подключения к БД: ", err)
 	}
 }

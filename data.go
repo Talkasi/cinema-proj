@@ -1,6 +1,10 @@
 package main
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 var GenresData = []Genre{
 	{ID: uuid.New().String(), Name: "Драма", Description: "Фильмы, в которых основное внимание уделяется эмоциональному развитию персонажей и сложным жизненным ситуациям."},
@@ -42,12 +46,6 @@ var SeatTypesData = []SeatType{
 	{ID: uuid.New().String(), Name: "Кресло с массажем", Description: "Кресло, которое предлагает функции массажа для расслабления зрителей."},
 }
 
-var TicketStatusesData = []TicketStatus{
-	{ID: uuid.New().String(), Name: "Забронирован"},
-	{ID: uuid.New().String(), Name: "Куплен"},
-	{ID: uuid.New().String(), Name: "Возвращен"},
-}
-
 var HallsData = []Hall{
 	{
 		ID:              uuid.New().String(),
@@ -84,4 +82,195 @@ var HallsData = []Hall{
 		EquipmentTypeID: EquipmentTypesData[3].ID,
 		Description:     "Зал с движущимися креслами и спецэффектами",
 	},
+}
+
+var MoviesData = []Movie{
+	{
+		ID:               uuid.New().String(),
+		Title:            "Интерстеллар",
+		Duration:         "02:49:00",
+		Rating:           8.6,
+		Description:      "Фантастический эпос о путешествии группы исследователей, которые используют недавно обнаруженный червоточину, чтобы обойти ограничения космических путешествий человека и покорить огромные расстояния на межзвёздном корабле.",
+		AgeLimit:         12,
+		BoxOfficeRevenue: 701.7,
+		ReleaseDate:      "2014-11-06",
+	},
+	{
+		ID:               uuid.New().String(),
+		Title:            "Начало",
+		Duration:         "02:28:00",
+		Rating:           8.8,
+		Description:      "Криминальный триллер о технологии проникновения в сны и краже идей из подсознания.",
+		AgeLimit:         12,
+		BoxOfficeRevenue: 836.8,
+		ReleaseDate:      "2010-07-16",
+	},
+	{
+		ID:               uuid.New().String(),
+		Title:            "Довод",
+		Duration:         "02:30:00",
+		Rating:           7.5,
+		Description:      "Шпионский боевик о секретной технологии инверсии времени, которая может предотвратить Третью мировую войну.",
+		AgeLimit:         16,
+		BoxOfficeRevenue: 363.7,
+		ReleaseDate:      "2020-08-26",
+	},
+	{
+		ID:               uuid.New().String(),
+		Title:            "Темный рыцарь",
+		Duration:         "02:32:00",
+		Rating:           9.0,
+		Description:      "Бэтмен, Джокер и Харви Дент вступают в смертельную схватку за душу Готэма.",
+		AgeLimit:         16,
+		BoxOfficeRevenue: 1004.6,
+		ReleaseDate:      "2008-07-18",
+	},
+	{
+		ID:               uuid.New().String(),
+		Title:            "Зеленая книга",
+		Duration:         "02:10:00",
+		Rating:           8.2,
+		Description:      "История дружбы афроамериканского пианиста и его итальянского водителя во время турне по югу США в 1960-х.",
+		AgeLimit:         12,
+		BoxOfficeRevenue: 321.7,
+		ReleaseDate:      "2018-11-21",
+	},
+}
+
+var UsersData = []User{
+	{
+		ID:           uuid.New().String(),
+		Name:         "Иван Иванов",
+		Email:        "ivan@example.com",
+		PasswordHash: "$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C",
+		BirthDate:    "1990-05-15",
+		IsBlocked:    false,
+		IsAdmin:      false,
+	},
+	{
+		ID:           uuid.New().String(),
+		Name:         "Петр Петров",
+		Email:        "petr@example.com",
+		PasswordHash: "$2a$10$yT.9H7v2cK2J4mNtHvWZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C",
+		BirthDate:    "1985-10-20",
+		IsBlocked:    false,
+		IsAdmin:      true,
+	},
+	{
+		ID:           uuid.New().String(),
+		Name:         "Сергей Сергеев",
+		Email:        "sergey@example.com",
+		PasswordHash: "$2a$10$zU.8H6w1bL3K5nNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C",
+		BirthDate:    "1995-03-10",
+		IsBlocked:    true,
+		IsAdmin:      false,
+	},
+}
+
+var MovieShowsData = []MovieShow{
+	{
+		ID:        uuid.New().String(),
+		MovieID:   MoviesData[0].ID,
+		HallID:    HallsData[0].ID,
+		StartTime: time.Now().Add(24 * time.Hour),
+		Language:  "Русский",
+	},
+	{
+		ID:        uuid.New().String(),
+		MovieID:   MoviesData[1].ID,
+		HallID:    HallsData[1].ID,
+		StartTime: time.Now().Add(26 * time.Hour),
+		Language:  "English",
+	},
+	{
+		ID:        uuid.New().String(),
+		MovieID:   MoviesData[2].ID,
+		HallID:    HallsData[2].ID,
+		StartTime: time.Now().Add(48 * time.Hour),
+		Language:  "Русский",
+	},
+}
+
+var SeatsData = []Seat{
+	{
+		ID:         uuid.New().String(),
+		HallID:     HallsData[0].ID,
+		SeatTypeID: SeatTypesData[0].ID,
+		RowNumber:  1,
+		SeatNumber: 1,
+	},
+	{
+		ID:         uuid.New().String(),
+		HallID:     HallsData[0].ID,
+		SeatTypeID: SeatTypesData[1].ID,
+		RowNumber:  2,
+		SeatNumber: 5,
+	},
+	{
+		ID:         uuid.New().String(),
+		HallID:     HallsData[1].ID,
+		SeatTypeID: SeatTypesData[2].ID,
+		RowNumber:  3,
+		SeatNumber: 10,
+	},
+}
+
+var TicketsData = []Ticket{
+	{
+		ID:          uuid.New().String(),
+		MovieShowID: MovieShowsData[0].ID,
+		SeatID:      SeatsData[0].ID,
+		Status:      "Purchased",
+		Price:       500.00,
+	},
+	{
+		ID:          uuid.New().String(),
+		MovieShowID: MovieShowsData[1].ID,
+		SeatID:      SeatsData[1].ID,
+		Status:      "Reserved",
+		Price:       750.00,
+	},
+	{
+		ID:          uuid.New().String(),
+		MovieShowID: MovieShowsData[2].ID,
+		SeatID:      SeatsData[2].ID,
+		Status:      "Available",
+		Price:       1000.00,
+	},
+}
+
+var ReviewsData = []Review{
+	{
+		ID:      uuid.New().String(),
+		UserID:  UsersData[0].ID,
+		MovieID: MoviesData[0].ID,
+		Rating:  9.5,
+		Comment: "Отличный фильм с глубоким смыслом и потрясающей графикой!",
+	},
+	{
+		ID:      uuid.New().String(),
+		UserID:  UsersData[1].ID,
+		MovieID: MoviesData[1].ID,
+		Rating:  8.0,
+		Comment: "Интересный сюжет, но сложный для восприятия с первого раза.",
+	},
+	{
+		ID:      uuid.New().String(),
+		UserID:  UsersData[0].ID,
+		MovieID: MoviesData[2].ID,
+		Rating:  7.5,
+		Comment: "Хороший боевик, но слишком много нелогичных моментов.",
+	},
+}
+
+var MoviesGenresData = [][2]string{
+	{MoviesData[0].ID, GenresData[3].ID}, // Интерстеллар - Научная фантастика
+	{MoviesData[0].ID, GenresData[0].ID}, // Интерстеллар - Драма
+	{MoviesData[1].ID, GenresData[5].ID}, // Начало - Триллер
+	{MoviesData[1].ID, GenresData[3].ID}, // Начало - Научная фантастика
+	{MoviesData[2].ID, GenresData[5].ID}, // Довод - Триллер
+	{MoviesData[3].ID, GenresData[5].ID}, // Темный рыцарь - Триллер
+	{MoviesData[3].ID, GenresData[0].ID}, // Темный рыцарь - Драма
+	{MoviesData[4].ID, GenresData[0].ID}, // Зеленая книга - Драма
+	{MoviesData[4].ID, GenresData[1].ID}, // Зеленая книга - Комедия
 }

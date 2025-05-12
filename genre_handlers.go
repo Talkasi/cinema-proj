@@ -3,11 +3,54 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+func validateAllGenreData(w http.ResponseWriter, g GenreData) bool {
+	if err := validateGenreName(g.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if err := validateGenreDescription(g.Description); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
+func validateGenreName(name string) error {
+	validNameRegex := regexp.MustCompile(`^[A-Za-zА-Яа-яЁё\s-]+$`)
+	if !validNameRegex.MatchString(name) {
+		return errors.New("имя жанра может содержать только буквы, пробелы и дефисы")
+	}
+
+	if !regexp.MustCompile(`\S`).MatchString(name) {
+		return errors.New("имя жанра не может состоять только из пробелов")
+	}
+
+	if len(name) == 0 || len(name) > 64 {
+		return errors.New("имя жанра не может быть пустым и не может превышать 64 символа")
+	}
+	return nil
+}
+
+func validateGenreDescription(description string) error {
+	validDescriptionRegex := regexp.MustCompile(`\S`)
+	if !validDescriptionRegex.MatchString(description) {
+		return errors.New("описание жанра не может быть пустым или состоять только из пробелов")
+	}
+	if len(description) > 1000 {
+		return errors.New("описание жанра не может превышать 1000 символов")
+	}
+	return nil
+}
 
 // @Summary Получить все жанры
 // @Description Возвращает список всех жанров
@@ -94,11 +137,7 @@ func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 		if !DecodeJSONBody(w, r, &g) {
 			return
 		}
-
-		if !ValidateRequiredFields(w, map[string]string{
-			"name":        g.Name,
-			"description": g.Description,
-		}) {
+		if !validateAllGenreData(w, g) {
 			return
 		}
 
@@ -142,10 +181,7 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		if !ValidateRequiredFields(w, map[string]string{
-			"name":        g.Name,
-			"description": g.Description,
-		}) {
+		if !validateAllGenreData(w, g) {
 			return
 		}
 

@@ -26,7 +26,7 @@ db-init: db-clean
 # Очистка основной БД
 db-clean:
 	@echo "Очистка основной БД..."
-	@$(PSQL_CONN) -q -f _clear_all_db.sql || true
+	@$(PSQL_CONN) -q -f sql/_clear_all_db.sql || true
 
 # Инициализация тестовой БД
 test-init: test-clean
@@ -42,7 +42,7 @@ test-clean:
 # Запуск приложения
 run: db-init
 	@echo "Запуск приложения..."
-	@go run main.go
+	@go run .
 
 # Запуск тестов
 test: test-init

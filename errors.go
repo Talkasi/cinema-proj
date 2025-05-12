@@ -97,7 +97,7 @@ func IsError(w http.ResponseWriter, err error) bool {
 			return true
 		}
 		if isForeignKeyViolation(err) {
-			http.Error(w, "Неверный внешний ключ", http.StatusFailedDependency)
+			http.Error(w, "Ошибка внешнего ключа, скорее всего на удаляемый объект ссылаются записи другой таблицы", http.StatusFailedDependency)
 			return true
 		}
 		if isDataTypeMismatch(err) {

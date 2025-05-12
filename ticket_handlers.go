@@ -29,7 +29,7 @@ func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
 		t.ID = uuid.New().String()
 
 		_, err := db.Exec(context.Background(), "INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status_id, price) VALUES ($1, $2, $3, $4, $5)",
-			t.ID, t.MovieShowID, t.SeatID, t.StatusID, t.Price)
+			t.ID, t.MovieShowID, t.SeatID, t.Status, t.Price)
 		if err != nil {
 			http.Error(w, "Ошибка при создании", http.StatusInternalServerError)
 			return
@@ -63,7 +63,7 @@ func GetTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 		var tickets []Ticket
 		for rows.Next() {
 			var t Ticket
-			if err := rows.Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.StatusID, &t.Price); err != nil {
+			if err := rows.Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.Status, &t.Price); err != nil {
 				http.Error(w, "Ошибка при сканировании билета", http.StatusInternalServerError)
 				return
 			}
@@ -86,7 +86,7 @@ func GetTicketByID(db *pgxpool.Pool) http.HandlerFunc {
 		id := r.PathValue("id")
 		var t Ticket
 		err := db.QueryRow(context.Background(), "SELECT id, movie_show_id, seat_id, ticket_status_id, price FROM tickets WHERE id = $1", id).
-			Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.StatusID, &t.Price)
+			Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.Status, &t.Price)
 
 		if err == sql.ErrNoRows {
 			http.Error(w, "Билет не найден", http.StatusNotFound)
@@ -120,7 +120,7 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 		t.ID = id
 
 		res, err := db.Exec(context.Background(), "UPDATE tickets SET movie_show_id=$1, seat_id=$2, ticket_status_id=$3, price=$4 WHERE id=$5",
-			t.MovieShowID, t.SeatID, t.StatusID, t.Price, t.ID)
+			t.MovieShowID, t.SeatID, t.Status, t.Price, t.ID)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return

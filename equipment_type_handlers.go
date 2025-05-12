@@ -11,13 +11,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllData(w http.ResponseWriter, e EquipmentTypeData) bool {
-	if err := validateName(e.Name); err != nil {
+func validateAllEquipmentTypeData(w http.ResponseWriter, e EquipmentTypeData) bool {
+	if err := validateEquipmentTypeName(e.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
 
-	if err := validateDescription(e.Description); err != nil {
+	if err := validateEquipmentTypeDesctiption(e.Description); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
@@ -25,7 +25,7 @@ func validateAllData(w http.ResponseWriter, e EquipmentTypeData) bool {
 	return true
 }
 
-func validateName(name string) error {
+func validateEquipmentTypeName(name string) error {
 	validNameRegex := regexp.MustCompile(`\S`)
 	if !validNameRegex.MatchString(name) {
 		return errors.New("имя не может быть пустым или состоять только из пробелов")
@@ -36,7 +36,7 @@ func validateName(name string) error {
 	return nil
 }
 
-func validateDescription(description string) error {
+func validateEquipmentTypeDesctiption(description string) error {
 	validDescriptionRegex := regexp.MustCompile(`\S`)
 	if !validDescriptionRegex.MatchString(description) {
 		return errors.New("описание не может быть пустым или состоять только из пробелов")
@@ -132,7 +132,7 @@ func CreateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !validateAllData(w, e) {
+		if !validateAllEquipmentTypeData(w, e) {
 			return
 		}
 
@@ -175,7 +175,7 @@ func UpdateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !validateAllData(w, e) {
+		if !validateAllEquipmentTypeData(w, e) {
 			return
 		}
 

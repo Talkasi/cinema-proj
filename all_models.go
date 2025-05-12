@@ -1,5 +1,44 @@
 package main
 
+import (
+	"time"
+)
+
+type LanguageEnumType string
+
+const (
+	English LanguageEnumType = "English"
+	Spanish LanguageEnumType = "Spanish"
+	French  LanguageEnumType = "French"
+	German  LanguageEnumType = "German"
+	Italian LanguageEnumType = "Italian"
+	Russian LanguageEnumType = "Русский"
+)
+
+func (l LanguageEnumType) IsValid() bool {
+	switch l {
+	case English, Spanish, French, German, Italian, Russian:
+		return true
+	}
+	return false
+}
+
+type TicketStatusEnumType string
+
+const (
+	Purchased TicketStatusEnumType = "Purchased"
+	Reserved  TicketStatusEnumType = "Reserved"
+	Available TicketStatusEnumType = "Available"
+)
+
+func (t TicketStatusEnumType) IsValid() bool {
+	switch t {
+	case Purchased, Reserved, Available:
+		return true
+	}
+	return false
+}
+
 type Genre struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -7,15 +46,15 @@ type Genre struct {
 }
 
 type Movie struct {
-	ID          string  `json:"id"`
-	Title       string  `json:"title"`
-	Duration    string  `json:"duration"` // формат "HH:MM:SS"
-	Rating      float64 `json:"rating"`
-	Description string  `json:"description"`
-	AgeLimit    int     `json:"age_limit"`
-	BoxOffice   float64 `json:"box_office_revenue"`
-	ReleaseDate string  `json:"release_date"` // формат "YYYY-MM-DD"
-	Genres      []Genre `json:"genres,omitempty"`
+	ID               string  `json:"id"`
+	Title            string  `json:"title"`
+	Duration         string  `json:"duration"`
+	Rating           float64 `json:"rating"`
+	Description      string  `json:"description"`
+	AgeLimit         int     `json:"age_limit"`
+	BoxOfficeRevenue float64 `json:"box_office_revenue"`
+	ReleaseDate      string  `json:"release_date"`
+	Genres           []Genre `json:"genres,omitempty"`
 }
 
 type Hall struct {
@@ -33,24 +72,19 @@ type EquipmentType struct {
 }
 
 type MovieShow struct {
-	ID        string `json:"id"`
-	MovieID   string `json:"movie_id"`
-	HallID    string `json:"hall_id"`
-	StartTime string `json:"start_time"` // формат "HH:MM:SS"
-	Language  string `json:"language"`
+	ID        string           `json:"id"`
+	MovieID   string           `json:"movie_id"`
+	HallID    string           `json:"hall_id"`
+	StartTime time.Time        `json:"start_time"`
+	Language  LanguageEnumType `json:"language"`
 }
 
 type Ticket struct {
-	ID          string  `json:"id"`
-	MovieShowID string  `json:"movie_show_id"`
-	SeatID      string  `json:"seat_id"`
-	StatusID    string  `json:"ticket_status_id"`
-	Price       float64 `json:"price"`
-}
-
-type TicketStatus struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID          string               `json:"id"`
+	MovieShowID string               `json:"movie_show_id"`
+	SeatID      string               `json:"seat_id"`
+	Status      TicketStatusEnumType `json:"ticket_status"`
+	Price       float64              `json:"price"`
 }
 
 type Seat struct {
@@ -74,6 +108,7 @@ type User struct {
 	PasswordHash string `json:"-"`          // скрывать при передаче
 	BirthDate    string `json:"birth_date"` // формат "YYYY-MM-DD"
 	IsBlocked    bool   `json:"is_blocked"`
+	IsAdmin      bool   `json:"-"`
 }
 
 type UserLogin struct {

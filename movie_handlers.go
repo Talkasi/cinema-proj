@@ -59,7 +59,7 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 		var movies []Movie
 		for rows.Next() {
 			var m Movie
-			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOffice, &m.ReleaseDate); err != nil {
+			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
 				http.Error(w, "Ошибка при сканировании фильма", http.StatusInternalServerError)
 				return
 			}
@@ -86,7 +86,7 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 		err := db.QueryRow(context.Background(), `
 			SELECT id, title, duration, rating, description, age_limit, box_office_revenue, release_date
 			FROM movies WHERE id = $1`, id).
-			Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOffice, &m.ReleaseDate)
+			Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
 
 		if err == sql.ErrNoRows {
 			http.Error(w, "Фильм не найден", http.StatusNotFound)
@@ -121,7 +121,7 @@ func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 		_, err := db.Exec(context.Background(), `
 			INSERT INTO movies (id, title, duration, rating, description, age_limit, box_office_revenue, release_date)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-			m.ID, m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOffice, m.ReleaseDate)
+			m.ID, m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOfficeRevenue, m.ReleaseDate)
 		if err != nil {
 			http.Error(w, "Ошибка при создании фильма", http.StatusInternalServerError)
 			return
@@ -161,7 +161,7 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 		res, err := db.Exec(context.Background(), `
 			UPDATE movies SET title=$1, duration=$2, rating=$3, description=$4, age_limit=$5, box_office_revenue=$6, release_date=$7
 			WHERE id=$8`,
-			m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOffice, m.ReleaseDate, id)
+			m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOfficeRevenue, m.ReleaseDate, id)
 		if err != nil {
 			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
 			return

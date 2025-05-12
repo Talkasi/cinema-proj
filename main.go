@@ -158,16 +158,6 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func ClearTable(db *pgxpool.Pool, tableName string) error {
-	query := fmt.Sprintf("TRUNCATE TABLE %s CASCADE", tableName)
-
-	_, err := db.Exec(context.Background(), query)
-	if err != nil {
-		return fmt.Errorf("failed to clear table %s: %w", tableName, err)
-	}
-	return nil
-}
-
 func GenerateToken(email, role string) (string, error) {
 	claims := Claims{
 		Email: email,
