@@ -79,7 +79,7 @@ func isTransactionIsolationViolation(err error) bool {
 
 func ParseUUIDFromPath(w http.ResponseWriter, pathValue string) (uuid.UUID, bool) {
 	id, err := uuid.Parse(pathValue)
-	if err != nil {
+	if err != nil || id.String() == "" {
 		http.Error(w, "Неверный формат ID", http.StatusBadRequest)
 		return uuid.Nil, false
 	}

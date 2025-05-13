@@ -1948,12 +1948,12 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех мест",
+                "description": "Возвращает список всех мест, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "seats"
+                    "Места"
                 ],
                 "summary": "Получить все места",
                 "responses": {
@@ -1986,7 +1986,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новое место",
+                "description": "Создаёт новое место.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1994,7 +1994,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "seats"
+                    "Места"
                 ],
                 "summary": "Создать место",
                 "parameters": [
@@ -2010,13 +2010,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Созданное место",
+                        "description": "ID созданного места",
                         "schema": {
-                            "$ref": "#/definitions/main.Seat"
+                            "$ref": "#/definitions/main.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный формат JSON/данных",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "type": "string"
                         }
@@ -2043,18 +2043,18 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает место по его ID",
+                "description": "Возвращает место по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "seats"
+                    "Места"
                 ],
                 "summary": "Получить место по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID места",
+                        "description": "ID места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2093,7 +2093,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующее место",
+                "description": "Обновляет существующее место.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2101,13 +2101,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "seats"
+                    "Места"
                 ],
                 "summary": "Обновить место",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID места",
+                        "description": "ID места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2124,13 +2124,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Обновленное место",
-                        "schema": {
-                            "$ref": "#/definitions/main.Seat"
-                        }
+                        "description": "Данные о месте успешно обновлены"
                     },
                     "400": {
-                        "description": "Неверный формат ID/JSON или данные",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "type": "string"
                         }
@@ -2161,15 +2158,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет место по его ID",
+                "description": "Удаляет место по его ID.",
                 "tags": [
-                    "seats"
+                    "Места"
                 ],
                 "summary": "Удалить место",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID места",
+                        "description": "ID места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2177,7 +2174,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Место успешно удалено"
+                        "description": "Данные о месте успешно удалены"
                     },
                     "400": {
                         "description": "Неверный формат ID",
@@ -2186,7 +2183,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещен",
+                        "description": "Доступ запрещён",
                         "schema": {
                             "type": "string"
                         }

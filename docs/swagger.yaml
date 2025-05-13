@@ -1566,7 +1566,7 @@ paths:
       - Типы мест
   /seats:
     get:
-      description: Возвращает список всех мест
+      description: Возвращает список всех мест, содержащихся в базе данных.
       produces:
       - application/json
       responses:
@@ -1588,11 +1588,11 @@ paths:
       - BearerAuth: []
       summary: Получить все места
       tags:
-      - seats
+      - Места
     post:
       consumes:
       - application/json
-      description: Создаёт новое место
+      description: Создаёт новое место.
       parameters:
       - description: Данные места
         in: body
@@ -1604,11 +1604,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: Созданное место
+          description: ID созданного места
           schema:
-            $ref: '#/definitions/main.Seat'
+            $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: Неверный формат JSON/данных
+          description: В запросе предоставлены неверные данные
           schema:
             type: string
         "403":
@@ -1623,25 +1623,25 @@ paths:
       - BearerAuth: []
       summary: Создать место
       tags:
-      - seats
+      - Места
   /seats/{id}:
     delete:
-      description: Удаляет место по его ID
+      description: Удаляет место по его ID.
       parameters:
-      - description: UUID места
+      - description: ID места
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Место успешно удалено
+          description: Данные о месте успешно удалены
         "400":
           description: Неверный формат ID
           schema:
             type: string
         "403":
-          description: Доступ запрещен
+          description: Доступ запрещён
           schema:
             type: string
         "404":
@@ -1656,11 +1656,11 @@ paths:
       - BearerAuth: []
       summary: Удалить место
       tags:
-      - seats
+      - Места
     get:
-      description: Возвращает место по его ID
+      description: Возвращает место по ID.
       parameters:
-      - description: UUID места
+      - description: ID места
         in: path
         name: id
         required: true
@@ -1688,13 +1688,13 @@ paths:
       - BearerAuth: []
       summary: Получить место по ID
       tags:
-      - seats
+      - Места
     put:
       consumes:
       - application/json
-      description: Обновляет существующее место
+      description: Обновляет существующее место.
       parameters:
-      - description: UUID места
+      - description: ID места
         in: path
         name: id
         required: true
@@ -1709,11 +1709,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Обновленное место
-          schema:
-            $ref: '#/definitions/main.Seat'
+          description: Данные о месте успешно обновлены
         "400":
-          description: Неверный формат ID/JSON или данные
+          description: В запросе предоставлены неверные данные
           schema:
             type: string
         "403":
@@ -1732,7 +1730,7 @@ paths:
       - BearerAuth: []
       summary: Обновить место
       tags:
-      - seats
+      - Места
   /seats/{movie_show_id}:
     get:
       parameters:
