@@ -258,7 +258,6 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movies [post]
-// @Summary Создать фильм (с транзакцией)
 func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data MovieData

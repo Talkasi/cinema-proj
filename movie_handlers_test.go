@@ -363,14 +363,14 @@ func TestCreateMovie(t *testing.T) {
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusCreated {
-				var created Movie
-				parseResponseBody(t, resp, &created)
+				var createdID string
+				parseResponseBody(t, resp, &createdID)
 
-				if created.ID == "" {
+				if createdID == "" {
 					t.Error("Expected non-empty ID in response")
 				}
 
-				if _, err := uuid.Parse(created.ID); err != nil {
+				if _, err := uuid.Parse(createdID); err != nil {
 					t.Error("Неверный формат возвращённого UUID")
 				}
 			}

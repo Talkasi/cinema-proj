@@ -50,19 +50,19 @@ func validateScreenTypeDesctiption(description string) error {
 	return nil
 }
 
-// @Summary Получить все типы оборудования
-// @Description Возвращает список всех типов оборудования
-// @Tags screen-types
+// @Summary Получить все типы экранов
+// @Description Возвращает список всех типов экранов, содержащихся в базе данных.
+// @Tags Типы экранов
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} ScreenType "Список типов оборудования"
-// @Failure 404 {object} ErrorResponse "Типы оборудования не найдены"
+// @Success 200 {array} ScreenType "Список типов экранов"
+// @Failure 404 {object} ErrorResponse "Типы экранов не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types [get]
 func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query(context.Background(), "SELECT id, name, description FROM screen_types")
-		if HandleDatabaseError(w, err, "типами оборудования") {
+		if HandleDatabaseError(w, err, "типами экранов") {
 			return
 		}
 		defer rows.Close()
@@ -70,14 +70,14 @@ func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 		var types []ScreenType
 		for rows.Next() {
 			var e ScreenType
-			if err := rows.Scan(&e.ID, &e.Name, &e.Description); HandleDatabaseError(w, err, "типом оборудования") {
+			if err := rows.Scan(&e.ID, &e.Name, &e.Description); HandleDatabaseError(w, err, "типом экранов") {
 				return
 			}
 			types = append(types, e)
 		}
 
 		if len(types) == 0 {
-			http.Error(w, "Типы оборудования не найдены", http.StatusNotFound)
+			http.Error(w, "Типы экранов не найдены", http.StatusNotFound)
 			return
 		}
 
@@ -85,15 +85,15 @@ func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить тип оборудования по ID
-// @Description Возвращает тип оборудования по его ID
-// @Tags screen-types
+// @Summary Получить тип экрана по ID
+// @Description Возвращает тип экрана по ID.
+// @Tags Типы экранов
 // @Produce json
-// @Param id path string true "UUID типа оборудования"
 // @Security BearerAuth
-// @Success 200 {object} ScreenType "Тип оборудования"
+// @Param id path string true "ID типа экрана"
+// @Success 200 {object} ScreenType "Тип экрана"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
-// @Failure 404 {object} ErrorResponse "Тип оборудования не найден"
+// @Failure 404 {object} ErrorResponse "Тип экрана не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types/{id} [get]
 func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
@@ -117,15 +117,15 @@ func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать тип оборудования
-// @Description Создаёт новый тип оборудования
-// @Tags screen-types
+// @Summary Создать тип экрана
+// @Description Создаёт новый тип экрана.
+// @Tags Типы экранов
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param screen_type body ScreenTypeData true "Данные типа оборудования"
-// @Success 201 {object} string "UUID созданного типа оборудования"
-// @Failure 400 {object} ErrorResponse "Неверный формат JSON"
+// @Param screen_type body ScreenTypeData true "Данные типа экрана"
+// @Success 201 {object} CreateResponse "ID созданного типа экрана"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types [post]
@@ -153,18 +153,18 @@ func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить тип оборудования
-// @Description Обновляет существующий тип оборудования
-// @Tags screen-types
+// @Summary Обновить тип экрана
+// @Description Обновляет существующий тип экрана.
+// @Tags Типы экранов
 // @Accept json
 // @Produce json
-// @Param id path string true "UUID типа оборудования"
-// @Param screen_type body ScreenTypeData true "Обновлённые данные типа оборудования"
 // @Security BearerAuth
-// @Success 200 "Тип оборудования успешно обновлён"
-// @Failure 400 {object} ErrorResponse "Неверный формат ID/JSON или пустые поля"
+// @Param id path string true "ID типа экрана"
+// @Param screen_type body ScreenTypeData true "Обновлённые данные типа экрана"
+// @Success 200 "Данные о типе экрана успешно обновлены"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
-// @Failure 404 {object} ErrorResponse "Тип оборудования не найден"
+// @Failure 404 {object} ErrorResponse "Тип экранов не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types/{id} [put]
 func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
@@ -198,15 +198,15 @@ func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить тип оборудования
-// @Description Удаляет тип оборудования по его ID
-// @Tags screen-types
-// @Param id path string true "UUID типа оборудования"
+// @Summary Удалить тип экрана
+// @Description Удаляет тип экрана по его ID.
+// @Tags Типы экранов
+// @Param id path string true "ID типа экрана"
 // @Security BearerAuth
-// @Success 204 "Тип оборудования успешно удалён"
+// @Success 204 "Данные о типе экрана успешно удалены"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
-// @Failure 404 {object} ErrorResponse "Тип оборудования не найден"
+// @Failure 404 {object} ErrorResponse "Тип экрана не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types/{id} [delete]
 func DeleteScreenType(db *pgxpool.Pool) http.HandlerFunc {

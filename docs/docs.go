@@ -117,7 +117,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает жанр по его ID.",
+                "description": "Возвращает жанр по ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -800,16 +800,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает список всех фильмов, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
                 "summary": "Получить все фильмы",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список фильмов",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -837,6 +838,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Создаёт новый фильм.",
                 "consumes": [
                     "application/json"
                 ],
@@ -844,7 +846,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
                 "summary": "Создать фильм",
                 "parameters": [
@@ -860,13 +862,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "ID созданного фильма",
                         "schema": {
-                            "$ref": "#/definitions/main.Movie"
+                            "$ref": "#/definitions/main.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный формат JSON или данные",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -893,14 +895,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает только фильмы, которые относятся ко всем указанным жанрам",
+                "description": "Возвращает фильмы, относящиеся ко всем указанным жанрам.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
-                "summary": "Получить фильмы по списку жанров (строгий поиск)",
+                "summary": "Получить фильмы по списку жанров",
                 "parameters": [
                     {
                         "type": "array",
@@ -916,7 +918,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Найденные фильмы",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -925,7 +927,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Неверный формат ID или не указаны жанры",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -952,11 +954,12 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает фильмы, в названии которых содержится заданная строка.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
                 "summary": "Поиск фильмов по названию",
                 "parameters": [
@@ -970,7 +973,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Найденные фильмы",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1006,11 +1009,12 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает фильм по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
                 "summary": "Получить фильм по ID",
                 "parameters": [
@@ -1024,7 +1028,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Фильм",
                         "schema": {
                             "$ref": "#/definitions/main.Movie"
                         }
@@ -1055,6 +1059,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Обновляет существующий фильм.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1062,7 +1067,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
                 "summary": "Обновить фильм",
                 "parameters": [
@@ -1074,7 +1079,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные фильма",
+                        "description": "Новые данные фильма",
                         "name": "movie",
                         "in": "body",
                         "required": true,
@@ -1085,13 +1090,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.Movie"
-                        }
+                        "description": "Данные о фильме успешно обновлены"
                     },
                     "400": {
-                        "description": "Неверный формат ID/JSON или данные",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1122,8 +1124,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Удаляет фильм по его ID.",
                 "tags": [
-                    "movies"
+                    "Фильмы"
                 ],
                 "summary": "Удалить фильм",
                 "parameters": [
@@ -1137,7 +1140,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Фильм успешно удалён"
+                        "description": "Данные о фильме успешно удалены"
                     },
                     "400": {
                         "description": "Неверный формат ID",
@@ -1421,17 +1424,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех типов оборудования",
+                "description": "Возвращает список всех типов экранов, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "screen-types"
+                    "Типы экранов"
                 ],
-                "summary": "Получить все типы оборудования",
+                "summary": "Получить все типы экранов",
                 "responses": {
                     "200": {
-                        "description": "Список типов оборудования",
+                        "description": "Список типов экранов",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1440,7 +1443,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Типы оборудования не найдены",
+                        "description": "Типы экранов не найдены",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1459,7 +1462,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый тип оборудования",
+                "description": "Создаёт новый тип экрана.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1467,12 +1470,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "screen-types"
+                    "Типы экранов"
                 ],
-                "summary": "Создать тип оборудования",
+                "summary": "Создать тип экрана",
                 "parameters": [
                     {
-                        "description": "Данные типа оборудования",
+                        "description": "Данные типа экрана",
                         "name": "screen_type",
                         "in": "body",
                         "required": true,
@@ -1483,13 +1486,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "UUID созданного типа оборудования",
+                        "description": "ID созданного типа экрана",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный формат JSON",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1516,18 +1519,18 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает тип оборудования по его ID",
+                "description": "Возвращает тип экрана по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "screen-types"
+                    "Типы экранов"
                 ],
-                "summary": "Получить тип оборудования по ID",
+                "summary": "Получить тип экрана по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID типа оборудования",
+                        "description": "ID типа экрана",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1535,7 +1538,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Тип оборудования",
+                        "description": "Тип экрана",
                         "schema": {
                             "$ref": "#/definitions/main.ScreenType"
                         }
@@ -1547,7 +1550,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Тип оборудования не найден",
+                        "description": "Тип экрана не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1566,7 +1569,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий тип оборудования",
+                "description": "Обновляет существующий тип экрана.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1574,19 +1577,19 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "screen-types"
+                    "Типы экранов"
                 ],
-                "summary": "Обновить тип оборудования",
+                "summary": "Обновить тип экрана",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID типа оборудования",
+                        "description": "ID типа экрана",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные типа оборудования",
+                        "description": "Обновлённые данные типа экрана",
                         "name": "screen_type",
                         "in": "body",
                         "required": true,
@@ -1597,10 +1600,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Тип оборудования успешно обновлён"
+                        "description": "Данные о типе экрана успешно обновлены"
                     },
                     "400": {
-                        "description": "Неверный формат ID/JSON или пустые поля",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1612,7 +1615,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Тип оборудования не найден",
+                        "description": "Тип экранов не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1631,15 +1634,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип оборудования по его ID",
+                "description": "Удаляет тип экрана по его ID.",
                 "tags": [
-                    "screen-types"
+                    "Типы экранов"
                 ],
-                "summary": "Удалить тип оборудования",
+                "summary": "Удалить тип экрана",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID типа оборудования",
+                        "description": "ID типа экрана",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1647,7 +1650,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Тип оборудования успешно удалён"
+                        "description": "Данные о типе экрана успешно удалены"
                     },
                     "400": {
                         "description": "Неверный формат ID",
@@ -1662,7 +1665,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Тип оборудования не найден",
+                        "description": "Тип экрана не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1683,16 +1686,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает список всех типов мест, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "seat-types"
+                    "Типы мест"
                 ],
                 "summary": "Получить все типы мест",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список типов мест",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1720,6 +1724,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Создаёт новый тип места.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1727,7 +1732,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "seat-types"
+                    "Типы мест"
                 ],
                 "summary": "Создать тип места",
                 "parameters": [
@@ -1743,13 +1748,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "UUID созданного типа",
+                        "description": "ID созданного типа места",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный формат JSON или пустые поля",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1776,17 +1781,18 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Возвращает тип места по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "seat-types"
+                    "Типы мест"
                 ],
                 "summary": "Получить тип места по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID типа места",
+                        "description": "ID типа места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1794,7 +1800,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Тип места",
                         "schema": {
                             "$ref": "#/definitions/main.SeatType"
                         }
@@ -1825,6 +1831,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Обновляет существующий тип места.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1832,19 +1839,19 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "seat-types"
+                    "Типы мест"
                 ],
                 "summary": "Обновить тип места",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID типа места",
+                        "description": "ID типа места",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные типа",
+                        "description": "Обновлённые данные типа места",
                         "name": "seat_type",
                         "in": "body",
                         "required": true,
@@ -1855,10 +1862,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Тип места успешно обновлён"
+                        "description": "Данные о типе места успешно обновлены"
                     },
                     "400": {
-                        "description": "Неверный UUID/JSON или пустые поля",
+                        "description": "В запросе предоставлены неверные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1889,14 +1896,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Удаляет тип места по его ID.",
                 "tags": [
-                    "seat-types"
+                    "Типы мест"
                 ],
                 "summary": "Удалить тип места",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID типа места",
+                        "description": "ID типа места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1904,7 +1912,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Тип места успешно удалён"
+                        "description": "Данные о типе места успешно удалены"
                     },
                     "400": {
                         "description": "Неверный формат ID",

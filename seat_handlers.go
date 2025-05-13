@@ -64,8 +64,8 @@ func validateSeatNumber(seatNumber int) error {
 }
 
 // @Summary Получить все места
-// @Description Возвращает список всех мест
-// @Tags seats
+// @Description Возвращает список всех мест, содержащихся в базе данных.
+// @Tags Места
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} Seat "Список мест"
@@ -102,11 +102,11 @@ func GetSeats(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить место по ID
-// @Description Возвращает место по его ID
-// @Tags seats
+// @Description Возвращает место по ID.
+// @Tags Места
 // @Produce json
-// @Param id path string true "UUID места"
 // @Security BearerAuth
+// @Param id path string true "ID места"
 // @Success 200 {object} Seat "Место"
 // @Failure 400 {string} string "Неверный формат ID"
 // @Failure 404 {string} string "Место не найдено"
@@ -136,14 +136,14 @@ func GetSeatByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Создать место
-// @Description Создаёт новое место
-// @Tags seats
+// @Description Создаёт новое место.
+// @Tags Места
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param seat body SeatData true "Данные места"
-// @Success 201 {object} Seat "Созданное место"
-// @Failure 400 {string} string "Неверный формат JSON/данных"
+// @Success 201 {object} CreateResponse "ID созданного места"
+// @Failure 400 {string} string "В запросе предоставлены неверные данные"
 // @Failure 403 {string} string "Доступ запрещен"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats [post]
@@ -167,30 +167,22 @@ func CreateSeat(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		createdSeat := Seat{
-			ID:         id.String(),
-			HallID:     s.HallID,
-			SeatTypeID: s.SeatTypeID,
-			RowNumber:  s.RowNumber,
-			SeatNumber: s.SeatNumber,
-		}
-
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(createdSeat)
+		json.NewEncoder(w).Encode(id.String())
 	}
 }
 
 // @Summary Обновить место
-// @Description Обновляет существующее место
-// @Tags seats
+// @Description Обновляет существующее место.
+// @Tags Места
 // @Accept json
 // @Produce json
-// @Param id path string true "UUID места"
-// @Param seat body SeatData true "Обновлённые данные места"
 // @Security BearerAuth
-// @Success 200 {object} Seat "Обновленное место"
-// @Failure 400 {string} string "Неверный формат ID/JSON или данные"
+// @Param id path string true "ID места"
+// @Param seat body SeatData true "Обновлённые данные места"
+// @Success 200 "Данные о месте успешно обновлены"
+// @Failure 400 {string} string "В запросе предоставлены неверные данные"
 // @Failure 403 {string} string "Доступ запрещен"
 // @Failure 404 {string} string "Место не найдено"
 // @Failure 500 {string} string "Ошибка сервера"
@@ -224,27 +216,19 @@ func UpdateSeat(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		updatedSeat := Seat{
-			ID:         id.String(),
-			HallID:     s.HallID,
-			SeatTypeID: s.SeatTypeID,
-			RowNumber:  s.RowNumber,
-			SeatNumber: s.SeatNumber,
-		}
-
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(updatedSeat)
+		json.NewEncoder(w)
 	}
 }
 
 // @Summary Удалить место
-// @Description Удаляет место по его ID
-// @Tags seats
-// @Param id path string true "UUID места"
+// @Description Удаляет место по его ID.
+// @Tags Места
+// @Param id path string true "ID места"
 // @Security BearerAuth
-// @Success 204 "Место успешно удалено"
+// @Success 204 "Данные о месте успешно удалены"
 // @Failure 400 {string} string "Неверный формат ID"
-// @Failure 403 {string} string "Доступ запрещен"
+// @Failure 403 {string} string "Доступ запрещён"
 // @Failure 404 {string} string "Место не найдено"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats/{id} [delete]

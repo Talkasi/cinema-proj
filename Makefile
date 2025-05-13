@@ -15,7 +15,7 @@ TEST_DB_PASS = postgres
 PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASS) dbname=$(DB_NAME) sslmode=$(DB_SSL)"
 TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) password=$(TEST_DB_PASS) dbname=$(TEST_DB_NAME) sslmode=$(DB_SSL)"
 
-.PHONY: db-init db-clean test-init test-clean run test test-v
+.PHONY: db-init db-clean test-init test-clean run test test-v swagger
 
 # Инициализация основной БД
 db-init: db-clean
@@ -48,9 +48,15 @@ test-clean:
 	@$(TEST_PSQL_CONN) -q -f sql/drop_test_roles.sql || true
 
 # Запуск приложения
-run: db-init
+run: db-init swagger
 	@echo "Запуск приложения..."
 	@go run .
+
+# Обновление документации Swagger
+swagger:
+	@echo "Обновление документации Swagger..."
+	@swag init -g main.go  # Замените main.go на файл, в котором находится ваша точка входа
+
 
 # Запуск тестов
 test: test-init

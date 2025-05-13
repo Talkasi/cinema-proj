@@ -186,8 +186,8 @@ func TestGetSeatByID(t *testing.T) {
 
 func TestCreateSeat(t *testing.T) {
 	validSeat := SeatData{
-		HallID:     uuid.New().String(),
-		SeatTypeID: uuid.New().String(),
+		HallID:     HallsData[2].ID,
+		SeatTypeID: SeatTypesData[1].ID,
 		RowNumber:  1,
 		SeatNumber: 1,
 	}
@@ -210,14 +210,18 @@ func TestCreateSeat(t *testing.T) {
 			"Forbidden Guest",
 			"",
 			validSeat,
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden User",
 			"CLAIM_ROLE_USER",
 			validSeat,
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusForbidden,
 		},
 		{
@@ -225,13 +229,7 @@ func TestCreateSeat(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			validSeat,
 			func(t *testing.T) {
-				// Создаем зал и тип места, чтобы ссылки были валидными
-				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				hall := getHallByID(t, ts, "", 0)
-				seatType := getSeatTypeByID(t, ts, "", 0)
-				validSeat.HallID = hall.ID
-				validSeat.SeatTypeID = seatType.ID
 			},
 			http.StatusCreated,
 		},
@@ -239,42 +237,54 @@ func TestCreateSeat(t *testing.T) {
 			"Invalid JSON Guest",
 			"",
 			"{invalid json}",
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON User",
 			"CLAIM_ROLE_USER",
 			"{invalid json}",
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
 			"CLAIM_ROLE_ADMIN",
 			"{invalid json}",
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid data Guest",
 			"",
 			invalidSeat,
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid data User",
 			"CLAIM_ROLE_USER",
 			invalidSeat,
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid data Admin",
 			"CLAIM_ROLE_ADMIN",
 			invalidSeat,
-			nil,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
 			http.StatusBadRequest,
 		},
 		{
@@ -282,14 +292,8 @@ func TestCreateSeat(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			validSeat,
 			func(t *testing.T) {
-				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				hall := getHallByID(t, ts, "", 0)
-				seatType := getSeatTypeByID(t, ts, "", 0)
-				validSeat.HallID = hall.ID
-				validSeat.SeatTypeID = seatType.ID
 
-				// Создаем место с такими же параметрами
 				_, err := TestAdminDB.Exec(context.Background(),
 					"INSERT INTO seats (id, hall_id, seat_type_id, row_number, seat_number) VALUES ($1, $2, $3, $4, $5)",
 					uuid.New(), validSeat.HallID, validSeat.SeatTypeID, validSeat.RowNumber, validSeat.SeatNumber)
@@ -304,31 +308,35 @@ func TestCreateSeat(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			SeatData{
 				HallID:     uuid.New().String(), // Несуществующий зал
-				SeatTypeID: uuid.New().String(),
+				SeatTypeID: SeatTypesData[0].ID,
 				RowNumber:  1,
 				SeatNumber: 1,
 			},
-			nil,
-			http.StatusBadRequest,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
+			http.StatusFailedDependency,
 		},
 		{
 			"Invalid Seat Type ID",
 			"CLAIM_ROLE_ADMIN",
 			SeatData{
-				HallID:     uuid.New().String(),
+				HallID:     HallsData[0].ID,
 				SeatTypeID: uuid.New().String(), // Несуществующий тип
 				RowNumber:  1,
-				SeatNumber: 1,
+				SeatNumber: 99,
 			},
-			nil,
-			http.StatusBadRequest,
+			func(t *testing.T) {
+				SeedAll(TestAdminDB)
+			},
+			http.StatusFailedDependency,
 		},
 		{
 			"Row number too big",
 			"CLAIM_ROLE_ADMIN",
 			SeatData{
-				HallID:     uuid.New().String(),
-				SeatTypeID: uuid.New().String(),
+				HallID:     HallsData[0].ID,
+				SeatTypeID: SeatTypesData[0].ID,
 				RowNumber:  101,
 				SeatNumber: 1,
 			},
@@ -339,8 +347,8 @@ func TestCreateSeat(t *testing.T) {
 			"Seat number too big",
 			"CLAIM_ROLE_ADMIN",
 			SeatData{
-				HallID:     uuid.New().String(),
-				SeatTypeID: uuid.New().String(),
+				HallID:     HallsData[0].ID,
+				SeatTypeID: SeatTypesData[0].ID,
 				RowNumber:  1,
 				SeatNumber: 101,
 			},
@@ -363,14 +371,14 @@ func TestCreateSeat(t *testing.T) {
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusCreated {
-				var seat Seat
-				parseResponseBody(t, resp, &seat)
+				var seatID string
+				parseResponseBody(t, resp, &seatID)
 
-				if seat.ID == "" {
+				if seatID == "" {
 					t.Error("Expected non-empty ID in response")
 				}
 
-				if _, err := uuid.Parse(seat.ID); err != nil {
+				if _, err := uuid.Parse(seatID); err != nil {
 					t.Error("Invalid UUID format in response")
 				}
 			}
@@ -380,8 +388,8 @@ func TestCreateSeat(t *testing.T) {
 
 func TestUpdateSeat(t *testing.T) {
 	validUpdate := SeatData{
-		HallID:     uuid.New().String(),
-		SeatTypeID: uuid.New().String(),
+		HallID:     HallsData[3].ID,
+		SeatTypeID: SeatTypesData[1].ID,
 		RowNumber:  2,
 		SeatNumber: 2,
 	}
@@ -558,20 +566,11 @@ func TestUpdateSeat(t *testing.T) {
 			"Conflict Admin - duplicate seat",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			validUpdate,
+			SeatData{SeatsData[0].HallID, SeatsData[2].SeatTypeID, SeatsData[0].RowNumber, SeatsData[0].SeatNumber},
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				seat1 := getSeatByID(t, ts, "", 0)
-				seat2 := getSeatByID(t, ts, "", 1)
-
-				// Пытаемся изменить seat2 чтобы он совпадал с seat1
-				validUpdate.HallID = seat1.HallID
-				validUpdate.RowNumber = seat1.RowNumber
-				validUpdate.SeatNumber = seat1.SeatNumber
-				validUpdate.SeatTypeID = seat1.SeatTypeID
-
-				return ts, seat2.ID
+				return ts, SeatsData[1].ID
 			},
 			http.StatusConflict,
 		},
@@ -590,15 +589,6 @@ func TestUpdateSeat(t *testing.T) {
 			req := createRequest(t, "PUT", ts.URL+"/seats/"+effectiveID, generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
-
-			if tt.expectedStatus == http.StatusOK {
-				var seat Seat
-				parseResponseBody(t, resp, &seat)
-
-				if seat.ID != effectiveID {
-					t.Errorf("Expected ID %v; got %v", effectiveID, seat.ID)
-				}
-			}
 		})
 	}
 }
@@ -607,7 +597,13 @@ func TestDeleteSeat(t *testing.T) {
 	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getSeatByID(t, ts, "", 0).ID
+		return ts, SeatsData[0].ID
+	}
+
+	setupExistingSeatNotTouched := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, SeatsData[3].ID
 	}
 
 	tests := []struct {
@@ -692,10 +688,17 @@ func TestDeleteSeat(t *testing.T) {
 			http.StatusForbidden,
 		},
 		{
-			"Success as Admin",
+			"Dependency error as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingSeat,
+			http.StatusFailedDependency,
+		},
+		{
+			"Success as Admin",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			setupExistingSeatNotTouched,
 			http.StatusNoContent,
 		},
 	}

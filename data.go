@@ -223,6 +223,13 @@ var SeatsData = []Seat{
 		RowNumber:  3,
 		SeatNumber: 10,
 	},
+	{
+		ID:         uuid.New().String(),
+		HallID:     HallsData[0].ID,
+		SeatTypeID: SeatTypesData[2].ID,
+		RowNumber:  3,
+		SeatNumber: 10,
+	},
 }
 
 var TicketsData = []Ticket{

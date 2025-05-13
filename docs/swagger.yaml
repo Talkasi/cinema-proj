@@ -422,7 +422,7 @@ paths:
       tags:
       - Жанры фильмов
     get:
-      description: Возвращает жанр по его ID.
+      description: Возвращает жанр по ID.
       parameters:
       - description: ID жанра
         in: path
@@ -830,11 +830,12 @@ paths:
       - movie-shows
   /movies:
     get:
+      description: Возвращает список всех фильмов, содержащихся в базе данных.
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список фильмов
           schema:
             items:
               $ref: '#/definitions/main.Movie'
@@ -851,10 +852,11 @@ paths:
       - BearerAuth: []
       summary: Получить все фильмы
       tags:
-      - movies
+      - Фильмы
     post:
       consumes:
       - application/json
+      description: Создаёт новый фильм.
       parameters:
       - description: Данные фильма
         in: body
@@ -866,11 +868,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: ID созданного фильма
           schema:
-            $ref: '#/definitions/main.Movie'
+            $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: Неверный формат JSON или данные
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -885,9 +887,10 @@ paths:
       - BearerAuth: []
       summary: Создать фильм
       tags:
-      - movies
+      - Фильмы
   /movies/{id}:
     delete:
+      description: Удаляет фильм по его ID.
       parameters:
       - description: ID фильма
         in: path
@@ -896,7 +899,7 @@ paths:
         type: string
       responses:
         "204":
-          description: Фильм успешно удалён
+          description: Данные о фильме успешно удалены
         "400":
           description: Неверный формат ID
           schema:
@@ -917,8 +920,9 @@ paths:
       - BearerAuth: []
       summary: Удалить фильм
       tags:
-      - movies
+      - Фильмы
     get:
+      description: Возвращает фильм по ID.
       parameters:
       - description: ID фильма
         in: path
@@ -929,7 +933,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Фильм
           schema:
             $ref: '#/definitions/main.Movie'
         "400":
@@ -948,17 +952,18 @@ paths:
       - BearerAuth: []
       summary: Получить фильм по ID
       tags:
-      - movies
+      - Фильмы
     put:
       consumes:
       - application/json
+      description: Обновляет существующий фильм.
       parameters:
       - description: ID фильма
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные фильма
+      - description: Новые данные фильма
         in: body
         name: movie
         required: true
@@ -968,11 +973,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.Movie'
+          description: Данные о фильме успешно обновлены
         "400":
-          description: Неверный формат ID/JSON или данные
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -991,10 +994,10 @@ paths:
       - BearerAuth: []
       summary: Обновить фильм
       tags:
-      - movies
+      - Фильмы
   /movies/by-genres/search:
     get:
-      description: Возвращает только фильмы, которые относятся ко всем указанным жанрам
+      description: Возвращает фильмы, относящиеся ко всем указанным жанрам.
       parameters:
       - collectionFormat: multi
         description: Список ID жанров
@@ -1008,13 +1011,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Найденные фильмы
           schema:
             items:
               $ref: '#/definitions/main.Movie'
             type: array
         "400":
-          description: Неверный формат ID или не указаны жанры
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
@@ -1027,11 +1030,12 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить фильмы по списку жанров (строгий поиск)
+      summary: Получить фильмы по списку жанров
       tags:
-      - movies
+      - Фильмы
   /movies/by-title/search:
     get:
+      description: Возвращает фильмы, в названии которых содержится заданная строка.
       parameters:
       - description: Поисковый запрос
         in: query
@@ -1042,7 +1046,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Найденные фильмы
           schema:
             items:
               $ref: '#/definitions/main.Movie'
@@ -1063,7 +1067,7 @@ paths:
       - BearerAuth: []
       summary: Поиск фильмов по названию
       tags:
-      - movies
+      - Фильмы
   /register:
     post:
       consumes:
@@ -1228,18 +1232,18 @@ paths:
       - reviews
   /screen-types:
     get:
-      description: Возвращает список всех типов оборудования
+      description: Возвращает список всех типов экранов, содержащихся в базе данных.
       produces:
       - application/json
       responses:
         "200":
-          description: Список типов оборудования
+          description: Список типов экранов
           schema:
             items:
               $ref: '#/definitions/main.ScreenType'
             type: array
         "404":
-          description: Типы оборудования не найдены
+          description: Типы экранов не найдены
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -1248,15 +1252,15 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить все типы оборудования
+      summary: Получить все типы экранов
       tags:
-      - screen-types
+      - Типы экранов
     post:
       consumes:
       - application/json
-      description: Создаёт новый тип оборудования
+      description: Создаёт новый тип экрана.
       parameters:
-      - description: Данные типа оборудования
+      - description: Данные типа экрана
         in: body
         name: screen_type
         required: true
@@ -1266,11 +1270,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: UUID созданного типа оборудования
+          description: ID созданного типа экрана
           schema:
-            type: string
+            $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: Неверный формат JSON
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1283,21 +1287,21 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать тип оборудования
+      summary: Создать тип экрана
       tags:
-      - screen-types
+      - Типы экранов
   /screen-types/{id}:
     delete:
-      description: Удаляет тип оборудования по его ID
+      description: Удаляет тип экрана по его ID.
       parameters:
-      - description: UUID типа оборудования
+      - description: ID типа экрана
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Тип оборудования успешно удалён
+          description: Данные о типе экрана успешно удалены
         "400":
           description: Неверный формат ID
           schema:
@@ -1307,7 +1311,7 @@ paths:
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Тип оборудования не найден
+          description: Тип экрана не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -1316,13 +1320,13 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить тип оборудования
+      summary: Удалить тип экрана
       tags:
-      - screen-types
+      - Типы экранов
     get:
-      description: Возвращает тип оборудования по его ID
+      description: Возвращает тип экрана по ID.
       parameters:
-      - description: UUID типа оборудования
+      - description: ID типа экрана
         in: path
         name: id
         required: true
@@ -1331,7 +1335,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Тип оборудования
+          description: Тип экрана
           schema:
             $ref: '#/definitions/main.ScreenType'
         "400":
@@ -1339,7 +1343,7 @@ paths:
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Тип оборудования не найден
+          description: Тип экрана не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -1348,20 +1352,20 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить тип оборудования по ID
+      summary: Получить тип экрана по ID
       tags:
-      - screen-types
+      - Типы экранов
     put:
       consumes:
       - application/json
-      description: Обновляет существующий тип оборудования
+      description: Обновляет существующий тип экрана.
       parameters:
-      - description: UUID типа оборудования
+      - description: ID типа экрана
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные типа оборудования
+      - description: Обновлённые данные типа экрана
         in: body
         name: screen_type
         required: true
@@ -1371,9 +1375,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Тип оборудования успешно обновлён
+          description: Данные о типе экрана успешно обновлены
         "400":
-          description: Неверный формат ID/JSON или пустые поля
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1381,7 +1385,7 @@ paths:
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Тип оборудования не найден
+          description: Тип экранов не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -1390,16 +1394,17 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить тип оборудования
+      summary: Обновить тип экрана
       tags:
-      - screen-types
+      - Типы экранов
   /seat-types:
     get:
+      description: Возвращает список всех типов мест, содержащихся в базе данных.
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список типов мест
           schema:
             items:
               $ref: '#/definitions/main.SeatType'
@@ -1416,10 +1421,11 @@ paths:
       - BearerAuth: []
       summary: Получить все типы мест
       tags:
-      - seat-types
+      - Типы мест
     post:
       consumes:
       - application/json
+      description: Создаёт новый тип места.
       parameters:
       - description: Данные типа места
         in: body
@@ -1431,11 +1437,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: UUID созданного типа
+          description: ID созданного типа места
           schema:
-            type: string
+            $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: Неверный формат JSON или пустые поля
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1450,18 +1456,19 @@ paths:
       - BearerAuth: []
       summary: Создать тип места
       tags:
-      - seat-types
+      - Типы мест
   /seat-types/{id}:
     delete:
+      description: Удаляет тип места по его ID.
       parameters:
-      - description: UUID типа места
+      - description: ID типа места
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Тип места успешно удалён
+          description: Данные о типе места успешно удалены
         "400":
           description: Неверный формат ID
           schema:
@@ -1482,10 +1489,11 @@ paths:
       - BearerAuth: []
       summary: Удалить тип места
       tags:
-      - seat-types
+      - Типы мест
     get:
+      description: Возвращает тип места по ID.
       parameters:
-      - description: UUID типа места
+      - description: ID типа места
         in: path
         name: id
         required: true
@@ -1494,7 +1502,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Тип места
           schema:
             $ref: '#/definitions/main.SeatType'
         "400":
@@ -1513,17 +1521,18 @@ paths:
       - BearerAuth: []
       summary: Получить тип места по ID
       tags:
-      - seat-types
+      - Типы мест
     put:
       consumes:
       - application/json
+      description: Обновляет существующий тип места.
       parameters:
-      - description: UUID типа места
+      - description: ID типа места
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные типа
+      - description: Обновлённые данные типа места
         in: body
         name: seat_type
         required: true
@@ -1533,9 +1542,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Тип места успешно обновлён
+          description: Данные о типе места успешно обновлены
         "400":
-          description: Неверный UUID/JSON или пустые поля
+          description: В запросе предоставлены неверные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1554,7 +1563,7 @@ paths:
       - BearerAuth: []
       summary: Обновить тип места
       tags:
-      - seat-types
+      - Типы мест
   /seats:
     get:
       description: Возвращает список всех мест

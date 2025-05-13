@@ -47,10 +47,11 @@ func validateSeatTypeDescription(desc string) error {
 }
 
 // @Summary Получить все типы мест
-// @Tags seat-types
+// @Description Возвращает список всех типов мест, содержащихся в базе данных.
+// @Tags Типы мест
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} SeatType
+// @Success 200 {array} SeatType "Список типов мест"
 // @Failure 404 {object} ErrorResponse "Типы мест не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types [get]
@@ -81,11 +82,12 @@ func GetSeatTypes(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить тип места по ID
-// @Tags seat-types
+// @Description Возвращает тип места по ID.
+// @Tags Типы мест
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID типа места"
-// @Success 200 {object} SeatType
+// @Param id path string true "ID типа места"
+// @Success 200 {object} SeatType "Тип места"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 404 {object} ErrorResponse "Тип места не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -112,13 +114,14 @@ func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Создать тип места
-// @Tags seat-types
+// @Description Создаёт новый тип места.
+// @Tags Типы мест
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param seat_type body SeatTypeData true "Данные типа места"
-// @Success 201 {object} string "UUID созданного типа"
-// @Failure 400 {object} ErrorResponse "Неверный формат JSON или пустые поля"
+// @Success 201 {object} CreateResponse "ID созданного типа места"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types [post]
@@ -147,14 +150,15 @@ func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Обновить тип места
-// @Tags seat-types
+// @Description Обновляет существующий тип места.
+// @Tags Типы мест
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID типа места"
-// @Param seat_type body SeatTypeData true "Обновлённые данные типа"
-// @Success 200 "Тип места успешно обновлён"
-// @Failure 400 {object} ErrorResponse "Неверный UUID/JSON или пустые поля"
+// @Param id path string true "ID типа места"
+// @Param seat_type body SeatTypeData true "Обновлённые данные типа места"
+// @Success 200 "Данные о типе места успешно обновлены"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Тип места не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -190,10 +194,11 @@ func UpdateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить тип места
-// @Tags seat-types
-// @Param id path string true "UUID типа места"
+// @Description Удаляет тип места по его ID.
+// @Tags Типы мест
+// @Param id path string true "ID типа места"
 // @Security BearerAuth
-// @Success 204 "Тип места успешно удалён"
+// @Success 204 "Данные о типе места успешно удалены"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Тип места не найден"
