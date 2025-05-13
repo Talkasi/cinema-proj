@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS movies (
     CONSTRAINT valid_age_limit CHECK (age_limit IN (0, 6, 12, 16, 18))
 );
 
-CREATE TABLE IF NOT EXISTS equipment_types (
+CREATE TABLE IF NOT EXISTS screen_types (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(1000) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS equipment_types (
 
 CREATE TABLE IF NOT EXISTS halls (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    equipment_type_id UUID REFERENCES equipment_types(id),
+    screen_type_id UUID REFERENCES screen_types(id),
     name VARCHAR(100) NOT NULL UNIQUE,
     capacity INT NOT NULL,
     description VARCHAR(1000),

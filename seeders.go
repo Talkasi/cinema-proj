@@ -15,11 +15,11 @@ func NewRouter() *http.ServeMux {
 
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
-	mux.HandleFunc("GET /equipment-types", Midleware(RoleBasedHandler(GetEquipmentTypes)))
-	mux.HandleFunc("GET /equipment-types/{id}", Midleware(RoleBasedHandler(GetEquipmentTypeByID)))
-	mux.HandleFunc("POST /equipment-types", Midleware(RoleBasedHandler(CreateEquipmentType)))
-	mux.HandleFunc("PUT /equipment-types/{id}", Midleware(RoleBasedHandler(UpdateEquipmentType)))
-	mux.HandleFunc("DELETE /equipment-types/{id}", Midleware(RoleBasedHandler(DeleteEquipmentType)))
+	mux.HandleFunc("GET /screen-types", Midleware(RoleBasedHandler(GetScreenTypes)))
+	mux.HandleFunc("GET /screen-types/{id}", Midleware(RoleBasedHandler(GetScreenTypeByID)))
+	mux.HandleFunc("POST /screen-types", Midleware(RoleBasedHandler(CreateScreenType)))
+	mux.HandleFunc("PUT /screen-types/{id}", Midleware(RoleBasedHandler(UpdateScreenType)))
+	mux.HandleFunc("DELETE /screen-types/{id}", Midleware(RoleBasedHandler(DeleteScreenType)))
 
 	mux.HandleFunc("GET /genres", Midleware(RoleBasedHandler(GetGenres)))
 	mux.HandleFunc("GET /genres/{id}", Midleware(RoleBasedHandler(GetGenreByID)))
@@ -126,14 +126,14 @@ func SeedGenres(db *pgxpool.Pool) error {
 
 func SeedHalls(db *pgxpool.Pool) error {
 	for _, h := range HallsData {
-		_, err := db.Exec(context.Background(), `INSERT INTO halls (id, name, capacity, equipment_type_id, description)
+		_, err := db.Exec(context.Background(), `INSERT INTO halls (id, name, capacity, screen_type_id, description)
             VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (id) DO UPDATE SET
                 capacity = EXCLUDED.capacity,
-                equipment_type_id = EXCLUDED.equipment_type_id,
+                screen_type_id = EXCLUDED.screen_type_id,
                 description = EXCLUDED.description,
                 name = EXCLUDED.name`,
-			h.ID, h.Name, h.Capacity, h.EquipmentTypeID, h.Description)
+			h.ID, h.Name, h.Capacity, h.ScreenTypeID, h.Description)
 		if err != nil {
 			return err
 		}
@@ -141,9 +141,9 @@ func SeedHalls(db *pgxpool.Pool) error {
 	return nil
 }
 
-func SeedEquipmentTypes(db *pgxpool.Pool) error {
-	for _, e := range EquipmentTypesData {
-		_, err := db.Exec(context.Background(), `INSERT INTO equipment_types (id, name, description)
+func SeedScreenTypes(db *pgxpool.Pool) error {
+	for _, e := range ScreenTypesData {
+		_, err := db.Exec(context.Background(), `INSERT INTO screen_types (id, name, description)
             VALUES ($1, $2, $3)
             ON CONFLICT (name) DO UPDATE SET
                 description = EXCLUDED.description,
@@ -299,7 +299,7 @@ func SeedAll(db *pgxpool.Pool) error {
 		return fmt.Errorf("ошибка при вставке жанров: %v", err)
 	}
 
-	if err := SeedEquipmentTypes(db); err != nil {
+	if err := SeedScreenTypes(db); err != nil {
 		return fmt.Errorf("ошибка при вставке типов оборудования: %v", err)
 	}
 
@@ -357,7 +357,7 @@ func ClearAll(db *pgxpool.Pool) error {
 		return fmt.Errorf("ошибка при очищении жанров: %v", err)
 	}
 
-	if err := ClearTable(db, "equipment_types"); err != nil {
+	if err := ClearTable(db, "screen_types"); err != nil {
 		return fmt.Errorf("ошибка при очищении типов оборудования: %v", err)
 	}
 

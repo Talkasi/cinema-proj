@@ -58,14 +58,14 @@ type Movie struct {
 }
 
 type Hall struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Capacity        int    `json:"capacity"`
-	EquipmentTypeID string `json:"equipment_type_id"`
-	Description     string `json:"description"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Capacity     int    `json:"capacity"`
+	ScreenTypeID string `json:"screen_type_id"`
+	Description  string `json:"description"`
 }
 
-type EquipmentType struct {
+type ScreenType struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -140,7 +140,7 @@ type GenreData struct {
 	Description string `json:"description"`
 }
 
-type EquipmentTypeData struct {
+type ScreenTypeData struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -155,8 +155,8 @@ type TicketStatusData struct {
 }
 
 type HallData struct {
-	Name            string `json:"name"`
-	Capacity        int    `json:"capacity"`
-	EquipmentTypeID string `json:"equipment_type_id"`
-	Description     string `json:"description"`
+	Name         string `json:"name"`
+	Capacity     int    `json:"capacity"`
+	ScreenTypeID string `json:"screen_type_id"`
+	Description  string `json:"description"`
 }

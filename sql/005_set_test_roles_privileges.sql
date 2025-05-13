@@ -4,7 +4,7 @@ GRANT SELECT ON
     halls, 
     tickets,
     genres, 
-    equipment_types, 
+    screen_types, 
     seats,
     seat_types, 
     reviews,

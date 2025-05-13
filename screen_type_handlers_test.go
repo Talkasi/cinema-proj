@@ -12,26 +12,26 @@ import (
 	"github.com/google/uuid"
 )
 
-func getEquipmentTypeByID(t *testing.T, ts *httptest.Server, token string, index int) EquipmentType {
-	req := createRequest(t, "GET", ts.URL+"/equipment-types", token, nil)
+func getScreenTypeByID(t *testing.T, ts *httptest.Server, token string, index int) ScreenType {
+	req := createRequest(t, "GET", ts.URL+"/screen-types", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
 
-	var equipmentTypes []EquipmentType
-	parseResponseBody(t, resp, &equipmentTypes)
+	var screenTypes []ScreenType
+	parseResponseBody(t, resp, &screenTypes)
 
-	if len(equipmentTypes) == 0 {
-		t.Fatal("Expected at least one equipment type, got none")
+	if len(screenTypes) == 0 {
+		t.Fatal("Expected at least one screen type, got none")
 	}
 
-	if index >= len(equipmentTypes) {
+	if index >= len(screenTypes) {
 		t.Fatal("Index is greater than length of data array")
 	}
 
-	return equipmentTypes[index]
+	return screenTypes[index]
 }
 
-func TestGetEquipmentTypes(t *testing.T) {
+func TestGetScreenTypes(t *testing.T) {
 	tests := []struct {
 		name           string
 		seedData       bool
@@ -55,7 +55,7 @@ func TestGetEquipmentTypes(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 			}
 
-			req := createRequest(t, "GET", ts.URL+"/equipment-types", generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/screen-types", generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -64,12 +64,12 @@ func TestGetEquipmentTypes(t *testing.T) {
 	}
 }
 
-func TestGetEquipmentTypeByID(t *testing.T) {
+func TestGetScreenTypeByID(t *testing.T) {
 	// Setup for valid ID tests
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getEquipmentTypeByID(t, ts, "", 0).ID
+		return ts, getScreenTypeByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -190,35 +190,35 @@ func TestGetEquipmentTypeByID(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
 
-			req := createRequest(t, "GET", ts.URL+"/equipment-types/"+id, generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/screen-types/"+id, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusOK {
-				var equipmentType EquipmentType
-				parseResponseBody(t, resp, &equipmentType)
+				var screenType ScreenType
+				parseResponseBody(t, resp, &screenType)
 
-				if equipmentType.ID != id {
-					t.Errorf("Expected ID %v; got %v", id, equipmentType.ID)
+				if screenType.ID != id {
+					t.Errorf("Expected ID %v; got %v", id, screenType.ID)
 				}
 			}
 		})
 	}
 }
 
-func TestCreateEquipmentType(t *testing.T) {
-	validEquipmentType := EquipmentTypeData{
-		Name:        "Test Equipment",
+func TestCreateScreenType(t *testing.T) {
+	validScreenType := ScreenTypeData{
+		Name:        "Test Screen",
 		Description: "Test Description",
 	}
 
-	invalidEquipmentType := EquipmentTypeData{
+	invalidScreenType := ScreenTypeData{
 		Name:        "",
 		Description: "Test Description",
 	}
 
 	setupConflictTest := func(t *testing.T) {
-		_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO equipment_types (name, description) VALUES ($1, $2)", validEquipmentType.Name, validEquipmentType.Description)
+		_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", validScreenType.Name, validScreenType.Description)
 		if err != nil {
 			t.Fatalf("Failed to insert into test database: %v", err)
 		}
@@ -234,21 +234,21 @@ func TestCreateEquipmentType(t *testing.T) {
 		{
 			"Forbidden Guest",
 			"",
-			validEquipmentType,
+			validScreenType,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden User",
 			"CLAIM_ROLE_USER",
-			validEquipmentType,
+			validScreenType,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
 			"CLAIM_ROLE_ADMIN",
-			validEquipmentType,
+			validScreenType,
 			nil,
 			http.StatusCreated,
 		},
@@ -276,42 +276,42 @@ func TestCreateEquipmentType(t *testing.T) {
 		{
 			"Empty field in JSON Guest",
 			"",
-			invalidEquipmentType,
+			invalidScreenType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty field in JSON User",
 			"CLAIM_ROLE_USER",
-			invalidEquipmentType,
+			invalidScreenType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty field in JSON Admin",
 			"CLAIM_ROLE_ADMIN",
-			invalidEquipmentType,
+			invalidScreenType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Insert Error Guest",
 			"",
-			validEquipmentType,
+			validScreenType,
 			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error User",
 			"CLAIM_ROLE_USER",
-			validEquipmentType,
+			validScreenType,
 			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error Admin",
 			"CLAIM_ROLE_ADMIN",
-			validEquipmentType,
+			validScreenType,
 			setupConflictTest,
 			http.StatusConflict,
 		},
@@ -326,7 +326,7 @@ func TestCreateEquipmentType(t *testing.T) {
 				tt.setup(t)
 			}
 
-			req := createRequest(t, "POST", ts.URL+"/equipment-types", generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "POST", ts.URL+"/screen-types", generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -346,17 +346,17 @@ func TestCreateEquipmentType(t *testing.T) {
 	}
 }
 
-func TestUpdateEquipmentType(t *testing.T) {
-	validUpdateData := EquipmentTypeData{
-		Name:        "Updated Equipment",
+func TestUpdateScreenType(t *testing.T) {
+	validUpdateData := ScreenTypeData{
+		Name:        "Updated Screen",
 		Description: "Updated Description",
 	}
 
-	// Setup function for tests needing existing equipment type
-	setupExistingEquipment := func(t *testing.T) (*httptest.Server, string) {
+	// Setup function for tests needing existing screen type
+	setupExistingScreen := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 	}
 
 	unknown_id := uuid.NewString()
@@ -444,7 +444,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"",
 			"",
 			"invalid-json",
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusBadRequest,
 		},
 		{
@@ -452,7 +452,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			"invalid-json",
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusBadRequest,
 		},
 		{
@@ -460,31 +460,31 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			"invalid-json",
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty Name as Guest",
 			"",
 			"",
-			EquipmentTypeData{Name: "", Description: "Test"},
-			setupExistingEquipment,
+			ScreenTypeData{Name: "", Description: "Test"},
+			setupExistingScreen,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty Name as User",
 			"CLAIM_ROLE_USER",
 			"",
-			EquipmentTypeData{Name: "", Description: "Test"},
-			setupExistingEquipment,
+			ScreenTypeData{Name: "", Description: "Test"},
+			setupExistingScreen,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty Name as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			EquipmentTypeData{Name: "", Description: "Test"},
-			setupExistingEquipment,
+			ScreenTypeData{Name: "", Description: "Test"},
+			setupExistingScreen,
 			http.StatusBadRequest,
 		},
 		{
@@ -492,7 +492,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"",
 			"",
 			validUpdateData,
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusForbidden,
 		},
 		{
@@ -500,7 +500,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusForbidden,
 		},
 		{
@@ -508,7 +508,7 @@ func TestUpdateEquipmentType(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusOK,
 		},
 	}
@@ -524,19 +524,19 @@ func TestUpdateEquipmentType(t *testing.T) {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "PUT", ts.URL+"/equipment-types/"+effectiveID, generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "PUT", ts.URL+"/screen-types/"+effectiveID, generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestDeleteEquipmentType(t *testing.T) {
-	// Setup function for tests needing existing equipment type
-	setupExistingEquipment := func(t *testing.T) (*httptest.Server, string) {
+func TestDeleteScreenType(t *testing.T) {
+	// Setup function for tests needing existing screen type
+	setupExistingScreen := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 	}
 
 	tests := []struct {
@@ -610,21 +610,21 @@ func TestDeleteEquipmentType(t *testing.T) {
 			"Forbidden as Guest",
 			"",
 			"",
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden as User",
 			"CLAIM_ROLE_USER",
 			"",
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			setupExistingEquipment,
+			setupExistingScreen,
 			http.StatusFailedDependency,
 		},
 		{
@@ -634,7 +634,7 @@ func TestDeleteEquipmentType(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
+				return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
 			},
 			http.StatusNoContent,
 		},
@@ -651,48 +651,48 @@ func TestDeleteEquipmentType(t *testing.T) {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "DELETE", ts.URL+"/equipment-types/"+effectiveID, generateToken(t, tt.role), nil)
+			req := createRequest(t, "DELETE", ts.URL+"/screen-types/"+effectiveID, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestEquipmentTypeConstraintsCreate(t *testing.T) {
+func TestScreenTypeConstraintsCreate(t *testing.T) {
 	tests := []struct {
 		name           string
 		role           string
-		body           EquipmentTypeData
+		body           ScreenTypeData
 		expectedStatus int
 	}{
 		{
 			"Empty name",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "   ", Description: "Valid"},
+			ScreenTypeData{Name: "   ", Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Valid", Description: "   "},
+			ScreenTypeData{Name: "Valid", Description: "   "},
 			http.StatusBadRequest,
 		},
 		{
 			"Name too long",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
+			ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Description too long",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			ScreenTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			http.StatusBadRequest,
 		},
 		{
 			"Special characters in name",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Тест <script>", Description: "Valid"},
+			ScreenTypeData{Name: "Тест <script>", Description: "Valid"},
 			http.StatusCreated,
 		},
 	}
@@ -702,54 +702,54 @@ func TestEquipmentTypeConstraintsCreate(t *testing.T) {
 			ts := setupTestServer()
 			defer ts.Close()
 
-			req := createRequest(t, "POST", ts.URL+"/equipment-types", generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "POST", ts.URL+"/screen-types", generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestEquipmentTypeConstraintsUpdate(t *testing.T) {
+func TestScreenTypeConstraintsUpdate(t *testing.T) {
 	tests := []struct {
 		name           string
 		role           string
-		body           EquipmentTypeData
+		body           ScreenTypeData
 		expectedStatus int
 	}{
 		{
 			"Empty name",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "   ", Description: "Valid"},
+			ScreenTypeData{Name: "   ", Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Valid", Description: "   "},
+			ScreenTypeData{Name: "Valid", Description: "   "},
 			http.StatusBadRequest,
 		},
 		{
 			"Name too long",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
+			ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Description too long",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			ScreenTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			http.StatusBadRequest,
 		},
 		{
 			"Special characters in name",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Тест <script>", Description: "Valid"},
+			ScreenTypeData{Name: "Тест <script>", Description: "Valid"},
 			http.StatusOK,
 		},
 		{
 			"Valid update",
 			"CLAIM_ROLE_ADMIN",
-			EquipmentTypeData{Name: "Valid Name", Description: "Valid Description"},
+			ScreenTypeData{Name: "Valid Name", Description: "Valid Description"},
 			http.StatusOK,
 		},
 	}
@@ -760,9 +760,9 @@ func TestEquipmentTypeConstraintsUpdate(t *testing.T) {
 			defer ts.Close()
 			_ = SeedAll(TestAdminDB)
 
-			equipmentTypeID := getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+			screenTypeID := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 
-			req := createRequest(t, "PUT", fmt.Sprintf("%s/equipment-types/%s", ts.URL, equipmentTypeID), generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "PUT", fmt.Sprintf("%s/screen-types/%s", ts.URL, screenTypeID), generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
@@ -774,20 +774,20 @@ func TestUpdateConflict(t *testing.T) {
 	defer ts.Close()
 
 	_ = SeedAll(TestAdminDB)
-	id1 := getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
-	id2 := getEquipmentTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
+	id1 := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
+	id2 := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
 
-	updateData := EquipmentTypeData{
+	updateData := ScreenTypeData{
 		Name:        id2.Name,
 		Description: "Updated",
 	}
 
-	req := createRequest(t, "PUT", ts.URL+"/equipment-types/"+id1.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), updateData)
+	req := createRequest(t, "PUT", ts.URL+"/screen-types/"+id1.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), updateData)
 	resp := executeRequest(t, req, http.StatusConflict)
 	defer resp.Body.Close()
 }
 
-func TestCreateEquipmentTypeDBError(t *testing.T) {
+func TestCreateScreenTypeDBError(t *testing.T) {
 	ts := setupTestServer()
 	defer ts.Close()
 
@@ -796,9 +796,9 @@ func TestCreateEquipmentTypeDBError(t *testing.T) {
 	TestGuestDB.Close()
 	TestUserDB.Close()
 
-	req := createRequest(t, "POST", ts.URL+"/equipment-types",
+	req := createRequest(t, "POST", ts.URL+"/screen-types",
 		generateToken(t, "CLAIM_ROLE_ADMIN"),
-		EquipmentTypeData{
+		ScreenTypeData{
 			Name:        "name",
 			Description: "Updated",
 		})

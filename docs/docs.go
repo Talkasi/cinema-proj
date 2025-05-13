@@ -15,268 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/equipment-types": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает список всех типов оборудования",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "equipment-types"
-                ],
-                "summary": "Получить все типы оборудования",
-                "responses": {
-                    "200": {
-                        "description": "Список типов оборудования",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.EquipmentType"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Типы оборудования не найдены",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Создает новый тип оборудования",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "equipment-types"
-                ],
-                "summary": "Создать тип оборудования",
-                "parameters": [
-                    {
-                        "description": "Данные типа оборудования",
-                        "name": "equipment_type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.EquipmentTypeData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "UUID созданного типа оборудования",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат JSON",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещен",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/equipment-types/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает тип оборудования по его UUID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "equipment-types"
-                ],
-                "summary": "Получить тип оборудования по ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID типа оборудования",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Тип оборудования",
-                        "schema": {
-                            "$ref": "#/definitions/main.EquipmentType"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Тип оборудования не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Обновляет существующий тип оборудования",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "equipment-types"
-                ],
-                "summary": "Обновить тип оборудования",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID типа оборудования",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Обновленные данные типа оборудования",
-                        "name": "equipment_type",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.EquipmentTypeData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Тип оборудования успешно обновлен"
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID/JSON или пустые поля",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещен",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Тип оборудования не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Удаляет тип оборудования по его UUID",
-                "tags": [
-                    "equipment-types"
-                ],
-                "summary": "Удалить тип оборудования",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID типа оборудования",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Тип оборудования успешно удален"
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещен",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Тип оборудования не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/genres": {
             "get": {
                 "security": [
@@ -541,6 +279,12 @@ const docTemplate = `{
         },
         "/halls": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех залов",
                 "produces": [
                     "application/json"
                 ],
@@ -550,12 +294,18 @@ const docTemplate = `{
                 "summary": "Получить все залы",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список залов",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/main.Hall"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Залы не найдены",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "500": {
@@ -567,6 +317,12 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый зал",
                 "consumes": [
                     "application/json"
                 ],
@@ -579,24 +335,30 @@ const docTemplate = `{
                 "summary": "Создать зал",
                 "parameters": [
                     {
-                        "description": "Новый зал",
+                        "description": "Данные зала",
                         "name": "hall",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Hall"
+                            "$ref": "#/definitions/main.HallData"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "UUID созданного зала",
                         "schema": {
-                            "$ref": "#/definitions/main.Hall"
+                            "type": "string"
                         }
                     },
                     "400": {
-                        "description": "Неверный JSON",
+                        "description": "Неверный формат JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
@@ -612,6 +374,12 @@ const docTemplate = `{
         },
         "/halls/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает зал по его UUID",
                 "produces": [
                     "application/json"
                 ],
@@ -622,7 +390,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID зала",
+                        "description": "UUID зала",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -630,9 +398,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Данные зала",
                         "schema": {
                             "$ref": "#/definitions/main.Hall"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -650,6 +424,12 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет существующий зал",
                 "consumes": [
                     "application/json"
                 ],
@@ -663,26 +443,35 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID зала",
+                        "description": "UUID зала",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные",
+                        "description": "Обновленные данные зала",
                         "name": "hall",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Hall"
+                            "$ref": "#/definitions/main.HallData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Данные зала успешно обновлены"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID/JSON или пустые поля",
                         "schema": {
-                            "$ref": "#/definitions/main.Hall"
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -700,6 +489,12 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет зал по его UUID",
                 "tags": [
                     "halls"
                 ],
@@ -707,7 +502,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID зала",
+                        "description": "UUID зала",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -715,7 +510,16 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Зал успешно удален"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
                             "type": "string"
                         }
@@ -1433,6 +1237,268 @@ const docTemplate = `{
                 }
             }
         },
+        "/screen-types": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех типов оборудования",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "screen-types"
+                ],
+                "summary": "Получить все типы оборудования",
+                "responses": {
+                    "200": {
+                        "description": "Список типов оборудования",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.ScreenType"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Типы оборудования не найдены",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый тип оборудования",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "screen-types"
+                ],
+                "summary": "Создать тип оборудования",
+                "parameters": [
+                    {
+                        "description": "Данные типа оборудования",
+                        "name": "screen_type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.ScreenTypeData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "UUID созданного типа оборудования",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/screen-types/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает тип оборудования по его UUID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "screen-types"
+                ],
+                "summary": "Получить тип оборудования по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID типа оборудования",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Тип оборудования",
+                        "schema": {
+                            "$ref": "#/definitions/main.ScreenType"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Тип оборудования не найден",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет существующий тип оборудования",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "screen-types"
+                ],
+                "summary": "Обновить тип оборудования",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID типа оборудования",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Обновленные данные типа оборудования",
+                        "name": "screen_type",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.ScreenTypeData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Тип оборудования успешно обновлен"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID/JSON или пустые поля",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Тип оборудования не найден",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет тип оборудования по его UUID",
+                "tags": [
+                    "screen-types"
+                ],
+                "summary": "Удалить тип оборудования",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID типа оборудования",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Тип оборудования успешно удален"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Тип оборудования не найден",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/seat-types": {
             "get": {
                 "produces": [
@@ -1862,208 +1928,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/ticket-statuses": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ticket-statuses"
-                ],
-                "summary": "Получить все статусы билетов",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.TicketStatus"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ticket-statuses"
-                ],
-                "summary": "Создать статус билета",
-                "parameters": [
-                    {
-                        "description": "Статус билета",
-                        "name": "ticket_status",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketStatus"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketStatus"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный запрос",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/ticket-statuses/{id}": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ticket-statuses"
-                ],
-                "summary": "Получить статус билета по ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID статуса билета",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketStatus"
-                        }
-                    },
-                    "404": {
-                        "description": "Статус билета не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ticket-statuses"
-                ],
-                "summary": "Обновить статус билета",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID статуса билета",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Обновлённые данные статуса",
-                        "name": "ticket_status",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketStatus"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketStatus"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный JSON",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Статус не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "ticket-statuses"
-                ],
-                "summary": "Удалить статус билета",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID статуса билета",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Удалено",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Статус не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/tickets": {
             "post": {
                 "consumes": [
@@ -2438,31 +2302,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.EquipmentType": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "main.EquipmentTypeData": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "main.Genre": {
             "type": "object",
             "properties": {
@@ -2497,16 +2336,52 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "equipment_type_id": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
+                },
+                "screen_type_id": {
+                    "type": "string"
                 }
             }
+        },
+        "main.HallData": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "screen_type_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.LanguageEnumType": {
+            "type": "string",
+            "enum": [
+                "English",
+                "Spanish",
+                "French",
+                "German",
+                "Italian",
+                "Русский"
+            ],
+            "x-enum-varnames": [
+                "English",
+                "Spanish",
+                "French",
+                "German",
+                "Italian",
+                "Russian"
+            ]
         },
         "main.Movie": {
             "type": "object",
@@ -2521,7 +2396,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "duration": {
-                    "description": "формат \"HH:MM:SS\"",
                     "type": "string"
                 },
                 "genres": {
@@ -2537,7 +2411,6 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "release_date": {
-                    "description": "формат \"YYYY-MM-DD\"",
                     "type": "string"
                 },
                 "title": {
@@ -2555,13 +2428,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "language": {
-                    "type": "string"
+                    "$ref": "#/definitions/main.LanguageEnumType"
                 },
                 "movie_id": {
                     "type": "string"
                 },
                 "start_time": {
-                    "description": "формат \"HH:MM:SS\"",
                     "type": "string"
                 }
             }
@@ -2582,6 +2454,31 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ScreenType": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ScreenTypeData": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -2635,21 +2532,23 @@ const docTemplate = `{
                 "seat_id": {
                     "type": "string"
                 },
-                "ticket_status_id": {
-                    "type": "string"
+                "ticket_status": {
+                    "$ref": "#/definitions/main.TicketStatusEnumType"
                 }
             }
         },
-        "main.TicketStatus": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
+        "main.TicketStatusEnumType": {
+            "type": "string",
+            "enum": [
+                "Purchased",
+                "Reserved",
+                "Available"
+            ],
+            "x-enum-varnames": [
+                "Purchased",
+                "Reserved",
+                "Available"
+            ]
         },
         "main.User": {
             "type": "object",

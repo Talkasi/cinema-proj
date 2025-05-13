@@ -20,7 +20,7 @@ var GenresData = []Genre{
 	{ID: uuid.New().String(), Name: "Мистика", Description: "Фильмы с элементами расследования, разгадки тайны или преступления."},
 }
 
-var EquipmentTypesData = []EquipmentType{
+var ScreenTypesData = []ScreenType{
 	{ID: uuid.New().String(), Name: "LED", Description: "Современные экраны, использующие светодиоды для отображения изображения с высокой яркостью и контрастностью."},
 	{ID: uuid.New().String(), Name: "LCD", Description: "Жидкокристаллические экраны, обеспечивающие хорошее качество изображения и энергоэффективность."},
 	{ID: uuid.New().String(), Name: "DLP", Description: "Цифровые проекторы на основе технологии цифровой обработки света, обеспечивающие высокое качество изображения."},
@@ -48,39 +48,39 @@ var SeatTypesData = []SeatType{
 
 var HallsData = []Hall{
 	{
-		ID:              uuid.New().String(),
-		Name:            "Основной зал",
-		Capacity:        500,
-		EquipmentTypeID: EquipmentTypesData[0].ID,
-		Description:     "Главный зал кинотеатра с современным оборудованием",
+		ID:           uuid.New().String(),
+		Name:         "Основной зал",
+		Capacity:     500,
+		ScreenTypeID: ScreenTypesData[0].ID,
+		Description:  "Главный зал кинотеатра с современным оборудованием",
 	},
 	{
-		ID:              uuid.New().String(),
-		Name:            "Малый зал",
-		Capacity:        150,
-		EquipmentTypeID: EquipmentTypesData[3].ID,
-		Description:     "Небольшой уютный зал для камерных просмотров",
+		ID:           uuid.New().String(),
+		Name:         "Малый зал",
+		Capacity:     150,
+		ScreenTypeID: ScreenTypesData[3].ID,
+		Description:  "Небольшой уютный зал для камерных просмотров",
 	},
 	{
-		ID:              uuid.New().String(),
-		Name:            "VIP зал",
-		Capacity:        50,
-		EquipmentTypeID: EquipmentTypesData[2].ID,
-		Description:     "Премиальный зал с креслами-реклайнерами и сервисом",
+		ID:           uuid.New().String(),
+		Name:         "VIP зал",
+		Capacity:     50,
+		ScreenTypeID: ScreenTypesData[2].ID,
+		Description:  "Премиальный зал с креслами-реклайнерами и сервисом",
 	},
 	{
-		ID:              uuid.New().String(),
-		Name:            "IMAX зал",
-		Capacity:        300,
-		EquipmentTypeID: EquipmentTypesData[4].ID,
-		Description:     "Зал с технологией IMAX Laser для максимального погружения",
+		ID:           uuid.New().String(),
+		Name:         "IMAX зал",
+		Capacity:     300,
+		ScreenTypeID: ScreenTypesData[4].ID,
+		Description:  "Зал с технологией IMAX Laser для максимального погружения",
 	},
 	{
-		ID:              uuid.New().String(),
-		Name:            "4DX зал",
-		Capacity:        200,
-		EquipmentTypeID: EquipmentTypesData[3].ID,
-		Description:     "Зал с движущимися креслами и спецэффектами",
+		ID:           uuid.New().String(),
+		Name:         "4DX зал",
+		Capacity:     200,
+		ScreenTypeID: ScreenTypesData[3].ID,
+		Description:  "Зал с движущимися креслами и спецэффектами",
 	},
 }
 

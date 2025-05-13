@@ -11,13 +11,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllEquipmentTypeData(w http.ResponseWriter, e EquipmentTypeData) bool {
-	if err := validateEquipmentTypeName(e.Name); err != nil {
+func validateAllScreenTypeData(w http.ResponseWriter, e ScreenTypeData) bool {
+	if err := validateScreenTypeName(e.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
 
-	if err := validateEquipmentTypeDesctiption(e.Description); err != nil {
+	if err := validateScreenTypeDesctiption(e.Description); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
@@ -25,7 +25,7 @@ func validateAllEquipmentTypeData(w http.ResponseWriter, e EquipmentTypeData) bo
 	return true
 }
 
-func validateEquipmentTypeName(name string) error {
+func validateScreenTypeName(name string) error {
 	validNameRegex := regexp.MustCompile(`\S`)
 	if !validNameRegex.MatchString(name) {
 		return errors.New("имя не может быть пустым или состоять только из пробелов")
@@ -36,7 +36,7 @@ func validateEquipmentTypeName(name string) error {
 	return nil
 }
 
-func validateEquipmentTypeDesctiption(description string) error {
+func validateScreenTypeDesctiption(description string) error {
 	validDescriptionRegex := regexp.MustCompile(`\S`)
 	if !validDescriptionRegex.MatchString(description) {
 		return errors.New("описание не может быть пустым или состоять только из пробелов")
@@ -49,24 +49,24 @@ func validateEquipmentTypeDesctiption(description string) error {
 
 // @Summary Получить все типы оборудования
 // @Description Возвращает список всех типов оборудования
-// @Tags equipment-types
+// @Tags screen-types
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} EquipmentType "Список типов оборудования"
+// @Success 200 {array} ScreenType "Список типов оборудования"
 // @Failure 404 {string} string "Типы оборудования не найдены"
 // @Failure 500 {string} string "Ошибка сервера"
-// @Router /equipment-types [get]
-func GetEquipmentTypes(db *pgxpool.Pool) http.HandlerFunc {
+// @Router /screen-types [get]
+func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query(context.Background(), "SELECT id, name, description FROM equipment_types")
+		rows, err := db.Query(context.Background(), "SELECT id, name, description FROM screen_types")
 		if HandleDatabaseError(w, err, "типами оборудования") {
 			return
 		}
 		defer rows.Close()
 
-		var types []EquipmentType
+		var types []ScreenType
 		for rows.Next() {
-			var e EquipmentType
+			var e ScreenType
 			if err := rows.Scan(&e.ID, &e.Name, &e.Description); HandleDatabaseError(w, err, "типом оборудования") {
 				return
 			}
@@ -84,26 +84,26 @@ func GetEquipmentTypes(db *pgxpool.Pool) http.HandlerFunc {
 
 // @Summary Получить тип оборудования по ID
 // @Description Возвращает тип оборудования по его UUID
-// @Tags equipment-types
+// @Tags screen-types
 // @Produce json
 // @Param id path string true "UUID типа оборудования"
 // @Security BearerAuth
-// @Success 200 {object} EquipmentType "Тип оборудования"
+// @Success 200 {object} ScreenType "Тип оборудования"
 // @Failure 400 {string} string "Неверный формат UUID"
 // @Failure 404 {string} string "Тип оборудования не найден"
 // @Failure 500 {string} string "Ошибка сервера"
-// @Router /equipment-types/{id} [get]
-func GetEquipmentTypeByID(db *pgxpool.Pool) http.HandlerFunc {
+// @Router /screen-types/{id} [get]
+func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
 			return
 		}
 
-		var e EquipmentType
+		var e ScreenType
 		e.ID = id.String()
 		err := db.QueryRow(context.Background(),
-			"SELECT name, description FROM equipment_types WHERE id = $1", id).
+			"SELECT name, description FROM screen_types WHERE id = $1", id).
 			Scan(&e.Name, &e.Description)
 
 		if IsError(w, err) {
@@ -116,29 +116,29 @@ func GetEquipmentTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 
 // @Summary Создать тип оборудования
 // @Description Создает новый тип оборудования
-// @Tags equipment-types
+// @Tags screen-types
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param equipment_type body EquipmentTypeData true "Данные типа оборудования"
+// @Param screen_type body ScreenTypeData true "Данные типа оборудования"
 // @Success 201 {object} string "UUID созданного типа оборудования"
 // @Failure 400 {string} string "Неверный формат JSON"
 // @Failure 403 {string} string "Доступ запрещен"
 // @Failure 500 {string} string "Ошибка сервера"
-// @Router /equipment-types [post]
-func CreateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
+// @Router /screen-types [post]
+func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var e EquipmentTypeData
+		var e ScreenTypeData
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !validateAllEquipmentTypeData(w, e) {
+		if !validateAllScreenTypeData(w, e) {
 			return
 		}
 
 		id := uuid.New()
 		_, err := db.Exec(context.Background(),
-			"INSERT INTO equipment_types (id, name, description) VALUES ($1, $2, $3)",
+			"INSERT INTO screen_types (id, name, description) VALUES ($1, $2, $3)",
 			id, e.Name, e.Description)
 
 		if IsError(w, err) {
@@ -152,35 +152,35 @@ func CreateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 
 // @Summary Обновить тип оборудования
 // @Description Обновляет существующий тип оборудования
-// @Tags equipment-types
+// @Tags screen-types
 // @Accept json
 // @Produce json
 // @Param id path string true "UUID типа оборудования"
-// @Param equipment_type body EquipmentTypeData true "Обновленные данные типа оборудования"
+// @Param screen_type body ScreenTypeData true "Обновленные данные типа оборудования"
 // @Security BearerAuth
 // @Success 200 "Тип оборудования успешно обновлен"
 // @Failure 400 {string} string "Неверный формат UUID/JSON или пустые поля"
 // @Failure 403 {string} string "Доступ запрещен"
 // @Failure 404 {string} string "Тип оборудования не найден"
 // @Failure 500 {string} string "Ошибка сервера"
-// @Router /equipment-types/{id} [put]
-func UpdateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
+// @Router /screen-types/{id} [put]
+func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
 			return
 		}
 
-		var e EquipmentTypeData
+		var e ScreenTypeData
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !validateAllEquipmentTypeData(w, e) {
+		if !validateAllScreenTypeData(w, e) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE equipment_types SET name=$1, description=$2 WHERE id=$3",
+			"UPDATE screen_types SET name=$1, description=$2 WHERE id=$3",
 			e.Name, e.Description, id)
 
 		if IsError(w, err) {
@@ -197,7 +197,7 @@ func UpdateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 
 // @Summary Удалить тип оборудования
 // @Description Удаляет тип оборудования по его UUID
-// @Tags equipment-types
+// @Tags screen-types
 // @Param id path string true "UUID типа оборудования"
 // @Security BearerAuth
 // @Success 204 "Тип оборудования успешно удален"
@@ -205,8 +205,8 @@ func UpdateEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 403 {string} string "Доступ запрещен"
 // @Failure 404 {string} string "Тип оборудования не найден"
 // @Failure 500 {string} string "Ошибка сервера"
-// @Router /equipment-types/{id} [delete]
-func DeleteEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
+// @Router /screen-types/{id} [delete]
+func DeleteScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
@@ -214,7 +214,7 @@ func DeleteEquipmentType(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		res, err := db.Exec(context.Background(),
-			"DELETE FROM equipment_types WHERE id = $1", id)
+			"DELETE FROM screen_types WHERE id = $1", id)
 		if IsError(w, err) {
 			return
 		}

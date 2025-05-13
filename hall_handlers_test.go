@@ -184,24 +184,24 @@ func TestGetHallByID(t *testing.T) {
 
 func TestCreateHall(t *testing.T) {
 	validHall := HallData{
-		Name:            "Test Hall",
-		Capacity:        100,
-		EquipmentTypeID: EquipmentTypesData[3].ID,
-		Description:     "Test Description",
+		Name:         "Test Hall",
+		Capacity:     100,
+		ScreenTypeID: ScreenTypesData[3].ID,
+		Description:  "Test Description",
 	}
 
 	invalidHall := HallData{
-		Name:            "",
-		Capacity:        0,
-		EquipmentTypeID: "",
-		Description:     "",
+		Name:         "",
+		Capacity:     0,
+		ScreenTypeID: "",
+		Description:  "",
 	}
 
 	invalidForainKeyHall := HallData{
-		Name:            "Test Hall",
-		Capacity:        100,
-		EquipmentTypeID: uuid.New().String(),
-		Description:     "Test Description",
+		Name:         "Test Hall",
+		Capacity:     100,
+		ScreenTypeID: uuid.New().String(),
+		Description:  "Test Description",
 	}
 
 	tests := []struct {
@@ -290,8 +290,8 @@ func TestCreateHall(t *testing.T) {
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
 				_, err := TestAdminDB.Exec(context.Background(),
-					"INSERT INTO halls (name, capacity, equipment_type_id, description) VALUES ($1, $2, $3, $4)",
-					validHall.Name, validHall.Capacity, validHall.EquipmentTypeID, validHall.Description)
+					"INSERT INTO halls (name, capacity, screen_type_id, description) VALUES ($1, $2, $3, $4)",
+					validHall.Name, validHall.Capacity, validHall.ScreenTypeID, validHall.Description)
 				if err != nil {
 					t.Fatalf("Failed to insert into test database: %v", err)
 				}
@@ -331,17 +331,17 @@ func TestCreateHall(t *testing.T) {
 
 func TestUpdateHall(t *testing.T) {
 	validUpdateData := HallData{
-		Name:            "Updated Hall",
-		Capacity:        150,
-		EquipmentTypeID: EquipmentTypesData[7].ID,
-		Description:     "Updated Description",
+		Name:         "Updated Hall",
+		Capacity:     150,
+		ScreenTypeID: ScreenTypesData[7].ID,
+		Description:  "Updated Description",
 	}
 
 	invalidUpdateData := HallData{
-		Name:            "",
-		Capacity:        0,
-		EquipmentTypeID: "",
-		Description:     "",
+		Name:         "",
+		Capacity:     0,
+		ScreenTypeID: "",
+		Description:  "",
 	}
 
 	// Setup function for tests needing existing hall

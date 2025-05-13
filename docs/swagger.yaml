@@ -1,20 +1,4 @@
 definitions:
-  main.EquipmentType:
-    properties:
-      description:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-    type: object
-  main.EquipmentTypeData:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-    type: object
   main.Genre:
     properties:
       description:
@@ -37,13 +21,40 @@ definitions:
         type: integer
       description:
         type: string
-      equipment_type_id:
-        type: string
       id:
         type: string
       name:
         type: string
+      screen_type_id:
+        type: string
     type: object
+  main.HallData:
+    properties:
+      capacity:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+      screen_type_id:
+        type: string
+    type: object
+  main.LanguageEnumType:
+    enum:
+    - English
+    - Spanish
+    - French
+    - German
+    - Italian
+    - Русский
+    type: string
+    x-enum-varnames:
+    - English
+    - Spanish
+    - French
+    - German
+    - Italian
+    - Russian
   main.Movie:
     properties:
       age_limit:
@@ -53,7 +64,6 @@ definitions:
       description:
         type: string
       duration:
-        description: формат "HH:MM:SS"
         type: string
       genres:
         items:
@@ -64,7 +74,6 @@ definitions:
       rating:
         type: number
       release_date:
-        description: формат "YYYY-MM-DD"
         type: string
       title:
         type: string
@@ -76,11 +85,10 @@ definitions:
       id:
         type: string
       language:
-        type: string
+        $ref: '#/definitions/main.LanguageEnumType'
       movie_id:
         type: string
       start_time:
-        description: формат "HH:MM:SS"
         type: string
     type: object
   main.Review:
@@ -94,6 +102,22 @@ definitions:
       review_comment:
         type: string
       user_id:
+        type: string
+    type: object
+  main.ScreenType:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  main.ScreenTypeData:
+    properties:
+      description:
+        type: string
+      name:
         type: string
     type: object
   main.Seat:
@@ -128,16 +152,19 @@ definitions:
         type: number
       seat_id:
         type: string
-      ticket_status_id:
-        type: string
+      ticket_status:
+        $ref: '#/definitions/main.TicketStatusEnumType'
     type: object
-  main.TicketStatus:
-    properties:
-      id:
-        type: string
-      name:
-        type: string
-    type: object
+  main.TicketStatusEnumType:
+    enum:
+    - Purchased
+    - Reserved
+    - Available
+    type: string
+    x-enum-varnames:
+    - Purchased
+    - Reserved
+    - Available
   main.User:
     properties:
       birth_date:
@@ -177,173 +204,6 @@ info:
   title: Your API Title
   version: "1.0"
 paths:
-  /equipment-types:
-    get:
-      description: Возвращает список всех типов оборудования
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список типов оборудования
-          schema:
-            items:
-              $ref: '#/definitions/main.EquipmentType'
-            type: array
-        "404":
-          description: Типы оборудования не найдены
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Получить все типы оборудования
-      tags:
-      - equipment-types
-    post:
-      consumes:
-      - application/json
-      description: Создает новый тип оборудования
-      parameters:
-      - description: Данные типа оборудования
-        in: body
-        name: equipment_type
-        required: true
-        schema:
-          $ref: '#/definitions/main.EquipmentTypeData'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: UUID созданного типа оборудования
-          schema:
-            type: string
-        "400":
-          description: Неверный формат JSON
-          schema:
-            type: string
-        "403":
-          description: Доступ запрещен
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Создать тип оборудования
-      tags:
-      - equipment-types
-  /equipment-types/{id}:
-    delete:
-      description: Удаляет тип оборудования по его UUID
-      parameters:
-      - description: UUID типа оборудования
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: Тип оборудования успешно удален
-        "400":
-          description: Неверный формат UUID
-          schema:
-            type: string
-        "403":
-          description: Доступ запрещен
-          schema:
-            type: string
-        "404":
-          description: Тип оборудования не найден
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Удалить тип оборудования
-      tags:
-      - equipment-types
-    get:
-      description: Возвращает тип оборудования по его UUID
-      parameters:
-      - description: UUID типа оборудования
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Тип оборудования
-          schema:
-            $ref: '#/definitions/main.EquipmentType'
-        "400":
-          description: Неверный формат UUID
-          schema:
-            type: string
-        "404":
-          description: Тип оборудования не найден
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Получить тип оборудования по ID
-      tags:
-      - equipment-types
-    put:
-      consumes:
-      - application/json
-      description: Обновляет существующий тип оборудования
-      parameters:
-      - description: UUID типа оборудования
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Обновленные данные типа оборудования
-        in: body
-        name: equipment_type
-        required: true
-        schema:
-          $ref: '#/definitions/main.EquipmentTypeData'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Тип оборудования успешно обновлен
-        "400":
-          description: Неверный формат UUID/JSON или пустые поля
-          schema:
-            type: string
-        "403":
-          description: Доступ запрещен
-          schema:
-            type: string
-        "404":
-          description: Тип оборудования не найден
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Обновить тип оборудования
-      tags:
-      - equipment-types
   /genres:
     get:
       description: Возвращает список всех жанров
@@ -513,61 +373,82 @@ paths:
       - genres
   /halls:
     get:
+      description: Возвращает список всех залов
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список залов
           schema:
             items:
               $ref: '#/definitions/main.Hall'
             type: array
+        "404":
+          description: Залы не найдены
+          schema:
+            type: string
         "500":
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Получить все залы
       tags:
       - halls
     post:
       consumes:
       - application/json
+      description: Создает новый зал
       parameters:
-      - description: Новый зал
+      - description: Данные зала
         in: body
         name: hall
         required: true
         schema:
-          $ref: '#/definitions/main.Hall'
+          $ref: '#/definitions/main.HallData'
       produces:
       - application/json
       responses:
         "201":
-          description: Created
+          description: UUID созданного зала
           schema:
-            $ref: '#/definitions/main.Hall'
+            type: string
         "400":
-          description: Неверный JSON
+          description: Неверный формат JSON
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "500":
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Создать зал
       tags:
       - halls
   /halls/{id}:
     delete:
+      description: Удаляет зал по его UUID
       parameters:
-      - description: ID зала
+      - description: UUID зала
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Удалено
+          description: Зал успешно удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
           schema:
             type: string
         "404":
@@ -578,12 +459,15 @@ paths:
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Удалить зал
       tags:
       - halls
     get:
+      description: Возвращает зал по его UUID
       parameters:
-      - description: ID зала
+      - description: UUID зала
         in: path
         name: id
         required: true
@@ -592,9 +476,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Данные зала
           schema:
             $ref: '#/definitions/main.Hall'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
         "404":
           description: Зал не найден
           schema:
@@ -603,31 +491,40 @@ paths:
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Получить зал по ID
       tags:
       - halls
     put:
       consumes:
       - application/json
+      description: Обновляет существующий зал
       parameters:
-      - description: ID зала
+      - description: UUID зала
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные
+      - description: Обновленные данные зала
         in: body
         name: hall
         required: true
         schema:
-          $ref: '#/definitions/main.Hall'
+          $ref: '#/definitions/main.HallData'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Данные зала успешно обновлены
+        "400":
+          description: Неверный формат UUID/JSON или пустые поля
           schema:
-            $ref: '#/definitions/main.Hall'
+            type: string
+        "403":
+          description: Доступ запрещен
+          schema:
+            type: string
         "404":
           description: Зал не найден
           schema:
@@ -636,6 +533,8 @@ paths:
           description: Ошибка сервера
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Обновить зал
       tags:
       - halls
@@ -1095,6 +994,173 @@ paths:
       summary: Обновить отзыв
       tags:
       - reviews
+  /screen-types:
+    get:
+      description: Возвращает список всех типов оборудования
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список типов оборудования
+          schema:
+            items:
+              $ref: '#/definitions/main.ScreenType'
+            type: array
+        "404":
+          description: Типы оборудования не найдены
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить все типы оборудования
+      tags:
+      - screen-types
+    post:
+      consumes:
+      - application/json
+      description: Создает новый тип оборудования
+      parameters:
+      - description: Данные типа оборудования
+        in: body
+        name: screen_type
+        required: true
+        schema:
+          $ref: '#/definitions/main.ScreenTypeData'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: UUID созданного типа оборудования
+          schema:
+            type: string
+        "400":
+          description: Неверный формат JSON
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Создать тип оборудования
+      tags:
+      - screen-types
+  /screen-types/{id}:
+    delete:
+      description: Удаляет тип оборудования по его UUID
+      parameters:
+      - description: UUID типа оборудования
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Тип оборудования успешно удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
+          schema:
+            type: string
+        "404":
+          description: Тип оборудования не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Удалить тип оборудования
+      tags:
+      - screen-types
+    get:
+      description: Возвращает тип оборудования по его UUID
+      parameters:
+      - description: UUID типа оборудования
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Тип оборудования
+          schema:
+            $ref: '#/definitions/main.ScreenType'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            type: string
+        "404":
+          description: Тип оборудования не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить тип оборудования по ID
+      tags:
+      - screen-types
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий тип оборудования
+      parameters:
+      - description: UUID типа оборудования
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные типа оборудования
+        in: body
+        name: screen_type
+        required: true
+        schema:
+          $ref: '#/definitions/main.ScreenTypeData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Тип оборудования успешно обновлен
+        "400":
+          description: Неверный формат UUID/JSON или пустые поля
+          schema:
+            type: string
+        "403":
+          description: Доступ запрещен
+          schema:
+            type: string
+        "404":
+          description: Тип оборудования не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Обновить тип оборудования
+      tags:
+      - screen-types
   /seat-types:
     get:
       produces:
@@ -1375,138 +1441,6 @@ paths:
       summary: Получить все билеты для показа фильма по ID
       tags:
       - seats
-  /ticket-statuses:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/main.TicketStatus'
-            type: array
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      summary: Получить все статусы билетов
-      tags:
-      - ticket-statuses
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Статус билета
-        in: body
-        name: ticket_status
-        required: true
-        schema:
-          $ref: '#/definitions/main.TicketStatus'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/main.TicketStatus'
-        "400":
-          description: Неверный запрос
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      summary: Создать статус билета
-      tags:
-      - ticket-statuses
-  /ticket-statuses/{id}:
-    delete:
-      parameters:
-      - description: ID статуса билета
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: Удалено
-          schema:
-            type: string
-        "404":
-          description: Статус не найден
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      summary: Удалить статус билета
-      tags:
-      - ticket-statuses
-    get:
-      parameters:
-      - description: ID статуса билета
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.TicketStatus'
-        "404":
-          description: Статус билета не найден
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      summary: Получить статус билета по ID
-      tags:
-      - ticket-statuses
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID статуса билета
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Обновлённые данные статуса
-        in: body
-        name: ticket_status
-        required: true
-        schema:
-          $ref: '#/definitions/main.TicketStatus'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.TicketStatus'
-        "400":
-          description: Неверный JSON
-          schema:
-            type: string
-        "404":
-          description: Статус не найден
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      summary: Обновить статус билета
-      tags:
-      - ticket-statuses
   /tickets:
     post:
       consumes:

@@ -22,7 +22,7 @@ import (
 func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query(context.Background(),
-			"SELECT id, name, capacity, equipment_type_id, description FROM halls")
+			"SELECT id, name, capacity, screen_type_id, description FROM halls")
 		if HandleDatabaseError(w, err, "залами") {
 			return
 		}
@@ -31,7 +31,7 @@ func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 		var halls []Hall
 		for rows.Next() {
 			var h Hall
-			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.EquipmentTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
+			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
 				return
 			}
 			halls = append(halls, h)
@@ -67,8 +67,8 @@ func GetHallByID(db *pgxpool.Pool) http.HandlerFunc {
 		var h Hall
 		h.ID = id.String()
 		err := db.QueryRow(context.Background(),
-			"SELECT name, capacity, equipment_type_id, description FROM halls WHERE id = $1", id).
-			Scan(&h.Name, &h.Capacity, &h.EquipmentTypeID, &h.Description)
+			"SELECT name, capacity, screen_type_id, description FROM halls WHERE id = $1", id).
+			Scan(&h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description)
 
 		if IsError(w, err) {
 			return
@@ -98,18 +98,18 @@ func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		if !ValidateRequiredFields(w, map[string]string{
-			"name":              h.Name,
-			"capacity":          fmt.Sprint(h.Capacity),
-			"description":       h.Description,
-			"equipment_type_id": h.EquipmentTypeID,
+			"name":           h.Name,
+			"capacity":       fmt.Sprint(h.Capacity),
+			"description":    h.Description,
+			"screen_type_id": h.ScreenTypeID,
 		}) {
 			return
 		}
 
 		id := uuid.New().String()
 		_, err := db.Exec(context.Background(),
-			"INSERT INTO halls (id, name, capacity, equipment_type_id, description) VALUES ($1, $2, $3, $4, $5)",
-			id, h.Name, h.Capacity, h.EquipmentTypeID, h.Description)
+			"INSERT INTO halls (id, name, capacity, screen_type_id, description) VALUES ($1, $2, $3, $4, $5)",
+			id, h.Name, h.Capacity, h.ScreenTypeID, h.Description)
 
 		if IsError(w, err) {
 			return
@@ -147,17 +147,17 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		if !ValidateRequiredFields(w, map[string]string{
-			"name":              h.Name,
-			"capacity":          fmt.Sprint(h.Capacity),
-			"description":       h.Description,
-			"equipment_type_id": h.EquipmentTypeID,
+			"name":           h.Name,
+			"capacity":       fmt.Sprint(h.Capacity),
+			"description":    h.Description,
+			"screen_type_id": h.ScreenTypeID,
 		}) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE halls SET name=$1, capacity=$2, equipment_type_id=$3, description=$4 WHERE id=$5",
-			h.Name, h.Capacity, h.EquipmentTypeID, h.Description, id)
+			"UPDATE halls SET name=$1, capacity=$2, screen_type_id=$3, description=$4 WHERE id=$5",
+			h.Name, h.Capacity, h.ScreenTypeID, h.Description, id)
 
 		if IsError(w, err) {
 			return
