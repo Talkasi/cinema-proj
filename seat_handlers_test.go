@@ -2,35 +2,35 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 )
 
-func getHallByID(t *testing.T, ts *httptest.Server, token string, index int) Hall {
-	req := createRequest(t, "GET", ts.URL+"/halls", token, nil)
+// Вспомогательные функции для тестов
+func getSeatByID(t *testing.T, ts *httptest.Server, token string, index int) Seat {
+	req := createRequest(t, "GET", ts.URL+"/seats", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
 
-	var halls []Hall
-	parseResponseBody(t, resp, &halls)
+	var seats []Seat
+	parseResponseBody(t, resp, &seats)
 
-	if len(halls) == 0 {
-		t.Fatal("Expected at least one hall, got none")
+	if len(seats) == 0 {
+		t.Fatal("Expected at least one seat, got none")
 	}
 
-	if index >= len(halls) {
+	if index >= len(seats) {
 		t.Fatal("Index is greater than length of data array")
 	}
 
-	return halls[index]
+	return seats[index]
 }
 
-func TestGetHalls(t *testing.T) {
+func TestGetSeats(t *testing.T) {
 	tests := []struct {
 		name           string
 		seedData       bool
@@ -54,37 +54,27 @@ func TestGetHalls(t *testing.T) {
 				SeedAll(TestAdminDB)
 			}
 
-			req := createRequest(t, "GET", ts.URL+"/halls", generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/seats", generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusOK {
-				var halls []Hall
-				parseResponseBody(t, resp, &halls)
+				var seats []Seat
+				parseResponseBody(t, resp, &seats)
 
-				if len(halls) == 0 {
-					t.Error("Expected non-empty halls list")
-				}
-
-				requiredFields := []string{"ID", "Name", "Capacity", "ScreenTypeID", "Description"}
-				for _, hall := range halls {
-					v := reflect.ValueOf(hall)
-					for _, field := range requiredFields {
-						if v.FieldByName(field).IsZero() {
-							t.Errorf("Missing or zero field %s in response", field)
-						}
-					}
+				if len(seats) == 0 {
+					t.Error("Expected non-empty seats list")
 				}
 			}
 		})
 	}
 }
 
-func TestGetHallByID(t *testing.T) {
+func TestGetSeatByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getHallByID(t, ts, "", 0).ID
+		return ts, getSeatByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -178,42 +168,35 @@ func TestGetHallByID(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
 
-			req := createRequest(t, "GET", ts.URL+"/halls/"+id, generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/seats/"+id, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusOK {
-				var hall Hall
-				parseResponseBody(t, resp, &hall)
+				var seat Seat
+				parseResponseBody(t, resp, &seat)
 
-				if hall.ID != id {
-					t.Errorf("Expected ID %v; got %v", id, hall.ID)
+				if seat.ID != id {
+					t.Errorf("Expected ID %v; got %v", id, seat.ID)
 				}
 			}
 		})
 	}
 }
 
-func TestCreateHall(t *testing.T) {
-	validHall := HallData{
-		Name:         "Test Hall",
-		Capacity:     100,
-		ScreenTypeID: ScreenTypesData[3].ID,
-		Description:  "Test Description",
+func TestCreateSeat(t *testing.T) {
+	validSeat := SeatData{
+		HallID:     uuid.New().String(),
+		SeatTypeID: uuid.New().String(),
+		RowNumber:  1,
+		SeatNumber: 1,
 	}
 
-	invalidHall := HallData{
-		Name:         "",
-		Capacity:     0,
-		ScreenTypeID: "",
-		Description:  "",
-	}
-
-	invalidForainKeyHall := HallData{
-		Name:         "Test Hall",
-		Capacity:     100,
-		ScreenTypeID: uuid.New().String(),
-		Description:  "Test Description",
+	invalidSeat := SeatData{
+		HallID:     "invalid",
+		SeatTypeID: uuid.New().String(),
+		RowNumber:  0,
+		SeatNumber: -1,
 	}
 
 	tests := []struct {
@@ -226,32 +209,31 @@ func TestCreateHall(t *testing.T) {
 		{
 			"Forbidden Guest",
 			"",
-			validHall,
+			validSeat,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden User",
 			"CLAIM_ROLE_USER",
-			validHall,
+			validSeat,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
 			"CLAIM_ROLE_ADMIN",
-			validHall,
+			validSeat,
 			func(t *testing.T) {
+				// Создаем зал и тип места, чтобы ссылки были валидными
+				ts := setupTestServer()
 				SeedAll(TestAdminDB)
+				hall := getHallByID(t, ts, "", 0)
+				seatType := getSeatTypeByID(t, ts, "", 0)
+				validSeat.HallID = hall.ID
+				validSeat.SeatTypeID = seatType.ID
 			},
 			http.StatusCreated,
-		},
-		{
-			"Unknown forain key Admin",
-			"CLAIM_ROLE_ADMIN",
-			invalidForainKeyHall,
-			nil,
-			http.StatusFailedDependency,
 		},
 		{
 			"Invalid JSON Guest",
@@ -275,88 +257,95 @@ func TestCreateHall(t *testing.T) {
 			http.StatusBadRequest,
 		},
 		{
-			"Empty fields in JSON Guest",
+			"Invalid data Guest",
 			"",
-			invalidHall,
+			invalidSeat,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty fields in JSON User",
+			"Invalid data User",
 			"CLAIM_ROLE_USER",
-			invalidHall,
+			invalidSeat,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty fields in JSON Admin",
+			"Invalid data Admin",
 			"CLAIM_ROLE_ADMIN",
-			invalidHall,
+			invalidSeat,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Conflict Admin",
+			"Conflict Admin - duplicate seat",
 			"CLAIM_ROLE_ADMIN",
-			validHall,
+			validSeat,
 			func(t *testing.T) {
+				ts := setupTestServer()
 				SeedAll(TestAdminDB)
+				hall := getHallByID(t, ts, "", 0)
+				seatType := getSeatTypeByID(t, ts, "", 0)
+				validSeat.HallID = hall.ID
+				validSeat.SeatTypeID = seatType.ID
+
+				// Создаем место с такими же параметрами
 				_, err := TestAdminDB.Exec(context.Background(),
-					"INSERT INTO halls (name, capacity, screen_type_id, description) VALUES ($1, $2, $3, $4)",
-					validHall.Name, validHall.Capacity, validHall.ScreenTypeID, validHall.Description)
+					"INSERT INTO seats (id, hall_id, seat_type_id, row_number, seat_number) VALUES ($1, $2, $3, $4, $5)",
+					uuid.New(), validSeat.HallID, validSeat.SeatTypeID, validSeat.RowNumber, validSeat.SeatNumber)
 				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
+					t.Fatal("Failed to create test seat:", err)
 				}
 			},
 			http.StatusConflict,
 		},
 		{
-			"Capacity 1 as Admin",
+			"Invalid Hall ID",
 			"CLAIM_ROLE_ADMIN",
-			HallData{
-				Name:         "Min Capacity",
-				Capacity:     1,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
-			},
-			func(t *testing.T) { SeedAll(TestAdminDB) },
-			http.StatusCreated,
-		},
-		{
-			"Max name length as Admin",
-			"CLAIM_ROLE_ADMIN",
-			HallData{
-				Name:         strings.Repeat("a", 100),
-				Capacity:     100,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
-			},
-			func(t *testing.T) { SeedAll(TestAdminDB) },
-			http.StatusCreated,
-		},
-		{
-			"Name too long as Admin",
-			"CLAIM_ROLE_ADMIN",
-			HallData{
-				Name:         strings.Repeat("a", 101),
-				Capacity:     100,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+			SeatData{
+				HallID:     uuid.New().String(), // Несуществующий зал
+				SeatTypeID: uuid.New().String(),
+				RowNumber:  1,
+				SeatNumber: 1,
 			},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
-			"Max description length as Admin",
+			"Invalid Seat Type ID",
 			"CLAIM_ROLE_ADMIN",
-			HallData{
-				Name:         "Test Hall",
-				Capacity:     100,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  strings.Repeat("a", 1000),
+			SeatData{
+				HallID:     uuid.New().String(),
+				SeatTypeID: uuid.New().String(), // Несуществующий тип
+				RowNumber:  1,
+				SeatNumber: 1,
 			},
-			func(t *testing.T) { SeedAll(TestAdminDB) },
-			http.StatusCreated,
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Row number too big",
+			"CLAIM_ROLE_ADMIN",
+			SeatData{
+				HallID:     uuid.New().String(),
+				SeatTypeID: uuid.New().String(),
+				RowNumber:  101,
+				SeatNumber: 1,
+			},
+			nil,
+			http.StatusBadRequest,
+		},
+		{
+			"Seat number too big",
+			"CLAIM_ROLE_ADMIN",
+			SeatData{
+				HallID:     uuid.New().String(),
+				SeatTypeID: uuid.New().String(),
+				RowNumber:  1,
+				SeatNumber: 101,
+			},
+			nil,
+			http.StatusBadRequest,
 		},
 	}
 
@@ -369,46 +358,48 @@ func TestCreateHall(t *testing.T) {
 				tt.setup(t)
 			}
 
-			req := createRequest(t, "POST", ts.URL+"/halls", generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "POST", ts.URL+"/seats", generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusCreated {
-				var created string
-				parseResponseBody(t, resp, &created)
+				var seat Seat
+				parseResponseBody(t, resp, &seat)
 
-				if created == "" {
+				if seat.ID == "" {
 					t.Error("Expected non-empty ID in response")
 				}
 
-				if _, err := uuid.Parse(created); err != nil {
-					t.Error("Неверный формат возврещённого UUID")
+				if _, err := uuid.Parse(seat.ID); err != nil {
+					t.Error("Invalid UUID format in response")
 				}
 			}
 		})
 	}
 }
 
-func TestUpdateHall(t *testing.T) {
-	validUpdateData := HallData{
-		Name:         "Updated Hall",
-		Capacity:     150,
-		ScreenTypeID: ScreenTypesData[7].ID,
-		Description:  "Updated Description",
+func TestUpdateSeat(t *testing.T) {
+	validUpdate := SeatData{
+		HallID:     uuid.New().String(),
+		SeatTypeID: uuid.New().String(),
+		RowNumber:  2,
+		SeatNumber: 2,
 	}
 
-	invalidUpdateData := HallData{
-		Name:         "",
-		Capacity:     0,
-		ScreenTypeID: "",
-		Description:  "",
+	invalidUpdate := SeatData{
+		HallID:     "invalid",
+		SeatTypeID: uuid.New().String(),
+		RowNumber:  0,
+		SeatNumber: -1,
 	}
 
-	// Setup function for tests needing existing hall
-	setupExistingHall := func(t *testing.T) (*httptest.Server, string) {
+	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)
-		return ts, getHallByID(t, ts, "", 0).ID
+		SeedAll(TestAdminDB)
+		seat := getSeatByID(t, ts, "", 0)
+		validUpdate.HallID = seat.HallID
+		validUpdate.SeatTypeID = seat.SeatTypeID
+		return ts, seat.ID
 	}
 
 	tests := []struct {
@@ -423,7 +414,7 @@ func TestUpdateHall(t *testing.T) {
 			"Invalid UUID as Guest",
 			"",
 			"invalid-uuid",
-			validUpdateData,
+			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -432,98 +423,10 @@ func TestUpdateHall(t *testing.T) {
 			http.StatusBadRequest,
 		},
 		{
-			"Capacity 1 as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			HallData{
-				Name:         "Min Capacity",
-				Capacity:     1,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
-			},
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
-			},
-			http.StatusOK,
-		},
-		{
-			"Update With Same Data as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				SeedAll(TestAdminDB)
-				hall := getHallByID(t, ts, "", 0)
-				_, err := TestAdminDB.Exec(context.Background(),
-					"UPDATE halls SET name=$1, capacity=$2, screen_type_id=$3, description=$4 WHERE id=$5",
-					validUpdateData.Name, validUpdateData.Capacity,
-					validUpdateData.ScreenTypeID, validUpdateData.Description, hall.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return ts, hall.ID
-			},
-			http.StatusOK,
-		},
-		{
-			"Max name length as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			HallData{
-				Name:         strings.Repeat("a", 100),
-				Capacity:     100,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
-			},
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
-			},
-			http.StatusOK,
-		},
-		{
-			"Name too long as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			HallData{
-				Name:         strings.Repeat("a", 101),
-				Capacity:     100,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
-			},
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Max description length as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			HallData{
-				Name:         "Test Hall",
-				Capacity:     100,
-				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  strings.Repeat("a", 1000),
-			},
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
-			},
-			http.StatusOK,
-		},
-		{
 			"Invalid UUID as User",
 			"CLAIM_ROLE_USER",
 			"invalid-uuid",
-			validUpdateData,
+			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -535,7 +438,7 @@ func TestUpdateHall(t *testing.T) {
 			"Invalid UUID as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"invalid-uuid",
-			validUpdateData,
+			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -547,7 +450,7 @@ func TestUpdateHall(t *testing.T) {
 			"Unknown UUID as Guest",
 			"",
 			"",
-			validUpdateData,
+			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -559,7 +462,7 @@ func TestUpdateHall(t *testing.T) {
 			"Unknown UUID as User",
 			"CLAIM_ROLE_USER",
 			"",
-			validUpdateData,
+			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -571,7 +474,7 @@ func TestUpdateHall(t *testing.T) {
 			"Unknown UUID as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			validUpdateData,
+			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -584,7 +487,7 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			"",
 			"invalid-json",
-			setupExistingHall,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
@@ -592,7 +495,7 @@ func TestUpdateHall(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			"invalid-json",
-			setupExistingHall,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
@@ -600,56 +503,77 @@ func TestUpdateHall(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			"invalid-json",
-			setupExistingHall,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty fields in JSON as Guest",
+			"Invalid data as Guest",
 			"",
 			"",
-			invalidUpdateData,
-			setupExistingHall,
+			invalidUpdate,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty fields in JSON as User",
+			"Invalid data as User",
 			"CLAIM_ROLE_USER",
 			"",
-			invalidUpdateData,
-			setupExistingHall,
+			invalidUpdate,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
-			"Empty fields in as Admin",
+			"Invalid data as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			invalidUpdateData,
-			setupExistingHall,
+			invalidUpdate,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
 			"Forbidden Guest",
 			"",
 			"",
-			validUpdateData,
-			setupExistingHall,
+			validUpdate,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden User",
 			"CLAIM_ROLE_USER",
 			"",
-			validUpdateData,
-			setupExistingHall,
+			validUpdate,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			validUpdateData,
-			setupExistingHall,
+			validUpdate,
+			setupExistingSeat,
 			http.StatusOK,
+		},
+		{
+			"Conflict Admin - duplicate seat",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			validUpdate,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				seat1 := getSeatByID(t, ts, "", 0)
+				seat2 := getSeatByID(t, ts, "", 1)
+
+				// Пытаемся изменить seat2 чтобы он совпадал с seat1
+				validUpdate.HallID = seat1.HallID
+				validUpdate.RowNumber = seat1.RowNumber
+				validUpdate.SeatNumber = seat1.SeatNumber
+				validUpdate.SeatTypeID = seat1.SeatTypeID
+
+				return ts, seat2.ID
+			},
+			http.StatusConflict,
 		},
 	}
 
@@ -658,25 +582,32 @@ func TestUpdateHall(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
 
-			// Use provided ID or fallback to id from setup
 			effectiveID := tt.id
 			if effectiveID == "" {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "PUT", ts.URL+"/halls/"+effectiveID, generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "PUT", ts.URL+"/seats/"+effectiveID, generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var seat Seat
+				parseResponseBody(t, resp, &seat)
+
+				if seat.ID != effectiveID {
+					t.Errorf("Expected ID %v; got %v", effectiveID, seat.ID)
+				}
+			}
 		})
 	}
 }
 
-func TestDeleteHall(t *testing.T) {
-	// Setup function for tests needing existing hall
-	setupExistingHall := func(t *testing.T) (*httptest.Server, string) {
+func TestDeleteSeat(t *testing.T) {
+	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getHallByID(t, ts, "", 0).ID
+		return ts, getSeatByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -720,21 +651,6 @@ func TestDeleteHall(t *testing.T) {
 			http.StatusNotFound,
 		},
 		{
-			"Double Delete as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				SeedAll(TestAdminDB)
-				hall := getHallByID(t, ts, "", 4)
-				req := createRequest(t, "DELETE", ts.URL+"/halls/"+hall.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), nil)
-				resp := executeRequest(t, req, http.StatusNoContent)
-				resp.Body.Close()
-				return ts, hall.ID
-			},
-			http.StatusNotFound,
-		},
-		{
 			"Invalid UUID as Guest",
 			"",
 			"invalid-uuid",
@@ -765,32 +681,21 @@ func TestDeleteHall(t *testing.T) {
 			"Forbidden as Guest",
 			"",
 			"",
-			setupExistingHall,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden as User",
 			"CLAIM_ROLE_USER",
 			"",
-			setupExistingHall,
+			setupExistingSeat,
 			http.StatusForbidden,
-		},
-		{
-			"Dependency error as Admin",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			setupExistingHall,
-			http.StatusFailedDependency,
 		},
 		{
 			"Success as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, "", 4).ID
-			},
+			setupExistingSeat,
 			http.StatusNoContent,
 		},
 	}
@@ -800,64 +705,39 @@ func TestDeleteHall(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
 
-			// Use provided ID or fallback to id from setup
 			effectiveID := tt.id
 			if effectiveID == "" {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "DELETE", ts.URL+"/halls/"+effectiveID, generateToken(t, tt.role), nil)
+			req := createRequest(t, "DELETE", ts.URL+"/seats/"+effectiveID, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestHallSecurity(t *testing.T) {
+func TestCreateSeatDBError(t *testing.T) {
 	ts := setupTestServer()
 	defer ts.Close()
-	SeedAll(TestAdminDB)
 
-	// SQL-инъекция в имени
-	t.Run("SQL Injection in Name", func(t *testing.T) {
-		sqlInjection := HallData{
-			Name:         "Test'; DROP TABLE halls;--",
-			Capacity:     100,
-			ScreenTypeID: ScreenTypesData[0].ID,
-			Description:  "Test",
-		}
+	// Создаем ситуацию с ошибкой БД
+	TestAdminDB.Close()
+	TestGuestDB.Close()
+	TestUserDB.Close()
 
-		req := createRequest(t, "POST", ts.URL+"/halls", generateToken(t, "CLAIM_ROLE_ADMIN"), sqlInjection)
-		resp := executeRequest(t, req, http.StatusBadRequest)
-		defer resp.Body.Close()
-	})
+	req := createRequest(t, "POST", ts.URL+"/seats",
+		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		SeatData{
+			HallID:     uuid.New().String(),
+			SeatTypeID: uuid.New().String(),
+			RowNumber:  1,
+			SeatNumber: 1,
+		})
+	resp := executeRequest(t, req, http.StatusInternalServerError)
+	defer resp.Body.Close()
 
-	// XSS в описании
-	t.Run("XSS in Description", func(t *testing.T) {
-		xssPayload := HallData{
-			Name:         "Test Hall",
-			Capacity:     100,
-			ScreenTypeID: ScreenTypesData[0].ID,
-			Description:  "<script>alert('XSS')</script>",
-		}
-
-		req := createRequest(t, "POST", ts.URL+"/halls", generateToken(t, "CLAIM_ROLE_ADMIN"), xssPayload)
-		resp := executeRequest(t, req, http.StatusCreated)
-		defer resp.Body.Close()
-
-		// Проверяем, что скрипт не исполнился
-		var id string
-		parseResponseBody(t, resp, &id)
-
-		req = createRequest(t, "GET", ts.URL+"/halls/"+id, "", nil)
-		resp = executeRequest(t, req, http.StatusOK)
-		defer resp.Body.Close()
-
-		var hall Hall
-		parseResponseBody(t, resp, &hall)
-
-		if strings.Contains(hall.Description, "<script>") {
-			t.Error("XSS payload was not sanitized")
-		}
-	})
+	if err := InitTestDB(); err != nil {
+		log.Fatal("ошибка подключения к БД: ", err)
+	}
 }

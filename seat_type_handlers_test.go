@@ -12,26 +12,26 @@ import (
 	"github.com/google/uuid"
 )
 
-func getScreenTypeByID(t *testing.T, ts *httptest.Server, token string, index int) ScreenType {
-	req := createRequest(t, "GET", ts.URL+"/screen-types", token, nil)
+func getSeatTypeByID(t *testing.T, ts *httptest.Server, token string, index int) SeatType {
+	req := createRequest(t, "GET", ts.URL+"/seat-types", token, nil)
 	resp := executeRequest(t, req, http.StatusOK)
 	defer resp.Body.Close()
 
-	var screen_types []ScreenType
-	parseResponseBody(t, resp, &screen_types)
+	var seat_types []SeatType
+	parseResponseBody(t, resp, &seat_types)
 
-	if len(screen_types) == 0 {
-		t.Fatal("Expected at least one screen type, got none")
+	if len(seat_types) == 0 {
+		t.Fatal("Expected at least one seat type, got none")
 	}
 
-	if index >= len(screen_types) {
+	if index >= len(seat_types) {
 		t.Fatal("Index is greater than length of data array")
 	}
 
-	return screen_types[index]
+	return seat_types[index]
 }
 
-func TestGetScreenTypes(t *testing.T) {
+func TestGetSeatTypes(t *testing.T) {
 	tests := []struct {
 		name           string
 		seedData       bool
@@ -55,7 +55,7 @@ func TestGetScreenTypes(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 			}
 
-			req := createRequest(t, "GET", ts.URL+"/screen-types", generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/seat-types", generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -64,12 +64,12 @@ func TestGetScreenTypes(t *testing.T) {
 	}
 }
 
-func TestGetScreenTypeByID(t *testing.T) {
+func TestGetSeatTypeByID(t *testing.T) {
 	// Setup for valid ID tests
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getScreenTypeByID(t, ts, "", 0).ID
+		return ts, getSeatTypeByID(t, ts, "", 0).ID
 	}
 
 	tests := []struct {
@@ -190,35 +190,35 @@ func TestGetScreenTypeByID(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
 
-			req := createRequest(t, "GET", ts.URL+"/screen-types/"+id, generateToken(t, tt.role), nil)
+			req := createRequest(t, "GET", ts.URL+"/seat-types/"+id, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusOK {
-				var screen_type ScreenType
-				parseResponseBody(t, resp, &screen_type)
+				var seat_type SeatType
+				parseResponseBody(t, resp, &seat_type)
 
-				if screen_type.ID != id {
-					t.Errorf("Expected ID %v; got %v", id, screen_type.ID)
+				if seat_type.ID != id {
+					t.Errorf("Expected ID %v; got %v", id, seat_type.ID)
 				}
 			}
 		})
 	}
 }
 
-func TestCreateScreenType(t *testing.T) {
-	validScreenType := ScreenTypeData{
-		Name:        "Test Screen",
+func TestCreateSeatType(t *testing.T) {
+	validSeatType := SeatTypeData{
+		Name:        "Test Seat",
 		Description: "Test Description",
 	}
 
-	invalidScreenType := ScreenTypeData{
+	invalidSeatType := SeatTypeData{
 		Name:        "",
 		Description: "Test Description",
 	}
 
 	setupConflictTest := func(t *testing.T) {
-		_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", validScreenType.Name, validScreenType.Description)
+		_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", validSeatType.Name, validSeatType.Description)
 		if err != nil {
 			t.Fatalf("Failed to insert into test database: %v", err)
 		}
@@ -234,21 +234,21 @@ func TestCreateScreenType(t *testing.T) {
 		{
 			"Forbidden Guest",
 			"",
-			validScreenType,
+			validSeatType,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden User",
 			"CLAIM_ROLE_USER",
-			validScreenType,
+			validSeatType,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
 			"CLAIM_ROLE_ADMIN",
-			validScreenType,
+			validSeatType,
 			nil,
 			http.StatusCreated,
 		},
@@ -276,42 +276,42 @@ func TestCreateScreenType(t *testing.T) {
 		{
 			"Empty field in JSON Guest",
 			"",
-			invalidScreenType,
+			invalidSeatType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty field in JSON User",
 			"CLAIM_ROLE_USER",
-			invalidScreenType,
+			invalidSeatType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty field in JSON Admin",
 			"CLAIM_ROLE_ADMIN",
-			invalidScreenType,
+			invalidSeatType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Insert Error Guest",
 			"",
-			validScreenType,
+			validSeatType,
 			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error User",
 			"CLAIM_ROLE_USER",
-			validScreenType,
+			validSeatType,
 			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error Admin",
 			"CLAIM_ROLE_ADMIN",
-			validScreenType,
+			validSeatType,
 			setupConflictTest,
 			http.StatusConflict,
 		},
@@ -326,7 +326,7 @@ func TestCreateScreenType(t *testing.T) {
 				tt.setup(t)
 			}
 
-			req := createRequest(t, "POST", ts.URL+"/screen-types", generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "POST", ts.URL+"/seat-types", generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -346,17 +346,17 @@ func TestCreateScreenType(t *testing.T) {
 	}
 }
 
-func TestUpdateScreenType(t *testing.T) {
-	validUpdateData := ScreenTypeData{
-		Name:        "Updated Screen",
+func TestUpdateSeatType(t *testing.T) {
+	validUpdateData := SeatTypeData{
+		Name:        "Updated Seat",
 		Description: "Updated Description",
 	}
 
-	// Setup function for tests needing existing screen type
-	setupExistingScreen := func(t *testing.T) (*httptest.Server, string) {
+	// Setup function for tests needing existing seat type
+	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 	}
 
 	unknown_id := uuid.NewString()
@@ -444,7 +444,7 @@ func TestUpdateScreenType(t *testing.T) {
 			"",
 			"",
 			"invalid-json",
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
@@ -452,7 +452,7 @@ func TestUpdateScreenType(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			"invalid-json",
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
@@ -460,31 +460,31 @@ func TestUpdateScreenType(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			"invalid-json",
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty Name as Guest",
 			"",
 			"",
-			ScreenTypeData{Name: "", Description: "Test"},
-			setupExistingScreen,
+			SeatTypeData{Name: "", Description: "Test"},
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty Name as User",
 			"CLAIM_ROLE_USER",
 			"",
-			ScreenTypeData{Name: "", Description: "Test"},
-			setupExistingScreen,
+			SeatTypeData{Name: "", Description: "Test"},
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty Name as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			ScreenTypeData{Name: "", Description: "Test"},
-			setupExistingScreen,
+			SeatTypeData{Name: "", Description: "Test"},
+			setupExistingSeat,
 			http.StatusBadRequest,
 		},
 		{
@@ -492,7 +492,7 @@ func TestUpdateScreenType(t *testing.T) {
 			"",
 			"",
 			validUpdateData,
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
@@ -500,7 +500,7 @@ func TestUpdateScreenType(t *testing.T) {
 			"CLAIM_ROLE_USER",
 			"",
 			validUpdateData,
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
@@ -508,7 +508,7 @@ func TestUpdateScreenType(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			validUpdateData,
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusOK,
 		},
 	}
@@ -524,19 +524,19 @@ func TestUpdateScreenType(t *testing.T) {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "PUT", ts.URL+"/screen-types/"+effectiveID, generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "PUT", ts.URL+"/seat-types/"+effectiveID, generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestDeleteScreenType(t *testing.T) {
-	// Setup function for tests needing existing screen type
-	setupExistingScreen := func(t *testing.T) (*httptest.Server, string) {
+func TestDeleteSeatType(t *testing.T) {
+	// Setup function for tests needing existing seat type
+	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 	}
 
 	tests := []struct {
@@ -610,21 +610,21 @@ func TestDeleteScreenType(t *testing.T) {
 			"Forbidden as Guest",
 			"",
 			"",
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
 			"Forbidden as User",
 			"CLAIM_ROLE_USER",
 			"",
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			setupExistingScreen,
+			setupExistingSeat,
 			http.StatusFailedDependency,
 		},
 		{
@@ -634,7 +634,7 @@ func TestDeleteScreenType(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
+				return ts, getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
 			},
 			http.StatusNoContent,
 		},
@@ -651,48 +651,48 @@ func TestDeleteScreenType(t *testing.T) {
 				effectiveID = id
 			}
 
-			req := createRequest(t, "DELETE", ts.URL+"/screen-types/"+effectiveID, generateToken(t, tt.role), nil)
+			req := createRequest(t, "DELETE", ts.URL+"/seat-types/"+effectiveID, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestScreenTypeConstraintsCreate(t *testing.T) {
+func TestSeatTypeConstraintsCreate(t *testing.T) {
 	tests := []struct {
 		name           string
 		role           string
-		body           ScreenTypeData
+		body           SeatTypeData
 		expectedStatus int
 	}{
 		{
 			"Empty name",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "   ", Description: "Valid"},
+			SeatTypeData{Name: "   ", Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Valid", Description: "   "},
+			SeatTypeData{Name: "Valid", Description: "   "},
 			http.StatusBadRequest,
 		},
 		{
 			"Name too long",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
+			SeatTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Description too long",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			SeatTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			http.StatusBadRequest,
 		},
 		{
 			"Special characters in name",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Тест <script>", Description: "Valid"},
+			SeatTypeData{Name: "Тест <script>", Description: "Valid"},
 			http.StatusCreated,
 		},
 	}
@@ -702,54 +702,54 @@ func TestScreenTypeConstraintsCreate(t *testing.T) {
 			ts := setupTestServer()
 			defer ts.Close()
 
-			req := createRequest(t, "POST", ts.URL+"/screen-types", generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "POST", ts.URL+"/seat-types", generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestScreenTypeConstraintsUpdate(t *testing.T) {
+func TestSeatTypeConstraintsUpdate(t *testing.T) {
 	tests := []struct {
 		name           string
 		role           string
-		body           ScreenTypeData
+		body           SeatTypeData
 		expectedStatus int
 	}{
 		{
 			"Empty name",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "   ", Description: "Valid"},
+			SeatTypeData{Name: "   ", Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Valid", Description: "   "},
+			SeatTypeData{Name: "Valid", Description: "   "},
 			http.StatusBadRequest,
 		},
 		{
 			"Name too long",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
+			SeatTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Description too long",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
+			SeatTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			http.StatusBadRequest,
 		},
 		{
 			"Special characters in name",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Тест <script>", Description: "Valid"},
+			SeatTypeData{Name: "Тест <script>", Description: "Valid"},
 			http.StatusOK,
 		},
 		{
 			"Valid update",
 			"CLAIM_ROLE_ADMIN",
-			ScreenTypeData{Name: "Valid Name", Description: "Valid Description"},
+			SeatTypeData{Name: "Valid Name", Description: "Valid Description"},
 			http.StatusOK,
 		},
 	}
@@ -760,34 +760,34 @@ func TestScreenTypeConstraintsUpdate(t *testing.T) {
 			defer ts.Close()
 			_ = SeedAll(TestAdminDB)
 
-			screen_typeID := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+			seat_typeID := getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 
-			req := createRequest(t, "PUT", fmt.Sprintf("%s/screen-types/%s", ts.URL, screen_typeID), generateToken(t, tt.role), tt.body)
+			req := createRequest(t, "PUT", fmt.Sprintf("%s/seat-types/%s", ts.URL, seat_typeID), generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 		})
 	}
 }
 
-func TestUpdateConflict(t *testing.T) {
+func TestUpdateSeatConflict(t *testing.T) {
 	ts := setupTestServer()
 	defer ts.Close()
 
 	_ = SeedAll(TestAdminDB)
-	id1 := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
-	id2 := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
+	id1 := getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
+	id2 := getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
 
-	updateData := ScreenTypeData{
+	updateData := SeatTypeData{
 		Name:        id2.Name,
 		Description: "Updated",
 	}
 
-	req := createRequest(t, "PUT", ts.URL+"/screen-types/"+id1.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), updateData)
+	req := createRequest(t, "PUT", ts.URL+"/seat-types/"+id1.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), updateData)
 	resp := executeRequest(t, req, http.StatusConflict)
 	defer resp.Body.Close()
 }
 
-func TestCreateScreenTypeDBError(t *testing.T) {
+func TestCreateSeatTypeDBError(t *testing.T) {
 	ts := setupTestServer()
 	defer ts.Close()
 
@@ -796,9 +796,9 @@ func TestCreateScreenTypeDBError(t *testing.T) {
 	TestGuestDB.Close()
 	TestUserDB.Close()
 
-	req := createRequest(t, "POST", ts.URL+"/screen-types",
+	req := createRequest(t, "POST", ts.URL+"/seat-types",
 		generateToken(t, "CLAIM_ROLE_ADMIN"),
-		ScreenTypeData{
+		SeatTypeData{
 			Name:        "name",
 			Description: "Updated",
 		})

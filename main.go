@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,55 +9,16 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	_ "cw/docs"
 )
 
-var IsTestMode bool
-
-var (
-	TestGuestDB *pgxpool.Pool
-	TestUserDB  *pgxpool.Pool
-	TestAdminDB *pgxpool.Pool
-)
-
-func InitTestDB() error {
-	var err error
-	ctx := context.Background()
-
-	TestGuestDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
-		os.Getenv("TEST_GUEST_USER"),
-		os.Getenv("TEST_DB_NAME"),
-		os.Getenv("TEST_GUEST_PASSWORD")))
-	if err != nil {
-		return fmt.Errorf("ошибка подключения гостя: %v", err)
-	}
-
-	TestUserDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
-		os.Getenv("TEST_USER_USER"),
-		os.Getenv("TEST_DB_NAME"),
-		os.Getenv("TEST_USER_PASSWORD")))
-	if err != nil {
-		return fmt.Errorf("ошибка подключения пользователя: %v", err)
-	}
-
-	TestAdminDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
-		os.Getenv("TEST_ADMIN_USER"),
-		os.Getenv("TEST_DB_NAME"),
-		os.Getenv("TEST_ADMIN_PASSWORD")))
-	if err != nil {
-		return fmt.Errorf("ошибка подключения администратора: %v", err)
-	}
-
-	return nil
-}
-
-// @title Your API Title
+// @title Курсовая работа по базам данных
 // @version 1.0
-// @description This is a sample
+// @description Разработка базы данных для управления кинотеатром
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
@@ -77,16 +37,83 @@ func main() {
 	defer UserDB.Close()
 	defer GuestDB.Close()
 
-	// if err := CreateAll(AdminDB); err != nil {
-	// 	log.Fatal("ошибка создания таблиц БД: ", err)
-	// }
-
 	if err := SeedAll(AdminDB); err != nil {
 		log.Fatal("ошибка вставки данных: ", err)
 	}
 
 	log.Println("Сервер запущен на http://localhost:8080")
 	http.ListenAndServe(":8080", NewRouter())
+}
+
+func NewRouter() *http.ServeMux {
+	mux := new(http.ServeMux)
+
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
+
+	mux.HandleFunc("GET /screen-types", Midleware(RoleBasedHandler(GetScreenTypes)))
+	mux.HandleFunc("GET /screen-types/{id}", Midleware(RoleBasedHandler(GetScreenTypeByID)))
+	mux.HandleFunc("POST /screen-types", Midleware(RoleBasedHandler(CreateScreenType)))
+	mux.HandleFunc("PUT /screen-types/{id}", Midleware(RoleBasedHandler(UpdateScreenType)))
+	mux.HandleFunc("DELETE /screen-types/{id}", Midleware(RoleBasedHandler(DeleteScreenType)))
+
+	mux.HandleFunc("GET /genres", Midleware(RoleBasedHandler(GetGenres)))
+	mux.HandleFunc("GET /genres/{id}", Midleware(RoleBasedHandler(GetGenreByID)))
+	mux.HandleFunc("POST /genres", Midleware(RoleBasedHandler(CreateGenre)))
+	mux.HandleFunc("PUT /genres/{id}", Midleware(RoleBasedHandler(UpdateGenre)))
+	mux.HandleFunc("DELETE /genres/{id}", Midleware(RoleBasedHandler(DeleteGenre)))
+
+	mux.HandleFunc("GET /halls", Midleware(RoleBasedHandler(GetHalls)))
+	mux.HandleFunc("GET /halls/{id}", Midleware(RoleBasedHandler(GetHallByID)))
+	mux.HandleFunc("POST /halls", Midleware(RoleBasedHandler(CreateHall)))
+	mux.HandleFunc("PUT /halls/{id}", Midleware(RoleBasedHandler(UpdateHall)))
+	mux.HandleFunc("DELETE /halls/{id}", Midleware(RoleBasedHandler(DeleteHall)))
+
+	mux.HandleFunc("GET /movies", Midleware(RoleBasedHandler(GetMovies)))
+	mux.HandleFunc("GET /movies/by-title/search", Midleware(RoleBasedHandler(SearchMovies)))
+	mux.HandleFunc("GET /movies/by-genres/search", Midleware(RoleBasedHandler(GetMoviesByAllGenres)))
+	mux.HandleFunc("GET /movies/{id}", Midleware(RoleBasedHandler(GetMovieByID)))
+	mux.HandleFunc("POST /movies", Midleware(RoleBasedHandler(CreateMovie)))
+	mux.HandleFunc("PUT /movies/{id}", Midleware(RoleBasedHandler(UpdateMovie)))
+	mux.HandleFunc("DELETE /movies/{id}", Midleware(RoleBasedHandler(DeleteMovie)))
+
+	mux.HandleFunc("GET /movie-shows", Midleware(RoleBasedHandler(GetMovieShows)))
+	mux.HandleFunc("GET /movie-shows/{id}", Midleware(RoleBasedHandler(GetMovieShowByID)))
+	mux.HandleFunc("POST /movie-shows", Midleware(RoleBasedHandler(CreateMovieShow)))
+	mux.HandleFunc("PUT /movie-shows/{id}", Midleware(RoleBasedHandler(UpdateMovieShow)))
+	mux.HandleFunc("DELETE /movie-shows/{id}", Midleware(RoleBasedHandler(DeleteMovieShow)))
+
+	mux.HandleFunc("GET /reviews", Midleware(RoleBasedHandler(GetReviews)))
+	mux.HandleFunc("GET /reviews/{id}", Midleware(RoleBasedHandler(GetReviewByID)))
+	mux.HandleFunc("POST /reviews", Midleware(RoleBasedHandler(CreateReview)))
+	mux.HandleFunc("PUT /reviews/{id}", Midleware(RoleBasedHandler(UpdateReview)))
+	mux.HandleFunc("DELETE /reviews/{id}", Midleware(RoleBasedHandler(DeleteReview)))
+
+	mux.HandleFunc("GET /seats", Midleware(RoleBasedHandler(GetSeats)))
+	mux.HandleFunc("GET /seats/{id}", Midleware(RoleBasedHandler(GetSeatByID)))
+	mux.HandleFunc("POST /seats", Midleware(RoleBasedHandler(CreateSeat)))
+	mux.HandleFunc("PUT /seats/{id}", Midleware(RoleBasedHandler(UpdateSeat)))
+	mux.HandleFunc("DELETE /seats/{id}", Midleware(RoleBasedHandler(DeleteSeat)))
+
+	mux.HandleFunc("GET /seat-types", Midleware(RoleBasedHandler(GetSeatTypes)))
+	mux.HandleFunc("GET /seat-types/{id}", Midleware(RoleBasedHandler(GetSeatTypeByID)))
+	mux.HandleFunc("POST /seat-types", Midleware(RoleBasedHandler(CreateSeatType)))
+	mux.HandleFunc("PUT /seat-types/{id}", Midleware(RoleBasedHandler(UpdateSeatType)))
+	mux.HandleFunc("DELETE /seat-types/{id}", Midleware(RoleBasedHandler(DeleteSeatType)))
+
+	mux.HandleFunc("GET /tickets/movie-show/{movie_show_id}", Midleware(RoleBasedHandler(GetTicketsByMovieShowID)))
+	mux.HandleFunc("GET /tickets/{id}", Midleware(RoleBasedHandler(GetTicketByID)))
+	mux.HandleFunc("POST /tickets", Midleware(RoleBasedHandler(CreateTicket)))
+	mux.HandleFunc("PUT /tickets/{id}", Midleware(RoleBasedHandler(UpdateTicket)))
+	mux.HandleFunc("DELETE /tickets/{id}", Midleware(RoleBasedHandler(DeleteTicket)))
+
+	mux.HandleFunc("GET /users", Midleware(RoleBasedHandler(GetUsers)))
+	mux.HandleFunc("PUT /user/register", Midleware(RoleBasedHandler(RegisterUser)))
+	mux.HandleFunc("GET /user/login", Midleware(RoleBasedHandler(LoginUser)))
+	mux.HandleFunc("GET /users/{id}", Midleware(RoleBasedHandler(GetUserByID)))
+	mux.HandleFunc("PUT /users/{id}", Midleware(RoleBasedHandler(UpdateUser)))
+	mux.HandleFunc("DELETE /users/{id}", Midleware(RoleBasedHandler(DeleteUser)))
+
+	return mux
 }
 
 type Claims struct {
@@ -135,6 +162,37 @@ func InitDB() error {
 	return nil
 }
 
+func InitTestDB() error {
+	var err error
+	ctx := context.Background()
+
+	TestGuestDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_GUEST_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_GUEST_PASSWORD")))
+	if err != nil {
+		return fmt.Errorf("ошибка подключения гостя: %v", err)
+	}
+
+	TestUserDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_USER_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_USER_PASSWORD")))
+	if err != nil {
+		return fmt.Errorf("ошибка подключения пользователя: %v", err)
+	}
+
+	TestAdminDB, err = pgxpool.New(ctx, fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
+	if err != nil {
+		return fmt.Errorf("ошибка подключения администратора: %v", err)
+	}
+
+	return nil
+}
+
 func Midleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
@@ -171,6 +229,13 @@ func GenerateToken(email, role string) (string, error) {
 	return token.SignedString(SecretKey)
 }
 
+var IsTestMode bool
+var (
+	TestGuestDB *pgxpool.Pool
+	TestUserDB  *pgxpool.Pool
+	TestAdminDB *pgxpool.Pool
+)
+
 func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		role := r.Header.Get("Role")
@@ -201,49 +266,4 @@ func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.Hand
 
 		handler(db)(w, r)
 	}
-}
-
-func ParseUUIDFromPath(w http.ResponseWriter, pathValue string) (uuid.UUID, bool) {
-	id, err := uuid.Parse(pathValue)
-	if err != nil {
-		http.Error(w, "Неверный формат UUID", http.StatusBadRequest)
-		return uuid.Nil, false
-	}
-	return id, true
-}
-
-func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool {
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(v); err != nil {
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
-		return false
-	}
-	return true
-}
-
-func HandleDatabaseError(w http.ResponseWriter, err error, entity string) bool {
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Ошибка при работе с %s: %v", entity, err), http.StatusInternalServerError)
-		return true
-	}
-	return false
-}
-
-func CheckRowsAffected(w http.ResponseWriter, rowsAffected int64) bool {
-	if rowsAffected == 0 {
-		http.Error(w, "Данные не найдены", http.StatusNotFound)
-		return false
-	}
-	return true
-}
-
-func ValidateRequiredFields(w http.ResponseWriter, fields map[string]string) bool {
-	for field, value := range fields {
-		if value == "" {
-			http.Error(w, fmt.Sprintf("Поле '%s' не может быть пустым", field), http.StatusBadRequest)
-			return false
-		}
-	}
-	return true
 }

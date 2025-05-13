@@ -14,7 +14,7 @@ import (
 // @Tags movie-shows
 // @Produce json
 // @Success 200 {array} MovieShow
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movie-shows [get]
 func GetMovieShows(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -43,8 +43,8 @@ func GetMovieShows(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Param id path string true "ID показа фильма"
 // @Success 200 {object} MovieShow
-// @Failure 404 {string} string "Показ фильма не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 404 {object} ErrorResponse "Показ фильма не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movie-shows/{id} [get]
 func GetMovieShowByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -70,8 +70,8 @@ func GetMovieShowByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Param movie_show body MovieShow true "Показ фильма"
 // @Success 201 {object} MovieShow
-// @Failure 400 {string} string "Неверный запрос"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 400 {object} ErrorResponse "Неверный запрос"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movie-shows [post]
 func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -100,9 +100,9 @@ func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 // @Param id path string true "ID показа фильма"
 // @Param movie_show body MovieShow true "Обновлённые данные показа"
 // @Success 200 {object} MovieShow
-// @Failure 400 {string} string "Неверный JSON"
-// @Failure 404 {string} string "Показ не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 400 {object} ErrorResponse "Неверный JSON"
+// @Failure 404 {object} ErrorResponse "Показ не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movie-shows/{id} [put]
 func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +117,7 @@ func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 		res, err := db.Exec(context.Background(), "UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4 WHERE id=$5",
 			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, ms.ID)
 		if err != nil {
-			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
+			http.Error(w, "Ошибка при обновлёнии", http.StatusInternalServerError)
 			return
 		}
 		rows := res.RowsAffected()
@@ -133,15 +133,15 @@ func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 // @Tags movie-shows
 // @Param id path string true "ID показа фильма"
 // @Success 204 {string} string "Удалено"
-// @Failure 404 {string} string "Показ не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 404 {object} ErrorResponse "Показ не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movie-shows/{id} [delete]
 func DeleteMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		res, err := db.Exec(context.Background(), "DELETE FROM movie_shows WHERE id = $1", id)
 		if err != nil {
-			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
+			http.Error(w, "Ошибка при удалёнии", http.StatusInternalServerError)
 			return
 		}
 		rows := res.RowsAffected()

@@ -53,8 +53,8 @@ func validateScreenTypeDesctiption(description string) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} ScreenType "Список типов оборудования"
-// @Failure 404 {string} string "Типы оборудования не найдены"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 404 {object} ErrorResponse "Типы оборудования не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types [get]
 func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -83,15 +83,15 @@ func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить тип оборудования по ID
-// @Description Возвращает тип оборудования по его UUID
+// @Description Возвращает тип оборудования по его ID
 // @Tags screen-types
 // @Produce json
 // @Param id path string true "UUID типа оборудования"
 // @Security BearerAuth
 // @Success 200 {object} ScreenType "Тип оборудования"
-// @Failure 400 {string} string "Неверный формат UUID"
-// @Failure 404 {string} string "Тип оборудования не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 404 {object} ErrorResponse "Тип оборудования не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types/{id} [get]
 func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -115,16 +115,16 @@ func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Создать тип оборудования
-// @Description Создает новый тип оборудования
+// @Description Создаёт новый тип оборудования
 // @Tags screen-types
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param screen_type body ScreenTypeData true "Данные типа оборудования"
 // @Success 201 {object} string "UUID созданного типа оборудования"
-// @Failure 400 {string} string "Неверный формат JSON"
-// @Failure 403 {string} string "Доступ запрещен"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 400 {object} ErrorResponse "Неверный формат JSON"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types [post]
 func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -156,13 +156,13 @@ func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Param id path string true "UUID типа оборудования"
-// @Param screen_type body ScreenTypeData true "Обновленные данные типа оборудования"
+// @Param screen_type body ScreenTypeData true "Обновлённые данные типа оборудования"
 // @Security BearerAuth
-// @Success 200 "Тип оборудования успешно обновлен"
-// @Failure 400 {string} string "Неверный формат UUID/JSON или пустые поля"
-// @Failure 403 {string} string "Доступ запрещен"
-// @Failure 404 {string} string "Тип оборудования не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Success 200 "Тип оборудования успешно обновлён"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID/JSON или пустые поля"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Тип оборудования не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types/{id} [put]
 func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -196,15 +196,15 @@ func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить тип оборудования
-// @Description Удаляет тип оборудования по его UUID
+// @Description Удаляет тип оборудования по его ID
 // @Tags screen-types
 // @Param id path string true "UUID типа оборудования"
 // @Security BearerAuth
-// @Success 204 "Тип оборудования успешно удален"
-// @Failure 400 {string} string "Неверный формат UUID"
-// @Failure 403 {string} string "Доступ запрещен"
-// @Failure 404 {string} string "Тип оборудования не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Success 204 "Тип оборудования успешно удалён"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Тип оборудования не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /screen-types/{id} [delete]
 func DeleteScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

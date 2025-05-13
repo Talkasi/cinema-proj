@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 
@@ -11,18 +12,31 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllGenreData(w http.ResponseWriter, g GenreData) bool {
+func validateAllGenreData(w http.ResponseWriter, g GenreData) (bool, GenreData) {
+	var err error
+	g.Name, err = PrepareString(g.Name, nil)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("ошибка валидации имени: %v", err.Error()), http.StatusBadRequest)
+		return false, g
+	}
+
+	g.Description, err = PrepareString(g.Description, nil)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("ошибка валидации описания: %v", err.Error()), http.StatusBadRequest)
+		return false, g
+	}
+
 	if err := validateGenreName(g.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
+		return false, g
 	}
 
 	if err := validateGenreDescription(g.Description); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
+		return false, g
 	}
 
-	return true
+	return true, g
 }
 
 func validateGenreName(name string) error {
@@ -53,13 +67,13 @@ func validateGenreDescription(description string) error {
 }
 
 // @Summary Получить все жанры
-// @Description Возвращает список всех жанров
-// @Tags genres
+// @Description Возвращает список всех жанров, хранящихся в базе данных.
+// @Tags Жанры фильмов
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} Genre "Список жанров"
-// @Failure 404 {string} string "Жанры не найдены"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 404 {object} ErrorResponse "Жанры не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres [get]
 func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -87,16 +101,16 @@ func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить жанр по ID
-// @Description Возвращает жанр по его UUID
-// @Tags genres
+// @Summary Получить жанр по его ID
+// @Description Возвращает жанр по его ID.
+// @Tags Жанры фильмов
 // @Produce json
-// @Param id path string true "UUID жанра"
+// @Param id path string true "ID жанра"
 // @Security BearerAuth
 // @Success 200 {object} Genre "Жанр"
-// @Failure 400 {string} string "Неверный формат UUID"
-// @Failure 404 {string} string "Жанр не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 404 {object} ErrorResponse "Жанр не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [get]
 func GetGenreByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -120,16 +134,16 @@ func GetGenreByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Создать жанр
-// @Description Создает новый жанр
-// @Tags genres
+// @Description Создаёт новый жанр.
+// @Tags Жанры фильмов
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param genre body GenreData true "Данные жанра"
-// @Success 201 {object} string "UUID созданного жанра"
-// @Failure 400 {string} string "Неверный формат JSON"
-// @Failure 403 {string} string "Доступ запрещен"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Success 201 {object} CreateResponse "ID созданного жанра"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres [post]
 func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +151,9 @@ func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 		if !DecodeJSONBody(w, r, &g) {
 			return
 		}
-		if !validateAllGenreData(w, g) {
+
+		var ok bool
+		if ok, g = validateAllGenreData(w, g); !ok {
 			return
 		}
 
@@ -156,18 +172,18 @@ func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Обновить жанр
-// @Description Обновляет существующий жанр
-// @Tags genres
+// @Description Обновляет существующий жанр.
+// @Tags Жанры фильмов
 // @Accept json
 // @Produce json
-// @Param id path string true "UUID жанра"
-// @Param genre body GenreData true "Обновленные данные жанра"
+// @Param id path string true "ID жанра"
+// @Param genre body GenreData true "Новые данные жанра"
 // @Security BearerAuth
-// @Success 200 "Жанр успешно обновлен"
-// @Failure 400 {string} string "Неверный формат UUID/JSON или пустые поля"
-// @Failure 403 {string} string "Доступ запрещен"
-// @Failure 404 {string} string "Жанр не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Success 200 "Данные о жанре успешно обновлены"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Жанр не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [put]
 func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -181,7 +197,7 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		if !validateAllGenreData(w, g) {
+		if ok, g = validateAllGenreData(w, g); !ok {
 			return
 		}
 
@@ -202,15 +218,15 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить жанр
-// @Description Удаляет жанр по его UUID
-// @Tags genres
-// @Param id path string true "UUID жанра"
+// @Description Удаляет жанр по его ID.
+// @Tags Жанры фильмов
+// @Param id path string true "ID жанра"
 // @Security BearerAuth
-// @Success 204 "Жанр успешно удален"
-// @Failure 400 {string} string "Неверный формат UUID"
-// @Failure 403 {string} string "Доступ запрещен"
-// @Failure 404 {string} string "Жанр не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Success 204 "Данные о жанре успешно удалены"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Жанр не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [delete]
 func DeleteGenre(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

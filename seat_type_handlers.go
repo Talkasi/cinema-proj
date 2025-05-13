@@ -2,65 +2,109 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func validateAllSeatTypeData(w http.ResponseWriter, s SeatTypeData) bool {
+	if err := validateSeatTypeName(s.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+	if err := validateSeatTypeDescription(s.Description); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+func validateSeatTypeName(name string) error {
+	if len(name) == 0 || !regexp.MustCompile(`\S`).MatchString(name) {
+		return errors.New("имя не может быть пустым или состоять только из пробелов")
+	}
+	if len(name) > 100 {
+		return errors.New("имя не может превышать 100 символов")
+	}
+	return nil
+}
+
+func validateSeatTypeDescription(desc string) error {
+	if len(desc) == 0 || !regexp.MustCompile(`\S`).MatchString(desc) {
+		return errors.New("описание не может быть пустым или состоять только из пробелов")
+	}
+	if len(desc) > 1000 {
+		return errors.New("описание не может превышать 1000 символов")
+	}
+	return nil
+}
+
 // @Summary Получить все типы мест
 // @Tags seat-types
 // @Produce json
+// @Security BearerAuth
 // @Success 200 {array} SeatType
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 404 {object} ErrorResponse "Типы мест не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types [get]
 func GetSeatTypes(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query(context.Background(), "SELECT id, name, description FROM seat_types")
-		if err != nil {
-			http.Error(w, "Ошибка при получении типов мест", http.StatusInternalServerError)
+		if HandleDatabaseError(w, err, "типами мест") {
 			return
 		}
 		defer rows.Close()
 
-		var seatTypes []SeatType
+		var types []SeatType
 		for rows.Next() {
-			var st SeatType
-			if err := rows.Scan(&st.ID, &st.Name, &st.Description); err != nil {
-				http.Error(w, "Ошибка при сканировании", http.StatusInternalServerError)
+			var s SeatType
+			if err := rows.Scan(&s.ID, &s.Name, &s.Description); HandleDatabaseError(w, err, "типом места") {
 				return
 			}
-			seatTypes = append(seatTypes, st)
+			types = append(types, s)
 		}
-		json.NewEncoder(w).Encode(seatTypes)
+
+		if len(types) == 0 {
+			http.Error(w, "Типы мест не найдены", http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(types)
 	}
 }
 
 // @Summary Получить тип места по ID
 // @Tags seat-types
 // @Produce json
-// @Param id path string true "ID типа места"
+// @Security BearerAuth
+// @Param id path string true "UUID типа места"
 // @Success 200 {object} SeatType
-// @Failure 404 {string} string "Тип места не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 404 {object} ErrorResponse "Тип места не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types/{id} [get]
 func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		var st SeatType
-		err := db.QueryRow(context.Background(), "SELECT id, name, description FROM seat_types WHERE id = $1", id).
-			Scan(&st.ID, &st.Name, &st.Description)
-
-		if err == sql.ErrNoRows {
-			http.Error(w, "Тип места не найден", http.StatusNotFound)
-			return
-		} else if err != nil {
-			http.Error(w, "Ошибка при получении", http.StatusInternalServerError)
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
 			return
 		}
-		json.NewEncoder(w).Encode(st)
+
+		var s SeatType
+		s.ID = id.String()
+		err := db.QueryRow(context.Background(),
+			"SELECT name, description FROM seat_types WHERE id = $1", id).
+			Scan(&s.Name, &s.Description)
+
+		if IsError(w, err) {
+			return
+		}
+
+		json.NewEncoder(w).Encode(s)
 	}
 }
 
@@ -68,28 +112,34 @@ func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Tags seat-types
 // @Accept json
 // @Produce json
-// @Param seat_type body SeatType true "Тип места"
-// @Success 201 {object} SeatType
-// @Failure 400 {string} string "Неверный запрос"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Security BearerAuth
+// @Param seat_type body SeatTypeData true "Данные типа места"
+// @Success 201 {object} string "UUID созданного типа"
+// @Failure 400 {object} ErrorResponse "Неверный формат JSON или пустые поля"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types [post]
 func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var st SeatType
-		if err := json.NewDecoder(r.Body).Decode(&st); err != nil {
-			http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		var s SeatTypeData
+		if !DecodeJSONBody(w, r, &s) {
 			return
 		}
-		st.ID = uuid.New().String()
+		if !validateAllSeatTypeData(w, s) {
+			return
+		}
 
-		_, err := db.Exec(context.Background(), "INSERT INTO seat_types (id, name, description) VALUES ($1, $2, $3)",
-			st.ID, st.Name, st.Description)
-		if err != nil {
-			http.Error(w, "Ошибка при вставке", http.StatusInternalServerError)
+		id := uuid.New()
+		_, err := db.Exec(context.Background(),
+			"INSERT INTO seat_types (id, name, description) VALUES ($1, $2, $3)",
+			id, s.Name, s.Description)
+
+		if IsError(w, err) {
 			return
 		}
+
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(st)
+		json.NewEncoder(w).Encode(id.String())
 	}
 }
 
@@ -97,58 +147,72 @@ func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 // @Tags seat-types
 // @Accept json
 // @Produce json
-// @Param id path string true "ID типа места"
-// @Param seat_type body SeatType true "Обновлённые данные типа"
-// @Success 200 {object} SeatType
-// @Failure 400 {string} string "Неверный JSON"
-// @Failure 404 {string} string "Тип не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Security BearerAuth
+// @Param id path string true "UUID типа места"
+// @Param seat_type body SeatTypeData true "Обновлённые данные типа"
+// @Success 200 "Тип места успешно обновлён"
+// @Failure 400 {object} ErrorResponse "Неверный UUID/JSON или пустые поля"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Тип места не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types/{id} [put]
 func UpdateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		var st SeatType
-		if err := json.NewDecoder(r.Body).Decode(&st); err != nil {
-			http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
 			return
 		}
-		st.ID = id
 
-		res, err := db.Exec(context.Background(), "UPDATE seat_types SET name=$1, description=$2 WHERE id=$3",
-			st.Name, st.Description, st.ID)
-		if err != nil {
-			http.Error(w, "Ошибка при обновлении", http.StatusInternalServerError)
+		var s SeatTypeData
+		if !DecodeJSONBody(w, r, &s) {
 			return
 		}
-		rows := res.RowsAffected()
-		if rows == 0 {
-			http.Error(w, "Тип места не найден", http.StatusNotFound)
+		if !validateAllSeatTypeData(w, s) {
 			return
 		}
-		json.NewEncoder(w).Encode(st)
+
+		res, err := db.Exec(context.Background(),
+			"UPDATE seat_types SET name=$1, description=$2 WHERE id=$3",
+			s.Name, s.Description, id)
+
+		if IsError(w, err) {
+			return
+		}
+		if !CheckRowsAffected(w, res.RowsAffected()) {
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 // @Summary Удалить тип места
 // @Tags seat-types
-// @Param id path string true "ID типа места"
-// @Success 204 {string} string "Удалено"
-// @Failure 404 {string} string "Тип не найден"
-// @Failure 500 {string} string "Ошибка сервера"
+// @Param id path string true "UUID типа места"
+// @Security BearerAuth
+// @Success 204 "Тип места успешно удалён"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Тип места не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /seat-types/{id} [delete]
 func DeleteSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		res, err := db.Exec(context.Background(), "DELETE FROM seat_types WHERE id = $1", id)
-		if err != nil {
-			http.Error(w, "Ошибка при удалении", http.StatusInternalServerError)
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
 			return
 		}
-		rows := res.RowsAffected()
-		if rows == 0 {
-			http.Error(w, "Тип места не найден", http.StatusNotFound)
+
+		res, err := db.Exec(context.Background(),
+			"DELETE FROM seat_types WHERE id = $1", id)
+
+		if IsError(w, err) {
 			return
 		}
+		if !CheckRowsAffected(w, res.RowsAffected()) {
+			return
+		}
+
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

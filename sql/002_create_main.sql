@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS movies (
     box_office_revenue DECIMAL(15,2) NOT NULL DEFAULT 0 CHECK (box_office_revenue >= 0),
     release_date DATE NOT NULL, -- can be IN the future
     CONSTRAINT valid_title CHECK (title ~ '\S'),
-    CONSTRAINT valid_duration CHECK (duration >= '00:00:00'),
+    CONSTRAINT valid_duration CHECK (duration > '00:00:00'),
     CONSTRAINT valid_rating CHECK (rating >= 0 AND rating <= 10),
     CONSTRAINT valid_description CHECK (description ~ '\S'),
     CONSTRAINT valid_age_limit CHECK (age_limit IN (0, 6, 12, 16, 18))
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS halls (
 );
 
 CREATE TABLE IF NOT EXISTS movies_genres (
-    movie_id UUID REFERENCES movies(id),
+    movie_id UUID REFERENCES movies(id) ON DELETE CASCADE,
     genre_id UUID REFERENCES genres(id),
     PRIMARY KEY (movie_id, genre_id)
 );
@@ -105,7 +105,7 @@ BEGIN
              NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > start_time)
         )
     ) THEN
-        RAISE EXCEPTION 'Невозможно запланировать показ, поскольку в это время зал будет занят показом другого фильма или будет проводиться уборка';
+        RAISE EXCEPTION 'Невозможно запланировать показ, поскольку в это время кинозал будет занят показом другого фильма или будет проводиться уборка';
     END IF;
 
     RETURN NEW;
@@ -175,11 +175,11 @@ FOR EACH ROW
 EXECUTE FUNCTION update_box_office_revenue();
 
 CREATE TABLE IF NOT EXISTS reviews (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
-    movie_id UUID REFERENCES movies(id),
+    movie_id UUID REFERENCES movies(id) ON DELETE CASCADE,
     rating DECIMAL(3,2) NOT NULL CHECK (rating >= 0 AND rating <= 10),
     review_comment TEXT,
     CONSTRAINT unique_review UNIQUE (user_id, movie_id),
-    CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S')
+    CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S'),
+    PRIMARY KEY (movie_id, user_id)
 );

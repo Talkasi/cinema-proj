@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -82,6 +84,51 @@ func isTransactionIsolationViolation(err error) bool {
 	return false
 }
 
+func ParseUUIDFromPath(w http.ResponseWriter, pathValue string) (uuid.UUID, bool) {
+	id, err := uuid.Parse(pathValue)
+	if err != nil {
+		http.Error(w, "Неверный формат ID", http.StatusBadRequest)
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(v); err != nil {
+		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+func HandleDatabaseError(w http.ResponseWriter, err error, entity string) bool {
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Ошибка при работе с %s: %v", entity, err), http.StatusInternalServerError)
+		return true
+	}
+	return false
+}
+
+func CheckRowsAffected(w http.ResponseWriter, rowsAffected int64) bool {
+	if rowsAffected == 0 {
+		http.Error(w, "Данные не найдены", http.StatusNotFound)
+		return false
+	}
+	return true
+}
+
+func ValidateRequiredFields(w http.ResponseWriter, fields map[string]string) bool {
+	for field, value := range fields {
+		if value == "" {
+			http.Error(w, fmt.Sprintf("Поле '%s' не может быть пустым", field), http.StatusBadRequest)
+			return false
+		}
+	}
+	return true
+}
+
 func IsError(w http.ResponseWriter, err error) bool {
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -89,7 +136,7 @@ func IsError(w http.ResponseWriter, err error) bool {
 			return true
 		}
 		if isPermissionDenied(err) {
-			http.Error(w, "Доступ запрещен", http.StatusForbidden)
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return true
 		}
 		if isNoRows(err) {
@@ -109,7 +156,7 @@ func IsError(w http.ResponseWriter, err error) bool {
 			return true
 		}
 		if isSyntaxError(err) {
-			http.Error(w, "ОШИБКА SQL ЗАПРОСА", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("ОШИБКА SQL ЗАПРОСА, %v\n", err), http.StatusInternalServerError)
 			return true
 		}
 		if isNotNullViolation(err) {
