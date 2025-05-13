@@ -12,6 +12,9 @@ import (
 )
 
 func validateAllScreenTypeData(w http.ResponseWriter, e ScreenTypeData) bool {
+	e.Name = PrepareString(e.Name)
+	e.Description = PrepareString(e.Description)
+
 	if err := validateScreenTypeName(e.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false

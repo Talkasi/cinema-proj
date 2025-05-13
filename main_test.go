@@ -30,6 +30,7 @@ func generateToken(t *testing.T, role string) string {
 }
 
 func executeRequest(t *testing.T, req *http.Request, expectedStatus int) *http.Response {
+	t.Helper()
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
@@ -76,6 +77,7 @@ func createRequest(t *testing.T, method, url, token string, body interface{}) *h
 }
 
 func parseResponseBody(t *testing.T, resp *http.Response, v interface{}) {
+	t.Helper()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Errorf("Error reading response body: %v", err)

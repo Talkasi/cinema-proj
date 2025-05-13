@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 
@@ -12,31 +11,21 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllGenreData(w http.ResponseWriter, g GenreData) (bool, GenreData) {
-	var err error
-	g.Name, err = PrepareString(g.Name, nil)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("ошибка валидации имени: %v", err.Error()), http.StatusBadRequest)
-		return false, g
-	}
-
-	g.Description, err = PrepareString(g.Description, nil)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("ошибка валидации описания: %v", err.Error()), http.StatusBadRequest)
-		return false, g
-	}
+func validateAllGenreData(w http.ResponseWriter, g GenreData) bool {
+	g.Name = PrepareString(g.Name)
+	g.Description = PrepareString(g.Description)
 
 	if err := validateGenreName(g.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false, g
+		return false
 	}
 
 	if err := validateGenreDescription(g.Description); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false, g
+		return false
 	}
 
-	return true, g
+	return true
 }
 
 func validateGenreName(name string) error {
@@ -102,11 +91,11 @@ func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить жанр по его ID
-// @Description Возвращает жанр по его ID.
+// @Description Возвращает жанр по ID.
 // @Tags Жанры фильмов
 // @Produce json
-// @Param id path string true "ID жанра"
 // @Security BearerAuth
+// @Param id path string true "ID жанра"
 // @Success 200 {object} Genre "Жанр"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 404 {object} ErrorResponse "Жанр не найден"
@@ -152,8 +141,7 @@ func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var ok bool
-		if ok, g = validateAllGenreData(w, g); !ok {
+		if !validateAllGenreData(w, g) {
 			return
 		}
 
@@ -176,9 +164,9 @@ func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 // @Tags Жанры фильмов
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID жанра"
 // @Param genre body GenreData true "Новые данные жанра"
-// @Security BearerAuth
 // @Success 200 "Данные о жанре успешно обновлены"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -197,7 +185,7 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		if ok, g = validateAllGenreData(w, g); !ok {
+		if !validateAllGenreData(w, g) {
 			return
 		}
 

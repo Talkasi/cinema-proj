@@ -8,7 +8,8 @@ GRANT SELECT ON
     seats,
     seat_types, 
     reviews,
-    users
+    users,
+    movies_genres
 TO cinema_test_guest;
 GRANT INSERT ON users TO cinema_test_guest;
 

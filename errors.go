@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -49,13 +49,6 @@ func isNotNullViolation(err error) bool {
 func isSyntaxError(err error) bool {
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		return pgErr.Code == "42601" // Код ошибки для синтаксической ошибки
-	}
-	return false
-}
-
-func isDivisionByZero(err error) bool {
-	if pgErr, ok := err.(*pgconn.PgError); ok {
-		return pgErr.Code == "22012" // Код ошибки для деления на ноль
 	}
 	return false
 }
@@ -149,10 +142,6 @@ func IsError(w http.ResponseWriter, err error) bool {
 		}
 		if isDataTypeMismatch(err) {
 			http.Error(w, "Неверный тип", http.StatusBadRequest)
-			return true
-		}
-		if isDivisionByZero(err) {
-			http.Error(w, "Ошибка деления на ноль", http.StatusBadRequest)
 			return true
 		}
 		if isSyntaxError(err) {

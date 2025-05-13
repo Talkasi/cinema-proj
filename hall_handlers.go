@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 
@@ -12,41 +11,31 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllHallData(w http.ResponseWriter, h HallData) (bool, HallData) {
-	var err error
-	h.Name, err = PrepareString(h.Name, nil)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("ошибка валидации имени: %v", err.Error()), http.StatusBadRequest)
-		return false, h
-	}
-
-	h.Description, err = PrepareString(h.Description, nil)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("ошибка валидации описания: %v", err.Error()), http.StatusBadRequest)
-		return false, h
-	}
+func validateAllHallData(w http.ResponseWriter, h HallData) bool {
+	h.Name = PrepareString(h.Name)
+	h.Description = PrepareString(h.Description)
 
 	if err := validateHallName(h.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false, h
+		return false
 	}
 
 	if err := validateHallCapacity(h.Capacity); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false, h
+		return false
 	}
 
 	if err := validateScreenTypeID(h.ScreenTypeID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false, h
+		return false
 	}
 
 	if err := validateHallDescription(h.Description); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false, h
+		return false
 	}
 
-	return true, h
+	return true
 }
 
 func validateHallName(name string) error {
@@ -169,8 +158,7 @@ func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var ok bool
-		if ok, h = validateAllHallData(w, h); !ok {
+		if !validateAllHallData(w, h) {
 			return
 		}
 
@@ -215,7 +203,7 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		if ok, h = validateAllHallData(w, h); !ok {
+		if !validateAllHallData(w, h) {
 			return
 		}
 

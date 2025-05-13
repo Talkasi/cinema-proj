@@ -5,16 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Валидаторы для фильмов
 func validateAllMovieData(w http.ResponseWriter, m MovieData) bool {
+	m.Title = PrepareString(m.Title)
+	m.Description = PrepareString(m.Description)
+
 	if err := validateMovieTitle(m.Title); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
@@ -24,11 +29,6 @@ func validateAllMovieData(w http.ResponseWriter, m MovieData) bool {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
-
-	// if err := validateMovieRating(m.Rating); err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return false
-	// }
 
 	if err := validateMovieDescription(m.Description); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -134,22 +134,37 @@ func fetchGenresByMovieID(db *pgxpool.Pool, movieID string) ([]Genre, error) {
 	return genres, nil
 }
 
-func insertMovieGenres(db *pgxpool.Pool, movieID string, genreIDs []string) error {
+func insertMovieGenres(tx pgx.Tx, movieID string, genreIDs []string) error {
+	if len(genreIDs) == 0 {
+		return nil
+	}
+
+	batch := &pgx.Batch{}
 	for _, genreID := range genreIDs {
-		if _, err := db.Exec(context.Background(),
-			"INSERT INTO movies_genres (movie_id, genre_id) VALUES ($1, $2)",
-			movieID, genreID); err != nil {
-			return fmt.Errorf("failed to insert genre %s: %v", genreID, err)
+		batch.Queue("INSERT INTO movies_genres (movie_id, genre_id) VALUES ($1, $2)",
+			movieID, genreID)
+	}
+
+	br := tx.SendBatch(context.Background(), batch)
+	defer br.Close()
+
+	// Проверяем результаты всех запросов в batch
+	for range genreIDs {
+		_, err := br.Exec()
+		if err != nil {
+			return fmt.Errorf("failed to insert movie-genre relation: %w", err)
 		}
 	}
-	return nil
+
+	return br.Close()
 }
 
 // @Summary Получить все фильмы
-// @Tags movies
+// @Description Возвращает список всех фильмов, содержащихся в базе данных.
+// @Tags Фильмы
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} Movie
+// @Success 200 {array} Movie "Список фильмов"
 // @Failure 404 {object} ErrorResponse "Фильмы не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movies [get]
@@ -168,7 +183,7 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 		for rows.Next() {
 			var m Movie
 			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
-				http.Error(w, "Ошибка при сканировании фильма", http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("Ошибка при сканировании фильма %v", err), http.StatusInternalServerError)
 				return
 			}
 
@@ -193,11 +208,12 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить фильм по ID
-// @Tags movies
+// @Description Возвращает фильм по ID.
+// @Tags Фильмы
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID фильма"
-// @Success 200 {object} Movie
+// @Success 200 {object} Movie "Фильм"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 404 {object} ErrorResponse "Фильм не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -231,16 +247,18 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Создать фильм
-// @Tags movies
+// @Description Создаёт новый фильм.
+// @Tags Фильмы
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param movie body MovieData true "Данные фильма"
-// @Success 201 {object} Movie
-// @Failure 400 {object} ErrorResponse "Неверный формат JSON или данные"
+// @Success 201 {object} CreateResponse "ID созданного фильма"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movies [post]
+// @Summary Создать фильм (с транзакцией)
 func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data MovieData
@@ -252,51 +270,51 @@ func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		ctx := context.Background()
+		tx, err := db.Begin(ctx)
+		if IsError(w, err) {
+			return
+		}
+		defer func() {
+			if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+				log.Printf("failed to rollback transaction: %v", err)
+			}
+		}()
+
 		id := uuid.New()
-		_, err := db.Exec(context.Background(), `
-			INSERT INTO movies (id, title, duration, description, age_limit, box_office_revenue, release_date)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-			id, data.Title, data.Duration, data.Description, data.AgeLimit, data.BoxOfficeRevenue, data.ReleaseDate)
+		_, err = tx.Exec(ctx, `
+            INSERT INTO movies (id, title, duration, description, age_limit, box_office_revenue, release_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+			id, data.Title, data.Duration, data.Description,
+			data.AgeLimit, data.BoxOfficeRevenue, data.ReleaseDate)
 		if IsError(w, err) {
 			return
 		}
 
-		err = insertMovieGenres(db, id.String(), data.GenreIDs)
-		if IsError(w, err) {
+		if err := insertMovieGenres(tx, id.String(), data.GenreIDs); IsError(w, err) {
 			return
 		}
 
-		movie := Movie{
-			ID:               id.String(),
-			Title:            data.Title,
-			Duration:         data.Duration,
-			Description:      data.Description,
-			AgeLimit:         data.AgeLimit,
-			BoxOfficeRevenue: data.BoxOfficeRevenue,
-			ReleaseDate:      data.ReleaseDate,
-		}
-
-		genres, err := fetchGenresByMovieID(db, id.String())
-		if IsError(w, err) {
+		if err := tx.Commit(ctx); IsError(w, err) {
 			return
 		}
-		movie.Genres = genres
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(movie)
+		json.NewEncoder(w).Encode(id.String())
 	}
 }
 
 // @Summary Обновить фильм
-// @Tags movies
+// @Description Обновляет существующий фильм.
+// @Tags Фильмы
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID фильма"
-// @Param movie body MovieData true "Обновлённые данные фильма"
-// @Success 200 {object} Movie
-// @Failure 400 {object} ErrorResponse "Неверный формат ID/JSON или данные"
+// @Param movie body MovieData true "Новые данные фильма"
+// @Success 200 "Данные о фильме успешно обновлены"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Фильм не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -317,7 +335,18 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		res, err := db.Exec(context.Background(), `
+		ctx := context.Background()
+		tx, err := db.Begin(ctx)
+		if IsError(w, err) {
+			return
+		}
+		defer func() {
+			if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+				log.Printf("failed to rollback transaction: %v", err)
+			}
+		}()
+
+		res, err := db.Exec(ctx, `
 			UPDATE movies SET title=$1, duration=$2, description=$3, age_limit=$4, box_office_revenue=$5, release_date=$6
 			WHERE id=$7`,
 			data.Title, data.Duration, data.Description, data.AgeLimit, data.BoxOfficeRevenue, data.ReleaseDate, id)
@@ -334,37 +363,26 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		err = insertMovieGenres(db, id.String(), data.GenreIDs)
+		err = insertMovieGenres(tx, id.String(), data.GenreIDs)
 		if IsError(w, err) {
 			return
 		}
 
-		movie := Movie{
-			ID:               id.String(),
-			Title:            data.Title,
-			Duration:         data.Duration,
-			Description:      data.Description,
-			AgeLimit:         data.AgeLimit,
-			BoxOfficeRevenue: data.BoxOfficeRevenue,
-			ReleaseDate:      data.ReleaseDate,
-		}
-
-		genres, err := fetchGenresByMovieID(db, id.String())
-		if IsError(w, err) {
+		if err := tx.Commit(ctx); IsError(w, err) {
 			return
 		}
-		movie.Genres = genres
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(movie)
+		json.NewEncoder(w)
 	}
 }
 
 // @Summary Удалить фильм
-// @Tags movies
+// @Description Удаляет фильм по его ID.
+// @Tags Фильмы
 // @Param id path string true "ID фильма"
 // @Security BearerAuth
-// @Success 204 "Фильм успешно удалён"
+// @Success 204 "Данные о фильме успешно удалены"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Фильм не найден"
@@ -390,11 +408,12 @@ func DeleteMovie(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Поиск фильмов по названию
-// @Tags movies
+// @Description Возвращает фильмы, в названии которых содержится заданная строка.
+// @Tags Фильмы
 // @Produce json
 // @Security BearerAuth
 // @Param query query string true "Поисковый запрос"
-// @Success 200 {array} Movie
+// @Success 200 {array} Movie "Найденные фильмы"
 // @Failure 400 {object} ErrorResponse "Пустой поисковый запрос"
 // @Failure 404 {object} ErrorResponse "Данные не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -442,34 +461,25 @@ func SearchMovies(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить фильмы по списку жанров (строгий поиск)
-// @Description Возвращает только фильмы, которые относятся ко всем указанным жанрам
-// @Tags movies
+// @Summary Получить фильмы по списку жанров
+// @Description Возвращает фильмы, относящиеся ко всем указанным жанрам.
+// @Tags Фильмы
 // @Produce json
 // @Security BearerAuth
 // @Param genre_ids query []string true "Список ID жанров" collectionFormat(multi)
-// @Success 200 {array} Movie
-// @Failure 400 {object} ErrorResponse "Неверный формат ID или не указаны жанры"
+// @Success 200 {array} Movie "Найденные фильмы"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 404 {object} ErrorResponse "Жанры не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movies/by-genres/search [get]
 func GetMoviesByAllGenres(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Получаем список ID жанров из query-параметра
 		genreIDs := r.URL.Query()["genre_ids"]
 		if len(genreIDs) == 0 {
 			http.Error(w, "Не указаны ID жанров", http.StatusBadRequest)
 			return
 		}
 
-		conn, err := db.Acquire(context.Background())
-		if err != nil {
-			http.Error(w, "Ошибка подключения к БД", http.StatusInternalServerError)
-			return
-		}
-		defer conn.Release()
-
-		// Валидируем каждый UUID
 		validGenreIDs := make([]string, 0, len(genreIDs))
 		for _, id := range genreIDs {
 			if _, err := uuid.Parse(id); err != nil {
@@ -479,33 +489,17 @@ func GetMoviesByAllGenres(db *pgxpool.Pool) http.HandlerFunc {
 			validGenreIDs = append(validGenreIDs, id)
 		}
 
-		// Проверяем существование всех жанров
-		var existingGenresCount int
-		err = db.QueryRow(context.Background(),
-			"SELECT COUNT(*) FROM genres WHERE id = ANY($1)", validGenreIDs).
-			Scan(&existingGenresCount)
-		if err != nil {
-			http.Error(w, "Ошибка при проверке жанров", http.StatusInternalServerError)
-			return
-		}
-		if existingGenresCount != len(validGenreIDs) {
-			http.Error(w, "Некоторые жанры не найдены", http.StatusNotFound)
-			return
-		}
-
-		// Получаем фильмы, которые относятся ко всем указанным жанрам
-		query := `
-            SELECT m.id, m.title, m.duration, m.rating, m.description, 
-                   m.age_limit, m.box_office_revenue, m.release_date
-            FROM movies m
-            WHERE NOT EXISTS (
-                SELECT id FROM unnest($1::uuid[]) AS id
-                EXCEPT
-                SELECT genre_id FROM movies_genres WHERE movie_id = m.id
-            )
-            ORDER BY m.title`
-
-		rows, err := db.Query(context.Background(), query, validGenreIDs)
+		rows, err := db.Query(context.Background(), `
+			SELECT *
+			FROM movies
+			WHERE id IN (
+				SELECT movie_id
+				FROM movies_genres
+				WHERE genre_id = ANY($1::uuid[])
+				GROUP BY movie_id
+        		HAVING COUNT(DISTINCT genre_id) = $2
+			)
+			ORDER BY title`, validGenreIDs, len(validGenreIDs))
 		if err != nil {
 			http.Error(w, "Ошибка при получении фильмов: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -529,6 +523,11 @@ func GetMoviesByAllGenres(db *pgxpool.Pool) http.HandlerFunc {
 			m.Genres = genres
 
 			movies = append(movies, m)
+		}
+
+		if len(movies) == 0 {
+			http.Error(w, "Фильмы не найдены", http.StatusNotFound)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")

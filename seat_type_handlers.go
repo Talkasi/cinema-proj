@@ -12,6 +12,9 @@ import (
 )
 
 func validateAllSeatTypeData(w http.ResponseWriter, s SeatTypeData) bool {
+	s.Name = PrepareString(s.Name)
+	s.Description = PrepareString(s.Description)
+
 	if err := validateSeatTypeName(s.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
