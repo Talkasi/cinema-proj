@@ -161,6 +161,22 @@ definitions:
         example: "2023-10-01T14:30:00Z"
         type: string
     type: object
+  main.MovieShowData:
+    properties:
+      hall_id:
+        example: de01f085-dffa-4347-88da-168560207511
+        type: string
+      language:
+        allOf:
+        - $ref: '#/definitions/main.LanguageEnumType'
+        example: Русский
+      movie_id:
+        example: 1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6
+        type: string
+      start_time:
+        example: "2023-10-01T14:30:00Z"
+        type: string
+    type: object
   main.Review:
     properties:
       movie_id:
@@ -269,6 +285,22 @@ definitions:
         allOf:
         - $ref: '#/definitions/main.TicketStatusEnumType'
         example: Purchased
+    type: object
+  main.TicketData:
+    properties:
+      movie_show_id:
+        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
+        type: string
+      price:
+        example: 800
+        type: number
+      seat_id:
+        example: c1bf35fb-4e5f-46cb-914b-bc8d76aaca23
+        type: string
+      ticket_status:
+        allOf:
+        - $ref: '#/definitions/main.TicketStatusEnumType'
+        example: Available
     type: object
   main.TicketStatusEnumType:
     enum:
@@ -698,77 +730,101 @@ paths:
       - users
   /movie-shows:
     get:
+      description: Возвращает список всех киносеансов, хранящихся в базе данных.
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список киносеансов
           schema:
             items:
               $ref: '#/definitions/main.MovieShow'
             type: array
+        "404":
+          description: Киносеансы не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все показы фильмов
+      security:
+      - BearerAuth: []
+      summary: Получить все киносеансы
       tags:
-      - movie-shows
+      - Киносеансы
     post:
       consumes:
       - application/json
+      description: Создаёт новый киносеанс.
       parameters:
-      - description: Показ фильма
+      - description: Данные киносеанса
         in: body
         name: movie_show
         required: true
         schema:
-          $ref: '#/definitions/main.MovieShow'
+          $ref: '#/definitions/main.MovieShowData'
       produces:
       - application/json
       responses:
         "201":
-          description: Created
+          description: ID созданного киносеанса
           schema:
-            $ref: '#/definitions/main.MovieShow'
+            $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: Неверный запрос
+          description: Неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Создать показ фильма
+      security:
+      - BearerAuth: []
+      summary: Создать киносеанс
       tags:
-      - movie-shows
+      - Киносеансы
   /movie-shows/{id}:
     delete:
+      description: Удаляет данные о киносеансе.
       parameters:
-      - description: ID показа фильма
+      - description: ID киносеанса
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Удалено
+          description: Данные о киносеансе удалёны
+        "400":
+          description: Неверный формат ID
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Показ не найден
+          description: Киносеанс не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Удалить показ фильма
+      security:
+      - BearerAuth: []
+      summary: Удалить киносеанс фильма
       tags:
-      - movie-shows
+      - Киносеансы
     get:
+      description: Возвращает даныне о киносеансе по ID.
       parameters:
-      - description: ID показа фильма
+      - description: ID киносеанса фильма
         in: path
         name: id
         required: true
@@ -777,57 +833,68 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Данные киносеанса
           schema:
             $ref: '#/definitions/main.MovieShow'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Показ фильма не найден
+          description: Киносеанс не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить показ фильма по ID
+      security:
+      - BearerAuth: []
+      summary: Получить киносеанс по ID
       tags:
-      - movie-shows
+      - Киносеансы
     put:
       consumes:
       - application/json
+      description: Обновляет данные о киносеансе.
       parameters:
-      - description: ID показа фильма
+      - description: ID киносеанса
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные показа
+      - description: Новые данные киносеанса
         in: body
         name: movie_show
         required: true
         schema:
-          $ref: '#/definitions/main.MovieShow'
+          $ref: '#/definitions/main.MovieShowData'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.MovieShow'
+          description: Данные киносеанса обновлены
         "400":
-          description: Неверный JSON
+          description: Неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
-          description: Показ не найден
+          description: Киносеанс не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Обновить показ фильма
+      security:
+      - BearerAuth: []
+      summary: Обновить киносеанс
       tags:
-      - movie-shows
+      - Киносеансы
   /movies:
     get:
       description: Возвращает список всех фильмов, содержащихся в базе данных.
@@ -1731,8 +1798,149 @@ paths:
       summary: Обновить место
       tags:
       - Места
-  /seats/{movie_show_id}:
+  /tickets:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый билет.
+      parameters:
+      - description: Билет
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/main.TicketData'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID созданного билета
+          schema:
+            $ref: '#/definitions/main.CreateResponse'
+        "400":
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать билет
+      tags:
+      - Билеты
+  /tickets/{id}:
+    delete:
+      description: Удаляет билет по его ID.
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Данные о билете успешно удалены
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Билет не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить билет
+      tags:
+      - Билеты
     get:
+      description: Возвращает билет по ID.
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Билет
+          schema:
+            $ref: '#/definitions/main.Ticket'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Билет не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить билет по ID
+      tags:
+      - Билеты
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий билет.
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные билета
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/main.TicketData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные о билете успешно обновлены
+        "400":
+          description: Неверный формат JSON
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Билет не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить билет
+      tags:
+      - Билеты
+  /tickets/movie-show/{movie_show_id}:
+    get:
+      description: Возвращает список всех билетов по ID сеанаса, содержащихся в базе
+        данных.
       parameters:
       - description: ID показа фильма
         in: path
@@ -1752,148 +1960,11 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все билеты для показа фильма по ID
+      security:
+      - BearerAuth: []
+      summary: Получить все билеты для сеанса фильма по его ID
       tags:
-      - tickets
-  /tickets:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Билет
-        in: body
-        name: ticket
-        required: true
-        schema:
-          $ref: '#/definitions/main.Ticket'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/main.Ticket'
-        "400":
-          description: Неверный JSON
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Создать билет
-      tags:
-      - tickets
-  /tickets/{id}:
-    delete:
-      parameters:
-      - description: ID билета
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: Удалено
-          schema:
-            type: string
-        "404":
-          description: Не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Удалить билет
-      tags:
-      - tickets
-    get:
-      parameters:
-      - description: ID билета
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.Ticket'
-        "404":
-          description: Билет не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить билет по ID
-      tags:
-      - tickets
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID билета
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Обновлённый билет
-        in: body
-        name: ticket
-        required: true
-        schema:
-          $ref: '#/definitions/main.Ticket'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.Ticket'
-        "400":
-          description: Неверный формат JSON
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Билет не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Обновить билет
-      tags:
-      - tickets
-  /tickets/user/{user_id}:
-    get:
-      parameters:
-      - description: ID пользователя
-        in: path
-        name: user_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/main.Ticket'
-            type: array
-        "500":
-          description: Ошибка
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить билеты пользователя
-      tags:
-      - tickets
+      - Билеты
   /users:
     get:
       produces:

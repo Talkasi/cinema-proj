@@ -692,7 +692,7 @@ func TestDeleteMovie(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, getMovieByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
 			},
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Success as Admin",

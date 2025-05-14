@@ -625,7 +625,7 @@ func TestDeleteScreenType(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingScreen,
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Success as Admin",

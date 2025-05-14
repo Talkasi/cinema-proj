@@ -625,7 +625,7 @@ func TestDeleteSeatType(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingSeat,
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Success as Admin",

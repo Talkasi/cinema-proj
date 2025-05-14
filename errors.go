@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -137,7 +138,7 @@ func IsError(w http.ResponseWriter, err error) bool {
 			return true
 		}
 		if isForeignKeyViolation(err) {
-			http.Error(w, "Ошибка внешнего ключа, скорее всего на удаляемый объект ссылаются записи другой таблицы", http.StatusFailedDependency)
+			http.Error(w, "Ошибка внешнего ключа", http.StatusConflict)
 			return true
 		}
 		if isDataTypeMismatch(err) {
@@ -150,6 +151,10 @@ func IsError(w http.ResponseWriter, err error) bool {
 		}
 		if isNotNullViolation(err) {
 			http.Error(w, "Передан null в обязательный непустой параметр", http.StatusInternalServerError)
+			return true
+		}
+		if strings.Contains(err.Error(), "Невозможно запланировать показ") {
+			http.Error(w, err.Error(), http.StatusConflict)
 			return true
 		}
 

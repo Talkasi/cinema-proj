@@ -741,7 +741,7 @@ func TestDeleteGenre(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingGenre,
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Success as Admin",

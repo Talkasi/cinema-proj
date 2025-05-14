@@ -315,7 +315,7 @@ func TestCreateSeat(t *testing.T) {
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
 			},
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Invalid Seat Type ID",
@@ -329,7 +329,7 @@ func TestCreateSeat(t *testing.T) {
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
 			},
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Row number too big",
@@ -692,7 +692,7 @@ func TestDeleteSeat(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingSeat,
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Success as Admin",

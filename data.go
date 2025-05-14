@@ -199,6 +199,13 @@ var MovieShowsData = []MovieShow{
 		StartTime: time.Now().Add(48 * time.Hour),
 		Language:  "Русский",
 	},
+	{
+		ID:        uuid.New().String(),
+		MovieID:   MoviesData[2].ID,
+		HallID:    HallsData[1].ID,
+		StartTime: time.Now().Add(48 * time.Hour),
+		Language:  "Русский",
+	},
 }
 
 var SeatsData = []Seat{

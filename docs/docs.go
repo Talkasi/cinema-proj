@@ -593,21 +593,33 @@ const docTemplate = `{
         },
         "/movie-shows": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех киносеансов, хранящихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "movie-shows"
+                    "Киносеансы"
                 ],
-                "summary": "Получить все показы фильмов",
+                "summary": "Получить все киносеансы",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список киносеансов",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/main.MovieShow"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Киносеансы не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
@@ -619,6 +631,12 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создаёт новый киносеанс.",
                 "consumes": [
                     "application/json"
                 ],
@@ -626,29 +644,35 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movie-shows"
+                    "Киносеансы"
                 ],
-                "summary": "Создать показ фильма",
+                "summary": "Создать киносеанс",
                 "parameters": [
                     {
-                        "description": "Показ фильма",
+                        "description": "Данные киносеанса",
                         "name": "movie_show",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShow"
+                            "$ref": "#/definitions/main.MovieShowData"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "ID созданного киносеанса",
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShow"
+                            "$ref": "#/definitions/main.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "Неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -664,17 +688,23 @@ const docTemplate = `{
         },
         "/movie-shows/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает даныне о киносеансе по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "movie-shows"
+                    "Киносеансы"
                 ],
-                "summary": "Получить показ фильма по ID",
+                "summary": "Получить киносеанс по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID показа фильма",
+                        "description": "ID киносеанса фильма",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -682,13 +712,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Данные киносеанса",
                         "schema": {
                             "$ref": "#/definitions/main.MovieShow"
                         }
                     },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "404": {
-                        "description": "Показ фильма не найден",
+                        "description": "Киносеанс не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -702,6 +738,12 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет данные о киносеансе.",
                 "consumes": [
                     "application/json"
                 ],
@@ -709,42 +751,45 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "movie-shows"
+                    "Киносеансы"
                 ],
-                "summary": "Обновить показ фильма",
+                "summary": "Обновить киносеанс",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID показа фильма",
+                        "description": "ID киносеанса",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные показа",
+                        "description": "Новые данные киносеанса",
                         "name": "movie_show",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShow"
+                            "$ref": "#/definitions/main.MovieShowData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.MovieShow"
-                        }
+                        "description": "Данные киносеанса обновлены"
                     },
                     "400": {
-                        "description": "Неверный JSON",
+                        "description": "Неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Показ не найден",
+                        "description": "Киносеанс не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -758,14 +803,20 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "tags": [
-                    "movie-shows"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
-                "summary": "Удалить показ фильма",
+                "description": "Удаляет данные о киносеансе.",
+                "tags": [
+                    "Киносеансы"
+                ],
+                "summary": "Удалить киносеанс фильма",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID показа фильма",
+                        "description": "ID киносеанса",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -773,13 +824,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Данные о киносеансе удалёны"
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Показ не найден",
+                        "description": "Киносеанс не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2203,15 +2263,78 @@ const docTemplate = `{
                 }
             }
         },
-        "/seats/{movie_show_id}": {
-            "get": {
+        "/tickets": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создаёт новый билет.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "tickets"
+                    "Билеты"
                 ],
-                "summary": "Получить все билеты для показа фильма по ID",
+                "summary": "Создать билет",
+                "parameters": [
+                    {
+                        "description": "Билет",
+                        "name": "ticket",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.TicketData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ID созданного билета",
+                        "schema": {
+                            "$ref": "#/definitions/main.CreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/movie-show/{movie_show_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Билеты"
+                ],
+                "summary": "Получить все билеты для сеанса фильма по его ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -2240,95 +2363,19 @@ const docTemplate = `{
                 }
             }
         },
-        "/tickets": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tickets"
-                ],
-                "summary": "Создать билет",
-                "parameters": [
-                    {
-                        "description": "Билет",
-                        "name": "ticket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.Ticket"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/main.Ticket"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный JSON",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tickets/user/{user_id}": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tickets"
-                ],
-                "summary": "Получить билеты пользователя",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID пользователя",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Ticket"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/tickets/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает билет по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "tickets"
+                    "Билеты"
                 ],
                 "summary": "Получить билет по ID",
                 "parameters": [
@@ -2342,9 +2389,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Билет",
                         "schema": {
                             "$ref": "#/definitions/main.Ticket"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
@@ -2362,6 +2415,12 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет существующий билет.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2369,7 +2428,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tickets"
+                    "Билеты"
                 ],
                 "summary": "Обновить билет",
                 "parameters": [
@@ -2381,21 +2440,18 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Обновлённый билет",
+                        "description": "Обновлённые данные билета",
                         "name": "ticket",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Ticket"
+                            "$ref": "#/definitions/main.TicketData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.Ticket"
-                        }
+                        "description": "Данные о билете успешно обновлены"
                     },
                     "400": {
                         "description": "Неверный формат JSON",
@@ -2418,8 +2474,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет билет по его ID.",
                 "tags": [
-                    "tickets"
+                    "Билеты"
                 ],
                 "summary": "Удалить билет",
                 "parameters": [
@@ -2433,13 +2495,22 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Данные о билете успешно удалены"
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Не найден",
+                        "description": "Билет не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2838,6 +2909,31 @@ const docTemplate = `{
                 }
             }
         },
+        "main.MovieShowData": {
+            "type": "object",
+            "properties": {
+                "hall_id": {
+                    "type": "string",
+                    "example": "de01f085-dffa-4347-88da-168560207511"
+                },
+                "language": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/main.LanguageEnumType"
+                        }
+                    ],
+                    "example": "Русский"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2023-10-01T14:30:00Z"
+                }
+            }
+        },
         "main.Review": {
             "type": "object",
             "properties": {
@@ -2991,6 +3087,31 @@ const docTemplate = `{
                         }
                     ],
                     "example": "Purchased"
+                }
+            }
+        },
+        "main.TicketData": {
+            "type": "object",
+            "properties": {
+                "movie_show_id": {
+                    "type": "string",
+                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 800
+                },
+                "seat_id": {
+                    "type": "string",
+                    "example": "c1bf35fb-4e5f-46cb-914b-bc8d76aaca23"
+                },
+                "ticket_status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/main.TicketStatusEnumType"
+                        }
+                    ],
+                    "example": "Available"
                 }
             }
         },

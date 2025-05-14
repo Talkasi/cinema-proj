@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateTicketData(w http.ResponseWriter, t Ticket) bool {
+func validateTicketData(w http.ResponseWriter, t TicketData) bool {
 	if err := validateTicketStatus(t.Status); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
@@ -40,40 +40,11 @@ func validateTicketStatus(status TicketStatusEnumType) error {
 	return nil
 }
 
-// @Summary Создать билет
-// @Tags tickets
-// @Accept json
+// @Summary Получить все билеты для сеанса фильма по его ID
+// @Description Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.
+// @Tags Билеты
 // @Produce json
-// @Param ticket body Ticket true "Билет"
-// @Success 201 {object} Ticket
-// @Failure 400 {object} ErrorResponse "Неверный JSON"
-// @Failure 500 {object} ErrorResponse "Ошибка сервера"
-// @Router /tickets [post]
-func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var t Ticket
-		if !DecodeJSONBody(w, r, &t) {
-			return
-		}
-		t.ID = uuid.New().String()
-
-		if !validateTicketData(w, t) {
-			return
-		}
-
-		_, err := db.Exec(context.Background(), "INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status, price) VALUES ($1, $2, $3, $4, $5)",
-			t.ID, t.MovieShowID, t.SeatID, t.Status, t.Price)
-		if IsError(w, err) {
-			return
-		}
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(t)
-	}
-}
-
-// @Summary Получить все билеты для показа фильма по ID
-// @Tags tickets
-// @Produce json
+// @Security BearerAuth
 // @Param movie_show_id path string true "ID показа фильма"
 // @Success 200 {array} Ticket
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -112,10 +83,13 @@ func GetTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить билет по ID
-// @Tags tickets
+// @Description Возвращает билет по ID.
+// @Tags Билеты
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID билета"
-// @Success 200 {object} Ticket
+// @Success 200 {object} Ticket "Билет"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 404 {object} ErrorResponse "Билет не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /tickets/{id} [get]
@@ -136,13 +110,50 @@ func GetTicketByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить билет
-// @Tags tickets
+// @Summary Создать билет
+// @Description Создаёт новый билет.
+// @Tags Билеты
 // @Accept json
 // @Produce json
+// @Security BearerAuth
+// @Param ticket body TicketData true "Билет"
+// @Success 201 {object} CreateResponse "ID созданного билета"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /tickets [post]
+func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var t TicketData
+		if !DecodeJSONBody(w, r, &t) {
+			return
+		}
+
+		if !validateTicketData(w, t) {
+			return
+		}
+
+		id := uuid.New()
+		_, err := db.Exec(context.Background(), "INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status, price) VALUES ($1, $2, $3, $4, $5)",
+			id, t.MovieShowID, t.SeatID, t.Status, t.Price)
+		if IsError(w, err) {
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(id.String())
+	}
+}
+
+// @Summary Обновить билет
+// @Description Обновляет существующий билет.
+// @Tags Билеты
+// @Accept json
+// @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID билета"
-// @Param ticket body Ticket true "Обновлённый билет"
-// @Success 200 {object} Ticket
+// @Param ticket body TicketData true "Обновлённые данные билета"
+// @Success 200 "Данные о билете успешно обновлены"
 // @Failure 404 {object} ErrorResponse "Билет не найден"
 // @Failure 400 {object} ErrorResponse "Неверный формат JSON"
 // @Failure 500 {object} ErrorResponse "Ошибка"
@@ -154,18 +165,17 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var t Ticket
+		var t TicketData
 		if !DecodeJSONBody(w, r, &t) {
 			return
 		}
-		t.ID = id.String()
 
 		if !validateTicketData(w, t) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(), "UPDATE tickets SET movie_show_id=$1, seat_id=$2, ticket_status=$3, price=$4 WHERE id=$5",
-			t.MovieShowID, t.SeatID, t.Status, t.Price, t.ID)
+			t.MovieShowID, t.SeatID, t.Status, t.Price, id)
 		if IsError(w, err) {
 			return
 		}
@@ -173,15 +183,19 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 		if !CheckRowsAffected(w, res.RowsAffected()) {
 			return
 		}
-		json.NewEncoder(w).Encode(t)
+		json.NewEncoder(w)
 	}
 }
 
 // @Summary Удалить билет
-// @Tags tickets
+// @Description Удаляет билет по его ID.
+// @Tags Билеты
+// @Security BearerAuth
 // @Param id path string true "ID билета"
-// @Success 204 {string} string "Удалено"
-// @Failure 404 {object} ErrorResponse "Не найден"
+// @Success 204 "Данные о билете успешно удалены"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Билет не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /tickets/{id} [delete]
 func DeleteTicket(db *pgxpool.Pool) http.HandlerFunc {
@@ -204,7 +218,7 @@ func DeleteTicket(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // // @Summary Получить билеты пользователя
-// // @Tags tickets
+// // @Tags Билеты
 // // @Produce json
 // // @Param user_id path string true "ID пользователя"
 // // @Success 200 {array} Ticket

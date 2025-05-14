@@ -104,6 +104,13 @@ type MovieShow struct {
 	Language  LanguageEnumType `json:"language" example:"Русский"`
 }
 
+type MovieShowData struct {
+	MovieID   string           `json:"movie_id" example:"1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"`
+	HallID    string           `json:"hall_id" example:"de01f085-dffa-4347-88da-168560207511"`
+	StartTime time.Time        `json:"start_time" example:"2023-10-01T14:30:00Z"`
+	Language  LanguageEnumType `json:"language" example:"Русский"`
+}
+
 type Ticket struct {
 	ID          string               `json:"id" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
 	MovieShowID string               `json:"movie_show_id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`

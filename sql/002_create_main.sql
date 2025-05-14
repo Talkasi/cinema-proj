@@ -81,26 +81,52 @@ CREATE TABLE IF NOT EXISTS movie_shows ( -- Тут надо проверять �
     language language_enum NOT NULL
 );
 
+-- CREATE OR REPLACE FUNCTION check_movie_show_conflict()
+-- RETURNS TRIGGER AS $$
+-- DECLARE
+--     new_movie_duration TIME;
+-- BEGIN
+--     SELECT duration INTO new_movie_duration
+--     FROM movies
+--     WHERE id = NEW.movie_id;
+
+--     -- Проверяем, есть ли пересечение времени с другими показами в том же зале
+--     IF EXISTS (
+--         SELECT 1
+--         FROM movie_shows
+--         WHERE hall_id = NEW.hall_id
+--         AND id <> NEW.id
+--         AND (
+--             (start_time < NEW.start_time + new_movie_duration + INTERVAL '10 minutes' 
+--              AND 
+--              start_time + (SELECT duration FROM movies WHERE id = movie_id) + INTERVAL '10 minutes' > NEW.start_time)
+--             OR 
+--             (NEW.start_time < start_time + (SELECT duration FROM movies WHERE id = movie_id) + INTERVAL '10 minutes' 
+--              AND 
+--              NEW.start_time + new_movie_duration + INTERVAL '10 minutes' > start_time)
+--         )
+--     ) THEN
+--         RAISE EXCEPTION 'Невозможно запланировать показ, поскольку в это время кинозал будет занят показом другого фильма или будет проводиться уборка';
+--     END IF;
+
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION check_movie_show_conflict()
 RETURNS TRIGGER AS $$
-DECLARE
-    new_movie_duration TIME;
 BEGIN
-    SELECT duration INTO new_movie_duration
-    FROM movies
-    WHERE id = NEW.movie_id;
-
-    -- Проверяем, есть ли пересечение времени с другими показами в том же зале
     IF EXISTS (
         SELECT 1
         FROM movie_shows
         WHERE hall_id = NEW.hall_id
+        AND id <> NEW.id
         AND (
             (start_time < NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' 
              AND 
-             start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > NEW.start_time)
+             start_time + (SELECT duration FROM movies WHERE id = movie_shows.movie_id) + INTERVAL '10 minutes' > NEW.start_time)
             OR 
-            (NEW.start_time < start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' 
+            (NEW.start_time < start_time + (SELECT duration FROM movies WHERE id = movie_shows.movie_id) + INTERVAL '10 minutes' 
              AND 
              NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > start_time)
         )
@@ -111,6 +137,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER check_movie_show_conflict_before_insert_or_update
 BEFORE INSERT OR UPDATE ON movie_shows

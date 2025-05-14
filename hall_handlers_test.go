@@ -251,7 +251,7 @@ func TestCreateHall(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			invalidForainKeyHall,
 			nil,
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Invalid JSON Guest",
@@ -780,7 +780,7 @@ func TestDeleteHall(t *testing.T) {
 			"CLAIM_ROLE_ADMIN",
 			"",
 			setupExistingHall,
-			http.StatusFailedDependency,
+			http.StatusConflict,
 		},
 		{
 			"Success as Admin",

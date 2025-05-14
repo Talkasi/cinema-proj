@@ -30,14 +30,14 @@ func getTicketByID(t *testing.T, ts *httptest.Server, token string, index int) T
 }
 
 func TestCreateTicket(t *testing.T) {
-	validTicket := Ticket{
+	validTicket := TicketData{
 		MovieShowID: MovieShowsData[0].ID,
 		SeatID:      SeatsData[3].ID,
 		Status:      Available,
 		Price:       1000,
 	}
 
-	invalidTicket := Ticket{
+	invalidTicket := TicketData{
 		MovieShowID: "",
 		SeatID:      "",
 		Status:      "INVALID_STATUS",
@@ -161,14 +161,14 @@ func TestCreateTicket(t *testing.T) {
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusCreated {
-				var created Ticket
+				var created string
 				parseResponseBody(t, resp, &created)
 
-				if created.ID == "" {
+				if created == "" {
 					t.Error("Expected non-empty ID in response")
 				}
 
-				if _, err := uuid.Parse(created.ID); err != nil {
+				if _, err := uuid.Parse(created); err != nil {
 					t.Error("Invalid UUID format in response")
 				}
 			}
@@ -301,7 +301,7 @@ func TestGetTicketByID(t *testing.T) {
 }
 
 func TestUpdateTicket(t *testing.T) {
-	validUpdateData := Ticket{
+	validUpdateData := TicketData{
 		MovieShowID: MovieShowsData[0].ID,
 		SeatID:      SeatsData[3].ID,
 		Status:      Reserved,
@@ -385,15 +385,6 @@ func TestUpdateTicket(t *testing.T) {
 			req := createRequest(t, "PUT", ts.URL+"/tickets/"+effectiveID, generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
-
-			if tt.expectedStatus == http.StatusOK {
-				var updated Ticket
-				parseResponseBody(t, resp, &updated)
-
-				if updated.ID != effectiveID {
-					t.Errorf("Expected ID %v; got %v", effectiveID, updated.ID)
-				}
-			}
 		})
 	}
 }
@@ -500,13 +491,13 @@ func TestTicketConstraints(t *testing.T) {
 	tests := []struct {
 		name           string
 		role           string
-		body           Ticket
+		body           TicketData
 		expectedStatus int
 	}{
 		{
 			"Negative price",
 			"CLAIM_ROLE_ADMIN",
-			Ticket{
+			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
 				Status:      Available,
@@ -517,7 +508,7 @@ func TestTicketConstraints(t *testing.T) {
 		{
 			"Invalid status",
 			"CLAIM_ROLE_ADMIN",
-			Ticket{
+			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
 				Status:      "INVALID_STATUS",
@@ -528,7 +519,7 @@ func TestTicketConstraints(t *testing.T) {
 		{
 			"Empty movie show ID",
 			"CLAIM_ROLE_ADMIN",
-			Ticket{
+			TicketData{
 				MovieShowID: "",
 				SeatID:      SeatsData[3].ID,
 				Status:      Available,
@@ -539,7 +530,7 @@ func TestTicketConstraints(t *testing.T) {
 		{
 			"Valid data",
 			"CLAIM_ROLE_ADMIN",
-			Ticket{
+			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
 				Status:      Available,
@@ -574,7 +565,7 @@ func TestTicketDBError(t *testing.T) {
 	t.Run("Create ticket DB error", func(t *testing.T) {
 		req := createRequest(t, "POST", ts.URL+"/tickets",
 			generateToken(t, "CLAIM_ROLE_ADMIN"),
-			Ticket{
+			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
 				Status:      Available,
