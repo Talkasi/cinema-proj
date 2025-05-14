@@ -72,7 +72,6 @@ CREATE TYPE language_enum AS ENUM (
     'Русский'
 );
 
-
 CREATE TABLE IF NOT EXISTS movie_shows ( -- Тут надо проверять при вставке, что не конфликтуют показы между собой
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     movie_id UUID REFERENCES movies(id),
@@ -80,38 +79,6 @@ CREATE TABLE IF NOT EXISTS movie_shows ( -- Тут надо проверять �
     start_time TIMESTAMP NOT NULL CHECK (start_time > '1895-03-22'),
     language language_enum NOT NULL
 );
-
--- CREATE OR REPLACE FUNCTION check_movie_show_conflict()
--- RETURNS TRIGGER AS $$
--- DECLARE
---     new_movie_duration TIME;
--- BEGIN
---     SELECT duration INTO new_movie_duration
---     FROM movies
---     WHERE id = NEW.movie_id;
-
---     -- Проверяем, есть ли пересечение времени с другими показами в том же зале
---     IF EXISTS (
---         SELECT 1
---         FROM movie_shows
---         WHERE hall_id = NEW.hall_id
---         AND id <> NEW.id
---         AND (
---             (start_time < NEW.start_time + new_movie_duration + INTERVAL '10 minutes' 
---              AND 
---              start_time + (SELECT duration FROM movies WHERE id = movie_id) + INTERVAL '10 minutes' > NEW.start_time)
---             OR 
---             (NEW.start_time < start_time + (SELECT duration FROM movies WHERE id = movie_id) + INTERVAL '10 minutes' 
---              AND 
---              NEW.start_time + new_movie_duration + INTERVAL '10 minutes' > start_time)
---         )
---     ) THEN
---         RAISE EXCEPTION 'Невозможно запланировать показ, поскольку в это время кинозал будет занят показом другого фильма или будет проводиться уборка';
---     END IF;
-
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION check_movie_show_conflict()
 RETURNS TRIGGER AS $$
@@ -202,11 +169,11 @@ FOR EACH ROW
 EXECUTE FUNCTION update_box_office_revenue();
 
 CREATE TABLE IF NOT EXISTS reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
     movie_id UUID REFERENCES movies(id) ON DELETE CASCADE,
-    rating DECIMAL(3,2) NOT NULL CHECK (rating >= 0 AND rating <= 10),
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 10),
     review_comment TEXT,
     CONSTRAINT unique_review UNIQUE (user_id, movie_id),
-    CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S'),
-    PRIMARY KEY (movie_id, user_id)
+    CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S')
 );

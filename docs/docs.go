@@ -539,58 +539,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/login": {
-            "post": {
-                "description": "Логин пользователя с именем пользователя и паролем",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Логин пользователя",
-                "parameters": [
-                    {
-                        "description": "Пользователь",
-                        "name": "user_login",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.UserLogin"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Токен авторизации",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный запрос",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Неверное имя пользователя или пароль",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка генерации токена",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/movie-shows": {
             "get": {
                 "security": [
@@ -1229,69 +1177,35 @@ const docTemplate = `{
                 }
             }
         },
-        "/register": {
-            "post": {
-                "description": "Регистрация нового пользователя с именем пользователя и паролем",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Регистрация нового пользователя",
-                "parameters": [
-                    {
-                        "description": "Пользователь",
-                        "name": "user_register",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.UserRegister"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Пользователь зарегистрирован",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный запрос",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сохранения пользователя",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/reviews": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех отзывов, хранящихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "reviews"
+                    "Отзывы"
                 ],
                 "summary": "Получить все отзывы",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список отзывов",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/main.Review"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Отзывы не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
@@ -1303,6 +1217,12 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создаёт новый отзыв.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1310,29 +1230,35 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "reviews"
+                    "Отзывы"
                 ],
                 "summary": "Создать отзыв",
                 "parameters": [
                     {
-                        "description": "Новый отзыв",
+                        "description": "Данные отзыва",
                         "name": "review",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Review"
+                            "$ref": "#/definitions/main.ReviewData"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "ID созданного отзыва",
                         "schema": {
-                            "$ref": "#/definitions/main.Review"
+                            "$ref": "#/definitions/main.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1348,13 +1274,19 @@ const docTemplate = `{
         },
         "/reviews/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает отзыв по ID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "reviews"
+                    "Отзывы"
                 ],
-                "summary": "Получить отзыв по ID",
+                "summary": "Получить отзыв по его ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1366,9 +1298,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Отзыв",
                         "schema": {
                             "$ref": "#/definitions/main.Review"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
@@ -1386,6 +1324,12 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет существующий отзыв.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1393,7 +1337,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "reviews"
+                    "Отзывы"
                 ],
                 "summary": "Обновить отзыв",
                 "parameters": [
@@ -1405,24 +1349,27 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные отзыва",
+                        "description": "Новые данные отзыва",
                         "name": "review",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.Review"
+                            "$ref": "#/definitions/main.ReviewData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.Review"
-                        }
+                        "description": "Данные отзыва успешно обновлены"
                     },
                     "400": {
-                        "description": "Неверный запрос",
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1442,8 +1389,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет отзыв по его ID.",
                 "tags": [
-                    "reviews"
+                    "Отзывы"
                 ],
                 "summary": "Удалить отзыв",
                 "parameters": [
@@ -1457,9 +1410,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Данные отзыва успешно удалены"
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
@@ -2524,23 +2486,143 @@ const docTemplate = `{
                 }
             }
         },
-        "/users": {
+        "/user": {
             "get": {
+                "description": "Аутентифицирует пользователя и возвращает токен",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Пользователи"
+                ],
+                "summary": "Вход пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для входа",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.UserLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Токен авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/main.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный email или пароль",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Пользователь заблокирован",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Регистрирует нового пользователя в системе",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Зарегистрировать нового пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для регистрации",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.UserRegister"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ID созданного пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/main.CreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Пользователь с таким email уже существует",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех пользователей",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
                 ],
                 "summary": "Получить всех пользователей",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список пользователей",
                         "schema": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/main.User"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователи не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "500": {
@@ -2554,11 +2636,17 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает пользователя по его ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Пользователи"
                 ],
                 "summary": "Получить пользователя по ID",
                 "parameters": [
@@ -2572,9 +2660,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Пользователь",
                         "schema": {
                             "$ref": "#/definitions/main.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
@@ -2592,6 +2686,12 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет данные пользователя",
                 "consumes": [
                     "application/json"
                 ],
@@ -2599,7 +2699,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "Пользователи"
                 ],
                 "summary": "Обновить пользователя",
                 "parameters": [
@@ -2611,24 +2711,27 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные пользователя",
+                        "description": "Новые данные пользователя",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/main.UserData"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.User"
-                        }
+                        "description": "Данные пользователя успешно обновлены"
                     },
                     "400": {
-                        "description": "Неверный JSON",
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2648,8 +2751,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет пользователя по его ID",
                 "tags": [
-                    "users"
+                    "Пользователи"
                 ],
                 "summary": "Удалить пользователя",
                 "parameters": [
@@ -2663,9 +2772,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Удалено",
+                        "description": "Пользователь успешно удалён"
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
@@ -2685,6 +2803,15 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "main.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+                }
+            }
+        },
         "main.CreateResponse": {
             "type": "object",
             "properties": {
@@ -2937,13 +3064,38 @@ const docTemplate = `{
         "main.Review": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+                },
                 "movie_id": {
                     "type": "string",
                     "example": "2002d9d0-80fa-4bc3-ab85-8525d1e9674c"
                 },
                 "rating": {
-                    "type": "number",
-                    "example": 8.5
+                    "type": "integer",
+                    "example": 8
+                },
+                "review_comment": {
+                    "type": "string",
+                    "example": "Отличный фильм!"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+                }
+            }
+        },
+        "main.ReviewData": {
+            "type": "object",
+            "properties": {
+                "movie_id": {
+                    "type": "string",
+                    "example": "2002d9d0-80fa-4bc3-ab85-8525d1e9674c"
+                },
+                "rating": {
+                    "type": "integer",
+                    "example": 8
                 },
                 "review_comment": {
                     "type": "string",
@@ -3146,6 +3298,23 @@ const docTemplate = `{
                 "is_blocked": {
                     "type": "boolean",
                     "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Иван Иванов"
+                }
+            }
+        },
+        "main.UserData": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string",
+                    "example": "1990-01-01"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "ivan@example.com"
                 },
                 "name": {
                     "type": "string",

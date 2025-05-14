@@ -1,4 +1,10 @@
 definitions:
+  main.AuthResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        type: string
+    type: object
   main.CreateResponse:
     properties:
       id:
@@ -179,12 +185,30 @@ definitions:
     type: object
   main.Review:
     properties:
+      id:
+        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        type: string
       movie_id:
         example: 2002d9d0-80fa-4bc3-ab85-8525d1e9674c
         type: string
       rating:
-        example: 8.5
-        type: number
+        example: 8
+        type: integer
+      review_comment:
+        example: Отличный фильм!
+        type: string
+      user_id:
+        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        type: string
+    type: object
+  main.ReviewData:
+    properties:
+      movie_id:
+        example: 2002d9d0-80fa-4bc3-ab85-8525d1e9674c
+        type: string
+      rating:
+        example: 8
+        type: integer
       review_comment:
         example: Отличный фильм!
         type: string
@@ -326,6 +350,18 @@ definitions:
       is_blocked:
         example: false
         type: boolean
+      name:
+        example: Иван Иванов
+        type: string
+    type: object
+  main.UserData:
+    properties:
+      birth_date:
+        example: "1990-01-01"
+        type: string
+      email:
+        example: ivan@example.com
+        type: string
       name:
         example: Иван Иванов
         type: string
@@ -694,40 +730,6 @@ paths:
       summary: Обновить кинозал
       tags:
       - Кинозалы
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Логин пользователя с именем пользователя и паролем
-      parameters:
-      - description: Пользователь
-        in: body
-        name: user_login
-        required: true
-        schema:
-          $ref: '#/definitions/main.UserLogin'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Токен авторизации
-          schema:
-            type: string
-        "400":
-          description: Неверный запрос
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "401":
-          description: Неверное имя пользователя или пароль
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка генерации токена
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Логин пользователя
-      tags:
-      - users
   /movie-shows:
     get:
       description: Возвращает список всех киносеансов, хранящихся в базе данных.
@@ -1135,84 +1137,69 @@ paths:
       summary: Поиск фильмов по названию
       tags:
       - Фильмы
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Регистрация нового пользователя с именем пользователя и паролем
-      parameters:
-      - description: Пользователь
-        in: body
-        name: user_register
-        required: true
-        schema:
-          $ref: '#/definitions/main.UserRegister'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Пользователь зарегистрирован
-          schema:
-            type: string
-        "400":
-          description: Неверный запрос
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сохранения пользователя
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Регистрация нового пользователя
-      tags:
-      - users
   /reviews:
     get:
+      description: Возвращает список всех отзывов, хранящихся в базе данных.
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Список отзывов
           schema:
             items:
               $ref: '#/definitions/main.Review'
             type: array
+        "404":
+          description: Отзывы не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Получить все отзывы
       tags:
-      - reviews
+      - Отзывы
     post:
       consumes:
       - application/json
+      description: Создаёт новый отзыв.
       parameters:
-      - description: Новый отзыв
+      - description: Данные отзыва
         in: body
         name: review
         required: true
         schema:
-          $ref: '#/definitions/main.Review'
+          $ref: '#/definitions/main.ReviewData'
       produces:
       - application/json
       responses:
         "201":
-          description: Created
+          description: ID созданного отзыва
           schema:
-            $ref: '#/definitions/main.Review'
+            $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: Неверный запрос
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Создать отзыв
       tags:
-      - reviews
+      - Отзывы
   /reviews/{id}:
     delete:
+      description: Удаляет отзыв по его ID.
       parameters:
       - description: ID отзыва
         in: path
@@ -1221,9 +1208,15 @@ paths:
         type: string
       responses:
         "204":
-          description: Удалено
+          description: Данные отзыва успешно удалены
+        "400":
+          description: Неверный формат ID
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Отзыв не найден
           schema:
@@ -1232,10 +1225,13 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Удалить отзыв
       tags:
-      - reviews
+      - Отзывы
     get:
+      description: Возвращает отзыв по ID.
       parameters:
       - description: ID отзыва
         in: path
@@ -1246,9 +1242,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Отзыв
           schema:
             $ref: '#/definitions/main.Review'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Отзыв не найден
           schema:
@@ -1257,33 +1257,38 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить отзыв по ID
+      security:
+      - BearerAuth: []
+      summary: Получить отзыв по его ID
       tags:
-      - reviews
+      - Отзывы
     put:
       consumes:
       - application/json
+      description: Обновляет существующий отзыв.
       parameters:
       - description: ID отзыва
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные отзыва
+      - description: Новые данные отзыва
         in: body
         name: review
         required: true
         schema:
-          $ref: '#/definitions/main.Review'
+          $ref: '#/definitions/main.ReviewData'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.Review'
+          description: Данные отзыва успешно обновлены
         "400":
-          description: Неверный запрос
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
@@ -1294,9 +1299,11 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Обновить отзыв
       tags:
-      - reviews
+      - Отзывы
   /screen-types:
     get:
       description: Возвращает список всех типов экранов, содержащихся в базе данных.
@@ -1965,26 +1972,105 @@ paths:
       summary: Получить все билеты для сеанса фильма по его ID
       tags:
       - Билеты
-  /users:
+  /user:
     get:
+      consumes:
+      - application/json
+      description: Аутентифицирует пользователя и возвращает токен
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserLogin'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Токен авторизации
           schema:
-            items:
-              $ref: '#/definitions/main.User'
-            type: array
+            $ref: '#/definitions/main.AuthResponse'
+        "400":
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "401":
+          description: Неверный email или пароль
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Пользователь заблокирован
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      summary: Вход пользователя
+      tags:
+      - Пользователи
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя в системе
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserRegister'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID созданного пользователя
+          schema:
+            $ref: '#/definitions/main.CreateResponse'
+        "400":
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Пользователь с таким email уже существует
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Зарегистрировать нового пользователя
+      tags:
+      - Пользователи
+  /users:
+    get:
+      description: Возвращает список всех пользователей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список пользователей
+          schema:
+            items:
+              $ref: '#/definitions/main.User'
+            type: array
+        "404":
+          description: Пользователи не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Получить всех пользователей
       tags:
-      - users
+      - Пользователи
   /users/{id}:
     delete:
+      description: Удаляет пользователя по его ID
       parameters:
       - description: ID пользователя
         in: path
@@ -1993,9 +2079,15 @@ paths:
         type: string
       responses:
         "204":
-          description: Удалено
+          description: Пользователь успешно удалён
+        "400":
+          description: Неверный формат ID
           schema:
-            type: string
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Пользователь не найден
           schema:
@@ -2004,10 +2096,13 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Удалить пользователя
       tags:
-      - users
+      - Пользователи
     get:
+      description: Возвращает пользователя по его ID
       parameters:
       - description: ID пользователя
         in: path
@@ -2018,9 +2113,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Пользователь
           schema:
             $ref: '#/definitions/main.User'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Пользователь не найден
           schema:
@@ -2029,33 +2128,38 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Получить пользователя по ID
       tags:
-      - users
+      - Пользователи
     put:
       consumes:
       - application/json
+      description: Обновляет данные пользователя
       parameters:
       - description: ID пользователя
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные пользователя
+      - description: Новые данные пользователя
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/main.User'
+          $ref: '#/definitions/main.UserData'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.User'
+          description: Данные пользователя успешно обновлены
         "400":
-          description: Неверный JSON
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
@@ -2066,9 +2170,11 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Обновить пользователя
       tags:
-      - users
+      - Пользователи
 securityDefinitions:
   BearerAuth:
     in: header

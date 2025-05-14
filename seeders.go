@@ -262,9 +262,9 @@ func SeedAll(db *pgxpool.Pool) error {
 		return fmt.Errorf("ошибка при вставке билетов: %v", err)
 	}
 
-	// if err := SeedReviews(db); err != nil {
-	// 	return fmt.Errorf("ошибка при вставке отзывов: %v", err)
-	// }
+	if err := SeedReviews(db); err != nil {
+		return fmt.Errorf("ошибка при вставке отзывов: %v", err)
+	}
 
 	return nil
 }

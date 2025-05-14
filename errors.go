@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -87,13 +88,50 @@ func ParseUUIDFromPath(w http.ResponseWriter, pathValue string) (uuid.UUID, bool
 	return id, true
 }
 
+// func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+// 	decoder := json.NewDecoder(r.Body)
+// 	decoder.DisallowUnknownFields()
+// 	if err := decoder.Decode(v); err != nil {
+// 		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+// 		println(err.Error())
+// 		return false
+// 	}
+// 	return true
+// }
+
 func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+	println(v)
+	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB
+
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
+
 	if err := decoder.Decode(v); err != nil {
-		http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		var syntaxError *json.SyntaxError
+		var unmarshalError *json.UnmarshalTypeError
+
+		switch {
+		case errors.Is(err, io.EOF):
+			http.Error(w, "Тело запроса не должно быть пустым", http.StatusBadRequest)
+		case errors.As(err, &syntaxError):
+			http.Error(w, fmt.Sprintf("Ошибка синтаксиса JSON в позиции %d", syntaxError.Offset), http.StatusBadRequest)
+		case errors.As(err, &unmarshalError):
+			http.Error(w, fmt.Sprintf("Некорректное значение для поля %s", unmarshalError.Field), http.StatusBadRequest)
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			http.Error(w, fmt.Sprintf("Неизвестное поле: %s", fieldName), http.StatusBadRequest)
+		default:
+			http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		}
 		return false
 	}
+
+	// Проверяем, что нет лишних данных
+	if decoder.More() {
+		http.Error(w, "Тело запроса должно содержать только один JSON объект", http.StatusBadRequest)
+		return false
+	}
+
 	return true
 }
 

@@ -2,25 +2,101 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
+	"regexp"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func validateAllUserData(w http.ResponseWriter, u UserData) bool {
+	u.Name = PrepareString(u.Name)
+	u.Email = PrepareString(u.Email)
+
+	if err := validateUserName(u.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if err := validateUserEmail(u.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if err := validateUserBirthDate(u.BirthDate); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
+func validateUserName(name string) error {
+	validNameRegex := regexp.MustCompile(`^[A-Za-zА-Яа-яЁё\s-]+$`)
+	if !validNameRegex.MatchString(name) {
+		return errors.New("имя пользователя может содержать только буквы, пробелы и дефисы")
+	}
+
+	if !regexp.MustCompile(`\S`).MatchString(name) {
+		return errors.New("имя пользователя не может состоять только из пробелов")
+	}
+
+	if len(name) == 0 || len(name) > 50 {
+		return errors.New("имя пользователя не может быть пустым и не может превышать 50 символов")
+	}
+	return nil
+}
+
+func validateUserEmail(email string) error {
+	validEmailRegex := regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$`)
+	if !validEmailRegex.MatchString(email) {
+		return errors.New("неверный формат email")
+	}
+
+	if len(email) > 100 {
+		return errors.New("email не может превышать 100 символов")
+	}
+	return nil
+}
+
+func validateUserBirthDate(birthDate time.Time) error {
+	now := time.Now()
+	hundredYearsAgo := now.AddDate(-100, 0, 0)
+
+	if birthDate.After(now) {
+		return errors.New("дата рождения не может быть в будущем")
+	}
+
+	if birthDate.Before(hundredYearsAgo) {
+		return errors.New("дата рождения не может быть более 100 лет назад")
+	}
+	return nil
+}
+
+func validateUserPassword(password string) error {
+	if len(password) < 8 {
+		return errors.New("пароль должен содержать не менее 8 символов")
+	}
+	return nil
+}
+
 // @Summary Получить всех пользователей
-// @Tags users
+// @Description Возвращает список всех пользователей
+// @Tags Пользователи
 // @Produce json
-// @Success 200 {array} User
+// @Security BearerAuth
+// @Success 200 {array} User "Список пользователей"
+// @Failure 404 {object} ErrorResponse "Пользователи не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /users [get]
 func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query(context.Background(), "SELECT id, name, email, birth_date, is_blocked FROM users")
-		if err != nil {
-			http.Error(w, "Ошибка при получении пользователей", http.StatusInternalServerError)
+		rows, err := db.Query(context.Background(),
+			"SELECT id, name, email, birth_date, is_blocked, is_admin FROM users")
+		if HandleDatabaseError(w, err, "пользователями") {
 			return
 		}
 		defer rows.Close()
@@ -28,172 +104,247 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 		var users []User
 		for rows.Next() {
 			var u User
-			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked); err != nil {
-				http.Error(w, "Ошибка при сканировании", http.StatusInternalServerError)
+			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
 				return
 			}
 			users = append(users, u)
 		}
+
+		if len(users) == 0 {
+			http.Error(w, "Пользователи не найдены", http.StatusNotFound)
+			return
+		}
+
 		json.NewEncoder(w).Encode(users)
 	}
 }
 
 // @Summary Получить пользователя по ID
-// @Tags users
+// @Description Возвращает пользователя по его ID
+// @Tags Пользователи
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID пользователя"
-// @Success 200 {object} User
+// @Success 200 {object} User "Пользователь"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /users/{id} [get]
 func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		var u User
-		err := db.QueryRow(context.Background(), "SELECT id, name, email, birth_date, is_blocked FROM users WHERE id = $1", id).
-			Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked)
-
-		if err == sql.ErrNoRows {
-			http.Error(w, "Пользователь не найден", http.StatusNotFound)
-			return
-		} else if err != nil {
-			http.Error(w, "Ошибка при получении", http.StatusInternalServerError)
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
 			return
 		}
+
+		var u User
+		err := db.QueryRow(context.Background(),
+			"SELECT id, name, email, birth_date, is_blocked, is_admin FROM users WHERE id = $1", id).
+			Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked, &u.IsAdmin)
+
+		if IsError(w, err) {
+			return
+		}
+
 		json.NewEncoder(w).Encode(u)
 	}
 }
 
 // @Summary Обновить пользователя
-// @Tags users
+// @Description Обновляет данные пользователя
+// @Tags Пользователи
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID пользователя"
-// @Param user body User true "Обновлённые данные пользователя"
-// @Success 200 {object} User
-// @Failure 400 {object} ErrorResponse "Неверный JSON"
+// @Param user body UserData true "Новые данные пользователя"
+// @Success 200 "Данные пользователя успешно обновлены"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /users/{id} [put]
 func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		var u User
-		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, "Неверный формат JSON", http.StatusBadRequest)
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
 			return
 		}
-		u.ID = id
 
-		res, err := db.Exec(context.Background(), "UPDATE users SET name=$1, email=$2, birth_date=$3, is_blocked=$4 WHERE id=$5",
-			u.Name, u.Email, u.BirthDate, u.IsBlocked, u.ID)
-		if err != nil {
-			http.Error(w, "Ошибка при обновлёнии", http.StatusInternalServerError)
+		var u UserData
+		if !DecodeJSONBody(w, r, &u) {
 			return
 		}
-		rows := res.RowsAffected()
-		if rows == 0 {
-			http.Error(w, "Пользователь не найден", http.StatusNotFound)
+
+		if !validateAllUserData(w, u) {
 			return
 		}
-		json.NewEncoder(w).Encode(u)
+
+		res, err := db.Exec(context.Background(),
+			"UPDATE users SET name=$1, email=$2, birth_date=$3 WHERE id=$4",
+			u.Name, u.Email, u.BirthDate, id)
+
+		if IsError(w, err) {
+			return
+		}
+
+		if !CheckRowsAffected(w, res.RowsAffected()) {
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 // @Summary Удалить пользователя
-// @Tags users
+// @Description Удаляет пользователя по его ID
+// @Tags Пользователи
 // @Param id path string true "ID пользователя"
-// @Success 204 {string} string "Удалено"
+// @Security BearerAuth
+// @Success 204 "Пользователь успешно удалён"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /users/{id} [delete]
 func DeleteUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		res, err := db.Exec(context.Background(), "DELETE FROM users WHERE id = $1", id)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("ошибка при удалёнии %v", err), http.StatusInternalServerError)
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
 			return
 		}
-		rows := res.RowsAffected()
-		if rows == 0 {
-			http.Error(w, "Пользователь не найден", http.StatusNotFound)
+
+		res, err := db.Exec(context.Background(),
+			"DELETE FROM users WHERE id = $1", id)
+
+		if IsError(w, err) {
 			return
 		}
+
+		if !CheckRowsAffected(w, res.RowsAffected()) {
+			return
+		}
+
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
-// RegisterUser регистрирует нового пользователя
-// @Summary Регистрация нового пользователя
-// @Description Регистрация нового пользователя с именем пользователя и паролем
+// @Summary Зарегистрировать нового пользователя
+// @Description Регистрирует нового пользователя в системе
+// @Tags Пользователи
 // @Accept json
 // @Produce json
-// @Tags users
-// @Param user_register body UserRegister true "Пользователь"
-// @Success 201 {string} string "Пользователь зарегистрирован"
-// @Failure 400 {object} ErrorResponse "Неверный запрос"
-// @Failure 500 {object} ErrorResponse "Ошибка сохранения пользователя"
-// @Router /register [post]
+// @Param user body UserRegister true "Данные для регистрации"
+// @Success 201 {object} CreateResponse "ID созданного пользователя"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 409 {object} ErrorResponse "Пользователь с таким email уже существует"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /user [post]
 func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user UserRegister
-		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-			http.Error(w, fmt.Sprintf("неверный запрос: %v", err), http.StatusBadRequest)
+		if !DecodeJSONBody(w, r, &user) {
 			return
 		}
 
-		var err error
-		_, err = db.Exec(context.Background(), "INSERT INTO users (email, password_hash, birth_date, name) VALUES ($1, $2, $3, $4)",
-			user.Email, user.PasswordHash, user.BirthDate, user.Name)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("ошибка сохранения пользователя: %v", err), http.StatusInternalServerError)
+		user.Name = PrepareString(user.Name)
+		user.Email = PrepareString(user.Email)
+
+		if err := validateUserName(user.Name); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := validateUserEmail(user.Email); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := validateUserPassword(user.PasswordHash); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := validateUserBirthDate(user.BirthDate); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		id := uuid.New()
+		_, err := db.Exec(context.Background(),
+			"INSERT INTO users (id, name, email, password_hash, birth_date) VALUES ($1, $2, $3, $4, $5)",
+			id, user.Name, user.Email, user.PasswordHash, user.BirthDate)
+
+		if IsError(w, err) {
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(id.String())
 	}
 }
 
-// LoginUser позволяет пользователю войти в систему
-// @Summary Логин пользователя
-// @Description Логин пользователя с именем пользователя и паролем
+// @Summary Вход пользователя
+// @Description Аутентифицирует пользователя и возвращает токен
+// @Tags Пользователи
 // @Accept json
 // @Produce json
-// @Tags users
-// @Param user_login body UserLogin true "Пользователь"
-// @Success 200 {string} string "Токен авторизации"
-// @Failure 400 {object} ErrorResponse "Неверный запрос"
-// @Failure 401 {object} ErrorResponse "Неверное имя пользователя или пароль"
-// @Failure 500 {object} ErrorResponse "Ошибка генерации токена"
-// @Router /login [post]
+// @Param credentials body UserLogin true "Данные для входа"
+// @Success 200 {object} AuthResponse "Токен авторизации"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 401 {object} ErrorResponse "Неверный email или пароль"
+// @Failure 403 {object} ErrorResponse "Пользователь заблокирован"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /user [get]
 func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var user UserLogin
-		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-			http.Error(w, fmt.Sprintf("неверный запрос %v", err), http.StatusBadRequest)
+		var creds UserLogin
+		if !DecodeJSONBody(w, r, &creds) {
 			return
 		}
 
-		var passwordHash string
-		err := db.QueryRow(context.Background(), "SELECT password_hash FROM users WHERE email = $1", user.Email).Scan(&passwordHash)
+		creds.Email = PrepareString(creds.Email)
+
+		if err := validateUserEmail(creds.Email); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := validateUserPassword(creds.PasswordHash); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var user struct {
+			ID           string
+			PasswordHash string
+			IsBlocked    bool
+			IsAdmin      bool
+		}
+
+		err := db.QueryRow(context.Background(),
+			"SELECT id, password_hash, is_blocked, is_admin FROM users WHERE email = $1", creds.Email).
+			Scan(&user.ID, &user.PasswordHash, &user.IsBlocked, &user.IsAdmin)
+		if IsError(w, err) {
+			return
+		}
+
+		if creds.PasswordHash != user.PasswordHash {
+			http.Error(w, "Неверный email или пароль", http.StatusUnauthorized)
+			return
+		}
+
+		role := "CLAIM_ROLE_USER"
+		if user.IsAdmin {
+			role = "CLAIM_ROLE_ADMIN"
+		}
+
+		token, err := GenerateToken(creds.Email, role)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("неверное имя пользователя или пароль %v", err), http.StatusUnauthorized)
+			http.Error(w, "Ошибка генерации токена", http.StatusInternalServerError)
 			return
 		}
 
-		if passwordHash != user.PasswordHash {
-			http.Error(w, "неверное имя пользователя или пароль", http.StatusUnauthorized)
-			return
-		}
-
-		token, err := GenerateToken(user.Email, "user")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("ошибка генерации токена %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Authorization", token)
-		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"token": token})
 	}
 }
