@@ -56,6 +56,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("PUT /screen-types/{id}", Midleware(RoleBasedHandler(UpdateScreenType)))
 	mux.HandleFunc("DELETE /screen-types/{id}", Midleware(RoleBasedHandler(DeleteScreenType)))
 
+	mux.HandleFunc("GET /genres/search", Midleware(RoleBasedHandler(SearchGenres)))
 	mux.HandleFunc("GET /genres", Midleware(RoleBasedHandler(GetGenres)))
 	mux.HandleFunc("GET /genres/{id}", Midleware(RoleBasedHandler(GetGenreByID)))
 	mux.HandleFunc("POST /genres", Midleware(RoleBasedHandler(CreateGenre)))

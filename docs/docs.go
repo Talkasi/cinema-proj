@@ -110,6 +110,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/genres/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список жанров, имена которых содержат указанную строку (регистронезависимый поиск).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Жанры фильмов"
+                ],
+                "summary": "Поиск жанров по имени",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Строка для поиска",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список найденных жанров",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Genre"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Строка поиска пуста",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Жанры не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/genres/{id}": {
             "get": {
                 "security": [
@@ -264,6 +319,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Жанр не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Конфликт при удалении жанра",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }

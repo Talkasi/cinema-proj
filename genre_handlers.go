@@ -214,6 +214,7 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Жанр не найден"
+// @Failure 409 {object} ErrorResponse "Конфликт при удалении жанра"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [delete]
 func DeleteGenre(db *pgxpool.Pool) http.HandlerFunc {
@@ -235,5 +236,52 @@ func DeleteGenre(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// @Summary Поиск жанров по имени
+// @Description Возвращает список жанров, имена которых содержат указанную строку (регистронезависимый поиск).
+// @Tags Жанры фильмов
+// @Produce json
+// @Security BearerAuth
+// @Param query query string true "Строка для поиска"
+// @Success 200 {array} Genre "Список найденных жанров"
+// @Failure 400 {object} ErrorResponse "Строка поиска пуста"
+// @Failure 404 {object} ErrorResponse "Жанры не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /genres/search [get]
+func SearchGenres(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("query")
+		query = PrepareString(query)
+		if query == "" {
+			http.Error(w, "Строка поиска пуста", http.StatusBadRequest)
+			return
+		}
+
+		rows, err := db.Query(context.Background(),
+			"SELECT id, name, description FROM genres WHERE name ILIKE $1",
+			"%"+query+"%")
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var genres []Genre
+		for rows.Next() {
+			var g Genre
+			if err := rows.Scan(&g.ID, &g.Name, &g.Description); HandleDatabaseError(w, err, "жанром") {
+				return
+			}
+
+			genres = append(genres, g)
+		}
+
+		if len(genres) == 0 {
+			http.Error(w, "Жанры не найдены", http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(genres)
 	}
 }

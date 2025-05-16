@@ -2,33 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 )
-
-func getGenreByID(t *testing.T, ts *httptest.Server, token string, index int) Genre {
-	req := createRequest(t, "GET", ts.URL+"/genres", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var genres []Genre
-	parseResponseBody(t, resp, &genres)
-
-	if len(genres) == 0 {
-		t.Fatal("Expected at least one genre, got none")
-	}
-
-	if index >= len(genres) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return genres[index]
-}
 
 func TestGetGenres(t *testing.T) {
 	tests := []struct {
@@ -74,7 +57,7 @@ func TestGetGenreByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getGenreByID(t, ts, "", 0).ID
+		return ts, GenresData[0].ID
 	}
 
 	tests := []struct {
@@ -392,7 +375,7 @@ func TestUpdateGenre(t *testing.T) {
 	setupExistingGenre := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getGenreByID(t, ts, "", 0).ID
+		return ts, GenresData[0].ID
 	}
 
 	tests := []struct {
@@ -652,7 +635,7 @@ func TestDeleteGenre(t *testing.T) {
 	setupExistingGenre := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getGenreByID(t, ts, "", 0).ID
+		return ts, GenresData[0].ID
 	}
 
 	tests := []struct {
@@ -750,7 +733,7 @@ func TestDeleteGenre(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getGenreByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 6).ID
+				return ts, GenresData[6].ID
 			},
 			http.StatusNoContent,
 		},
@@ -791,5 +774,157 @@ func TestCreateGenreDBError(t *testing.T) {
 
 	if err := InitTestDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
+	}
+}
+
+func TestSearchGenres(t *testing.T) {
+	setupWithGenres := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		query          string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+		expectedCount  int
+		role           string
+	}{
+		{
+			"Пустой запрос - ошибка",
+			"",
+			setupWithGenres,
+			http.StatusBadRequest,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Только пробельные символы - ошибка",
+			"          		",
+			setupWithGenres,
+			http.StatusBadRequest,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Короткий запрос",
+			"д",
+			setupWithGenres,
+			http.StatusOK,
+			3,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Нет совпадений",
+			"вестерн",
+			setupWithGenres,
+			http.StatusNotFound,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Точное совпадение - Драма",
+			"Драма",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение - 'рама'",
+			"рама",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение - 'ик'",
+			"ик",
+			setupWithGenres,
+			http.StatusOK,
+			4,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Поиск без учета регистра - 'кОмЕдИя'",
+			"кОмЕдИя",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Поиск с пробелами - 'Научная фантастика'",
+			"Научная фантастика",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение с пробелами - 'научная'",
+			"  научная    ",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Админ имеет доступ",
+			"Драма",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_ADMIN",
+		},
+		{
+			"Гость имеет доступ",
+			"Драма",
+			setupWithGenres,
+			http.StatusOK,
+			1,
+			"",
+		},
+		{
+			"Специальные символы в запросе - 'фэнтези'",
+			"фэнтези/",
+			setupWithGenres,
+			http.StatusNotFound,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			req := createRequest(t, "GET", ts.URL+"/genres/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var genres []Genre
+				if err := json.NewDecoder(resp.Body).Decode(&genres); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(genres) != tt.expectedCount {
+					t.Errorf("Expected %d genres, got %d: %v", tt.expectedCount, len(genres), genres)
+				}
+
+				lowerQuery := strings.ToLower(tt.query)
+				lowerQuery = PrepareString(lowerQuery)
+				for _, genre := range genres {
+					if !strings.Contains(strings.ToLower(genre.Name), lowerQuery) {
+						t.Errorf("Genre name '%s' does not contain query '%s'", genre.Name, tt.query)
+					}
+				}
+			}
+		})
 	}
 }
