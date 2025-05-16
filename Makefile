@@ -15,7 +15,7 @@ TEST_DB_PASS = postgres
 PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASS) dbname=$(DB_NAME) sslmode=$(DB_SSL)"
 TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) password=$(TEST_DB_PASS) dbname=$(TEST_DB_NAME) sslmode=$(DB_SSL)"
 
-.PHONY: db-init db-clean test-init test-clean run test test-v swagger
+.PHONY: db-init db-clean test-init test-clean run test test-v swagger cover
 
 # Инициализация основной БД
 db-init: db-clean
@@ -57,6 +57,9 @@ swagger:
 	@echo "Обновление документации Swagger..."
 	@swag init -g main.go  # Замените main.go на файл, в котором находится ваша точка входа
 
+cover:
+	go test -cover -coverprofile=c.out ./...
+	go tool cover -html=c.out
 
 # Запуск тестов
 test: test-init

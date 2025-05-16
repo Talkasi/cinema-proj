@@ -194,13 +194,12 @@ func TestCreateMovie(t *testing.T) {
 	}
 
 	validMovie := MovieData{
-		Title:            "Test Movie",
-		Duration:         "01:30:00", // Пример корректной продолжительности
-		Description:      "Test Description",
-		AgeLimit:         12,
-		BoxOfficeRevenue: 100000.00,
-		ReleaseDate:      time.Now(),
-		GenreIDs:         validGenresIds,
+		Title:       "Test Movie",
+		Duration:    "01:30:00", // Пример корректной продолжительности
+		Description: "Test Description",
+		AgeLimit:    12,
+		ReleaseDate: time.Now(),
+		GenreIDs:    validGenresIds,
 	}
 
 	tests := []struct {
@@ -255,91 +254,77 @@ func TestCreateMovie(t *testing.T) {
 		{
 			"Empty title",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid duration",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "00:00:00", Description: "Valid", AgeLimit: 12, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "00:00:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "", AgeLimit: 12, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid age limit",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 10, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 10, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Valid age limit (0)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 0, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 0, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (6)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 6, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 6, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (12)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (16)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (18)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 18, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 18, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Invalid age limit (19)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 19, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 19, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
-		},
-		{
-			"Negative box office revenue",
-			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, BoxOfficeRevenue: -100.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Valid box office revenue (0)",
-			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, BoxOfficeRevenue: 0.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
-			nil,
-			http.StatusCreated,
 		},
 		{
 			"Valid box office revenue (positive)",
 			"CLAIM_ROLE_ADMIN",
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, BoxOfficeRevenue: 100000.00, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
@@ -413,13 +398,12 @@ func TestUpdateMovie(t *testing.T) {
 	}
 
 	validUpdateData := MovieData{
-		Title:            "Updated Movie Title",
-		Duration:         "01:30:00",
-		Description:      "Updated Description",
-		AgeLimit:         16,
-		BoxOfficeRevenue: 1000000.00,
-		ReleaseDate:      time.Now(),
-		GenreIDs:         []string{},
+		Title:       "Updated Movie Title",
+		Duration:    "01:30:00",
+		Description: "Updated Description",
+		AgeLimit:    16,
+		ReleaseDate: time.Now(),
+		GenreIDs:    []string{},
 	}
 
 	tests := []struct {
@@ -506,7 +490,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Empty title as Guest",
 			"",
 			"",
-			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, BoxOfficeRevenue: 1000000.00, ReleaseDate: time.Now()},
+			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -514,7 +498,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Invalid duration as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			MovieData{Title: "Valid Title", Duration: "invalid-duration", Description: "Valid", AgeLimit: 16, BoxOfficeRevenue: 1000000.00, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "invalid-duration", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -522,7 +506,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Invalid age limit as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 99, BoxOfficeRevenue: 1000000.00, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 99, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -538,7 +522,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Title with only spaces",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			MovieData{Title: "   ", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, BoxOfficeRevenue: 1000000.00, ReleaseDate: time.Now()},
+			MovieData{Title: "   ", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -546,15 +530,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Description too long (1001 chars)",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: strings.Repeat("a", 1001), AgeLimit: 16, BoxOfficeRevenue: 1000000.00, ReleaseDate: time.Now()},
-			setupExistingMovieWithGenresID,
-			http.StatusBadRequest,
-		},
-		{
-			"Box office revenue negative",
-			"CLAIM_ROLE_ADMIN",
-			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, BoxOfficeRevenue: -100.00, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: strings.Repeat("a", 1001), AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -562,7 +538,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Valid update with future release date",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, BoxOfficeRevenue: 1000000.00, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
 			http.StatusOK,
 		},
@@ -735,13 +711,13 @@ func TestCreateMovieDBError(t *testing.T) {
 	defer ts.Close()
 
 	validMovieData := MovieData{
-		Title:            "Updated Movie Title",
-		Duration:         "01:30:00", // Пример корректного времени
-		Description:      "Updated Description",
-		AgeLimit:         16,
-		BoxOfficeRevenue: 1000000.00,
-		ReleaseDate:      time.Now(), // Завтра
-		GenreIDs:         []string{"genre1", "genre2"},
+		Title:       "Updated Movie Title",
+		Duration:    "01:30:00", // Пример корректного времени
+		Description: "Updated Description",
+		AgeLimit:    16,
+
+		ReleaseDate: time.Now(), // Завтра
+		GenreIDs:    []string{"genre1", "genre2"},
 	}
 
 	// Создаем ситуацию с ошибкой БД

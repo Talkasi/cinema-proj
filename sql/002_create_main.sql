@@ -26,14 +26,14 @@ CREATE TABLE IF NOT EXISTS movies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(200) NOT NULL,
     duration TIME NOT NULL,
-    rating DECIMAL(4,2), -- null if no reviews
+    rating DECIMAL(4,2) DEFAULT NULL, -- null if no reviews
     description VARCHAR(1000) NOT NULL,
     age_limit INT NOT NULL DEFAULT 0,
     box_office_revenue DECIMAL(15,2) NOT NULL DEFAULT 0 CHECK (box_office_revenue >= 0),
     release_date DATE NOT NULL, -- can be IN the future
     CONSTRAINT valid_title CHECK (title ~ '\S'),
     CONSTRAINT valid_duration CHECK (duration > '00:00:00'),
-    CONSTRAINT valid_rating CHECK (rating >= 0 AND rating <= 10),
+    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 10),
     CONSTRAINT valid_description CHECK (description ~ '\S'),
     CONSTRAINT valid_age_limit CHECK (age_limit IN (0, 6, 12, 16, 18))
 );

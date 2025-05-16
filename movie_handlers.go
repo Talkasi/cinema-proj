@@ -40,11 +40,6 @@ func validateAllMovieData(w http.ResponseWriter, m MovieData) bool {
 		return false
 	}
 
-	if err := validateMovieRevenue(m.BoxOfficeRevenue); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
 	return true
 }
 
@@ -79,8 +74,8 @@ func validateMovieDuration(duration string) error {
 }
 
 func validateMovieRating(rating *float64) error {
-	if rating != nil && (*rating < 0 || *rating > 10) {
-		return errors.New("рейтинг должен быть в промежутке от 0 до 10")
+	if rating != nil && (*rating < 1 || *rating > 10) {
+		return errors.New("рейтинг должен быть в промежутке от 1 до 10")
 	}
 
 	return nil
@@ -118,6 +113,14 @@ func fetchGenresByMovieID(db *pgxpool.Pool, movieID string) ([]Genre, error) {
 		FROM genres g
 		JOIN movies_genres mg ON g.id = mg.genre_id
 		WHERE mg.movie_id = $1`, movieID)
+
+	// rows, err := db.Query(context.Background(), `
+	//     SELECT g.id, g.name, g.description
+	//     FROM genres g
+	//     WHERE EXISTS (
+	//         SELECT 1 FROM movies_genres mg
+	//         WHERE mg.movie_id = $1 AND mg.genre_id = g.id
+	//     )`, movieID)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +160,28 @@ func insertMovieGenres(tx pgx.Tx, movieID string, genreIDs []string) error {
 	}
 
 	return br.Close()
+}
+
+func updateMovieGenres(tx pgx.Tx, ctx context.Context, movieID uuid.UUID, genreIDs []string) error {
+	// удаляем только те жанры, которых нет в новом списке
+	_, err := tx.Exec(ctx, `
+        DELETE FROM movies_genres 
+        WHERE movie_id = $1 
+        AND genre_id NOT IN (SELECT unnest($2::uuid[]))`,
+		movieID, genreIDs)
+	if err != nil {
+		return fmt.Errorf("failed to delete old genres: %w", err)
+	}
+
+	// добавляем только новые жанры
+	_, err = tx.Exec(ctx, `
+        INSERT INTO movies_genres (movie_id, genre_id)
+        SELECT $1, genre_id
+        FROM unnest($2::uuid[]) AS genre_id
+        ON CONFLICT (movie_id, genre_id) DO NOTHING`,
+		movieID, genreIDs)
+
+	return err
 }
 
 // @Summary Получить все фильмы
@@ -230,7 +255,6 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 			SELECT id, title, duration, rating, description, age_limit, box_office_revenue, release_date
 			FROM movies WHERE id = $1`, id).
 			Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
-
 		if IsError(w, err) {
 			return
 		}
@@ -269,7 +293,7 @@ func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		ctx := context.Background()
+		ctx := r.Context()
 		tx, err := db.Begin(ctx)
 		if IsError(w, err) {
 			return
@@ -282,10 +306,10 @@ func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 
 		id := uuid.New()
 		_, err = tx.Exec(ctx, `
-            INSERT INTO movies (id, title, duration, description, age_limit, box_office_revenue, release_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            INSERT INTO movies (id, title, duration, description, age_limit, release_date)
+            VALUES ($1, $2, $3, $4, $5, $6)`,
 			id, data.Title, data.Duration, data.Description,
-			data.AgeLimit, data.BoxOfficeRevenue, data.ReleaseDate)
+			data.AgeLimit, data.ReleaseDate)
 		if IsError(w, err) {
 			return
 		}
@@ -334,7 +358,8 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		ctx := context.Background()
+		ctx := r.Context()
+
 		tx, err := db.Begin(ctx)
 		if IsError(w, err) {
 			return
@@ -345,10 +370,17 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			}
 		}()
 
-		res, err := db.Exec(ctx, `
-			UPDATE movies SET title=$1, duration=$2, description=$3, age_limit=$4, box_office_revenue=$5, release_date=$6
-			WHERE id=$7`,
-			data.Title, data.Duration, data.Description, data.AgeLimit, data.BoxOfficeRevenue, data.ReleaseDate, id)
+		res, err := tx.Exec(ctx, `
+            UPDATE movies 
+            SET title = $1, 
+                duration = $2, 
+                description = $3, 
+                age_limit = $4, 
+                release_date = $5
+            WHERE id = $6`,
+			data.Title, data.Duration, data.Description,
+			data.AgeLimit, data.ReleaseDate, id)
+
 		if IsError(w, err) {
 			return
 		}
@@ -357,13 +389,7 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		_, err = db.Exec(context.Background(), "DELETE FROM movies_genres WHERE movie_id = $1", id)
-		if IsError(w, err) {
-			return
-		}
-
-		err = insertMovieGenres(tx, id.String(), data.GenreIDs)
-		if IsError(w, err) {
+		if err := updateMovieGenres(tx, ctx, id, data.GenreIDs); IsError(w, err) {
 			return
 		}
 
@@ -371,8 +397,7 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -385,6 +410,7 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Фильм не найден"
+// @Failure 409 {object} ErrorResponse "Конфликт при удалении фильма"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movies/{id} [delete]
 func DeleteMovie(db *pgxpool.Pool) http.HandlerFunc {
@@ -413,7 +439,7 @@ func DeleteMovie(db *pgxpool.Pool) http.HandlerFunc {
 // @Security BearerAuth
 // @Param query query string true "Поисковый запрос"
 // @Success 200 {array} Movie "Найденные фильмы"
-// @Failure 400 {object} ErrorResponse "Пустой поисковый запрос"
+// @Failure 400 {object} ErrorResponse "Строка поиска пуста"
 // @Failure 404 {object} ErrorResponse "Данные не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movies/by-title/search [get]
