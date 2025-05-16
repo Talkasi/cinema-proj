@@ -2478,8 +2478,8 @@
                 }
             }
         },
-        "/user": {
-            "get": {
+        "/user/login": {
+            "post": {
                 "description": "Аутентифицирует пользователя и возвращает токен",
                 "consumes": [
                     "application/json"
@@ -2534,7 +2534,9 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/user/register": {
             "post": {
                 "description": "Регистрирует нового пользователя в системе",
                 "consumes": [

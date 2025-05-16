@@ -107,8 +107,8 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("PUT /tickets/{id}", Midleware(RoleBasedHandler(UpdateTicket)))
 	mux.HandleFunc("DELETE /tickets/{id}", Midleware(RoleBasedHandler(DeleteTicket)))
 
-	mux.HandleFunc("POST /user/", Midleware(RoleBasedHandler(RegisterUser)))
-	mux.HandleFunc("GET /user/", Midleware(RoleBasedHandler(LoginUser)))
+	mux.HandleFunc("POST /user/register", Midleware(RoleBasedHandler(RegisterUser)))
+	mux.HandleFunc("POST /user/login", Midleware(RoleBasedHandler(LoginUser)))
 
 	mux.HandleFunc("GET /users", Midleware(RoleBasedHandler(GetUsers)))
 	mux.HandleFunc("GET /users/{id}", Midleware(RoleBasedHandler(GetUserByID)))
@@ -213,7 +213,6 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 		} else {
 			r.Header.Set("Role", "CLAIM_ROLE_GUEST")
 		}
-
 		next.ServeHTTP(w, r)
 	}
 }

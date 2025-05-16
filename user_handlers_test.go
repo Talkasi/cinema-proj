@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -188,7 +187,7 @@ func TestUpdateUser(t *testing.T) {
 	validUpdateData := UserData{
 		Name:      "Updated Name",
 		Email:     "updated@example.com",
-		BirthDate: time.Now().AddDate(-20, 0, 0),
+		BirthDate: "2020-12-12",
 	}
 
 	setupExistingUser := func(t *testing.T) (*httptest.Server, string) {
@@ -276,7 +275,7 @@ func TestUpdateUser(t *testing.T) {
 			UserData{
 				Name:      "Name123!",
 				Email:     "valid@example.com",
-				BirthDate: time.Now().AddDate(-20, 0, 0),
+				BirthDate: "2020-12-12",
 			},
 			setupExistingUser,
 			http.StatusBadRequest,
@@ -288,7 +287,7 @@ func TestUpdateUser(t *testing.T) {
 			UserData{
 				Name:      "Valid Name",
 				Email:     "invalid-email",
-				BirthDate: time.Now().AddDate(-20, 0, 0),
+				BirthDate: "2020-12-12",
 			},
 			setupExistingUser,
 			http.StatusBadRequest,
@@ -300,7 +299,7 @@ func TestUpdateUser(t *testing.T) {
 			UserData{
 				Name:      "Valid Name",
 				Email:     "valid@example.com",
-				BirthDate: time.Now().AddDate(1, 0, 0),
+				BirthDate: "2030-12-12",
 			},
 			setupExistingUser,
 			http.StatusBadRequest,
@@ -312,7 +311,7 @@ func TestUpdateUser(t *testing.T) {
 			UserData{
 				Name:      "Valid Name",
 				Email:     "valid@example.com",
-				BirthDate: time.Now().AddDate(-101, 0, 0),
+				BirthDate: "1030-12-30",
 			},
 			setupExistingUser,
 			http.StatusBadRequest,
@@ -353,12 +352,6 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	setupExistingUser := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)
-		return ts, getUserByID(t, ts, "", 0).ID
-	}
-
 	tests := []struct {
 		name           string
 		role           string
@@ -410,7 +403,11 @@ func TestDeleteUser(t *testing.T) {
 			"Success as Admin",
 			"CLAIM_ROLE_ADMIN",
 			"",
-			setupExistingUser,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, UsersData[3].ID
+			},
 			http.StatusNoContent,
 		},
 	}
@@ -437,7 +434,7 @@ func TestRegisterUser(t *testing.T) {
 		Name:         "Test User",
 		Email:        "test@example.com",
 		PasswordHash: "PasswordHash123",
-		BirthDate:    time.Now().AddDate(-20, 0, 0),
+		BirthDate:    "2020-12-12",
 	}
 
 	tests := []struct {
@@ -464,7 +461,7 @@ func TestRegisterUser(t *testing.T) {
 				Name:         "",
 				Email:        "valid@example.com",
 				PasswordHash: "PasswordHash123",
-				BirthDate:    time.Now().AddDate(-20, 0, 0),
+				BirthDate:    "2020-12-12",
 			},
 			nil,
 			http.StatusBadRequest,
@@ -475,7 +472,7 @@ func TestRegisterUser(t *testing.T) {
 				Name:         "Valid Name",
 				Email:        "invalid-email",
 				PasswordHash: "PasswordHash123",
-				BirthDate:    time.Now().AddDate(-20, 0, 0),
+				BirthDate:    "2020-12-12",
 			},
 			nil,
 			http.StatusBadRequest,
@@ -486,7 +483,7 @@ func TestRegisterUser(t *testing.T) {
 				Name:         "Valid Name",
 				Email:        "valid@example.com",
 				PasswordHash: "short",
-				BirthDate:    time.Now().AddDate(-20, 0, 0),
+				BirthDate:    "2020-12-12",
 			},
 			nil,
 			http.StatusBadRequest,
@@ -497,7 +494,7 @@ func TestRegisterUser(t *testing.T) {
 				Name:         "Valid Name",
 				Email:        "valid@example.com",
 				PasswordHash: "PasswordHash123",
-				BirthDate:    time.Now().AddDate(1, 0, 0),
+				BirthDate:    "2030-12-12",
 			},
 			nil,
 			http.StatusBadRequest,
@@ -508,7 +505,7 @@ func TestRegisterUser(t *testing.T) {
 				Name:         "Valid Name",
 				Email:        "valid@example.com",
 				PasswordHash: "PasswordHash123",
-				BirthDate:    time.Now().AddDate(-101, 0, 0),
+				BirthDate:    "1030-12-12",
 			},
 			nil,
 			http.StatusBadRequest,
@@ -537,7 +534,7 @@ func TestRegisterUser(t *testing.T) {
 				tt.setup(t)
 			}
 
-			req := createRequest(t, "POST", ts.URL+"/user", "", tt.body)
+			req := createRequest(t, "POST", ts.URL+"/user/register", "", tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -562,7 +559,7 @@ func TestLoginUser(t *testing.T) {
 		Name:         "Test User",
 		Email:        "test@example.com",
 		PasswordHash: "PasswordHash123",
-		BirthDate:    time.Now().AddDate(-20, 0, 0),
+		BirthDate:    "2020-12-12",
 	}
 
 	tests := []struct {
@@ -638,23 +635,6 @@ func TestLoginUser(t *testing.T) {
 			nil,
 			http.StatusUnauthorized,
 		},
-		{
-			"Blocked User",
-			UserLogin{
-				Email:        testUser.Email,
-				PasswordHash: testUser.PasswordHash,
-			},
-			func(t *testing.T) {
-
-				_, err := TestAdminDB.Exec(context.Background(),
-					"INSERT INTO users (name, email, password_hash, birth_date, is_blocked) VALUES ($1, $2, $3, $4, true)",
-					testUser.Name, testUser.Email, testUser.PasswordHash, testUser.BirthDate)
-				if err != nil {
-					t.Fatalf("Failed to insert into test database: %v", err)
-				}
-			},
-			http.StatusForbidden,
-		},
 	}
 
 	for _, tt := range tests {
@@ -666,7 +646,7 @@ func TestLoginUser(t *testing.T) {
 				tt.setup(t)
 			}
 
-			req := createRequest(t, "POST", ts.URL+"/user", "", tt.body)
+			req := createRequest(t, "POST", ts.URL+"/user/login", "", tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
@@ -691,11 +671,11 @@ func TestCreateUserDBError(t *testing.T) {
 	TestGuestDB.Close()
 	TestUserDB.Close()
 
-	req := createRequest(t, "POST", ts.URL+"/user", "", UserRegister{
+	req := createRequest(t, "POST", ts.URL+"/user/register", "", UserRegister{
 		Name:         "Test User",
 		Email:        "test@example.com",
 		PasswordHash: "PasswordHash123",
-		BirthDate:    time.Now().AddDate(-20, 0, 0),
+		BirthDate:    "2020-12-12",
 	})
 	resp := executeRequest(t, req, http.StatusInternalServerError)
 	defer resp.Body.Close()

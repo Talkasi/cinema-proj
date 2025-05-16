@@ -15,6 +15,7 @@ import (
 func validateAllUserData(w http.ResponseWriter, u UserData) bool {
 	u.Name = PrepareString(u.Name)
 	u.Email = PrepareString(u.Email)
+	u.BirthDate = PrepareString(u.BirthDate)
 
 	if err := validateUserName(u.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -62,17 +63,24 @@ func validateUserEmail(email string) error {
 	return nil
 }
 
-func validateUserBirthDate(birthDate time.Time) error {
-	now := time.Now()
-	hundredYearsAgo := now.AddDate(-100, 0, 0)
+func validateUserBirthDate(birthDate string) error {
+	parsedDate, err := time.Parse("2006-01-02", birthDate)
+	if err != nil {
+		return errors.New("неверный формат даты, используйте YYYY-MM-DD")
+	}
 
-	if birthDate.After(now) {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	minBirthDate := today.AddDate(-100, 0, 0)
+
+	if parsedDate.After(today) {
 		return errors.New("дата рождения не может быть в будущем")
 	}
 
-	if birthDate.Before(hundredYearsAgo) {
+	if parsedDate.Before(minBirthDate) {
 		return errors.New("дата рождения не может быть более 100 лет назад")
 	}
+
 	return nil
 }
 
@@ -102,11 +110,13 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 		defer rows.Close()
 
 		var users []User
+		var birthDate time.Time
 		for rows.Next() {
 			var u User
-			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
+			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsBlocked, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
 				return
 			}
+			u.BirthDate = birthDate.Format("2006-01-02")
 			users = append(users, u)
 		}
 
@@ -138,9 +148,11 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var u User
+		var birthDate time.Time
 		err := db.QueryRow(context.Background(),
 			"SELECT id, name, email, birth_date, is_blocked, is_admin FROM users WHERE id = $1", id).
-			Scan(&u.ID, &u.Name, &u.Email, &u.BirthDate, &u.IsBlocked, &u.IsAdmin)
+			Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsBlocked, &u.IsAdmin)
+		u.BirthDate = birthDate.Format("2006-01-02")
 
 		if IsError(w, err) {
 			return
@@ -239,7 +251,7 @@ func DeleteUser(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 409 {object} ErrorResponse "Пользователь с таким email уже существует"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
-// @Router /user [post]
+// @Router /user/register [post]
 func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user UserRegister
@@ -249,6 +261,7 @@ func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 
 		user.Name = PrepareString(user.Name)
 		user.Email = PrepareString(user.Email)
+		user.BirthDate = PrepareString(user.BirthDate)
 
 		if err := validateUserName(user.Name); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -295,7 +308,7 @@ func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 401 {object} ErrorResponse "Неверный email или пароль"
 // @Failure 403 {object} ErrorResponse "Пользователь заблокирован"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
-// @Router /user [get]
+// @Router /user/login [post]
 func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var creds UserLogin
@@ -325,6 +338,10 @@ func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 		err := db.QueryRow(context.Background(),
 			"SELECT id, password_hash, is_blocked, is_admin FROM users WHERE email = $1", creds.Email).
 			Scan(&user.ID, &user.PasswordHash, &user.IsBlocked, &user.IsAdmin)
+		if isNoRows(err) {
+			http.Error(w, "Неверный email или пароль", http.StatusUnauthorized)
+			return
+		}
 		if IsError(w, err) {
 			return
 		}

@@ -1972,8 +1972,8 @@ paths:
       summary: Получить все билеты для сеанса фильма по его ID
       tags:
       - Билеты
-  /user:
-    get:
+  /user/login:
+    post:
       consumes:
       - application/json
       description: Аутентифицирует пользователя и возвращает токен
@@ -2010,6 +2010,7 @@ paths:
       summary: Вход пользователя
       tags:
       - Пользователи
+  /user/register:
     post:
       consumes:
       - application/json

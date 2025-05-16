@@ -100,7 +100,6 @@ func ParseUUIDFromPath(w http.ResponseWriter, pathValue string) (uuid.UUID, bool
 // }
 
 func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool {
-	println(v)
 	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB
 
 	decoder := json.NewDecoder(r.Body)
@@ -126,7 +125,6 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, v interface{}) bool 
 		return false
 	}
 
-	// Проверяем, что нет лишних данных
 	if decoder.More() {
 		http.Error(w, "Тело запроса должно содержать только один JSON объект", http.StatusBadRequest)
 		return false

@@ -2486,8 +2486,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/user": {
-            "get": {
+        "/user/login": {
+            "post": {
                 "description": "Аутентифицирует пользователя и возвращает токен",
                 "consumes": [
                     "application/json"
@@ -2542,7 +2542,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/user/register": {
             "post": {
                 "description": "Регистрирует нового пользователя в системе",
                 "consumes": [

@@ -153,19 +153,19 @@ type SeatTypeData struct {
 }
 
 type User struct {
-	ID           string    `json:"id" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
-	Name         string    `json:"name" example:"Иван Иванов"`
-	Email        string    `json:"email" example:"ivan@example.com"`
-	PasswordHash string    `json:"-"`
-	BirthDate    time.Time `json:"birth_date" example:"1990-01-01"`
-	IsBlocked    bool      `json:"is_blocked" example:"false"`
-	IsAdmin      bool      `json:"-"`
+	ID           string `json:"id" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
+	Name         string `json:"name" example:"Иван Иванов"`
+	Email        string `json:"email" example:"ivan@example.com"`
+	PasswordHash string `json:"-"`
+	BirthDate    string `json:"birth_date" example:"1990-01-01"`
+	IsBlocked    bool   `json:"is_blocked" example:"false"`
+	IsAdmin      bool   `json:"-"`
 }
 
 type UserData struct {
-	Name      string    `json:"name" example:"Иван Иванов"`
-	Email     string    `json:"email" example:"ivan@example.com"`
-	BirthDate time.Time `json:"birth_date" example:"1990-01-01"`
+	Name      string `json:"name" example:"Иван Иванов"`
+	Email     string `json:"email" example:"ivan@example.com"`
+	BirthDate string `json:"birth_date" example:"1990-01-01"`
 }
 
 type UserLogin struct {
@@ -174,10 +174,10 @@ type UserLogin struct {
 }
 
 type UserRegister struct {
-	Name         string    `json:"name" example:"Иван Иванов"`
-	Email        string    `json:"email" example:"ivan@example.com"`
-	PasswordHash string    `json:"password_hash" example:"hashed_password"`
-	BirthDate    time.Time `json:"birth_date" example:"1990-01-01"`
+	Name         string `json:"name" example:"Иван Иванов"`
+	Email        string `json:"email" example:"ivan@example.com"`
+	PasswordHash string `json:"password_hash" example:"hashed_password"`
+	BirthDate    string `json:"birth_date" example:"1990-01-01"`
 }
 
 type Review struct {
