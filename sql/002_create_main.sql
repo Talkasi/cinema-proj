@@ -52,8 +52,13 @@ CREATE TABLE IF NOT EXISTS halls (
     name VARCHAR(100) NOT NULL UNIQUE,
     capacity INT NOT NULL,
     description VARCHAR(1000),
-    CONSTRAINT valid_name CHECK (name ~ '\S'),
-    CONSTRAINT valid_capacity CHECK (capacity >= 0),
+    CONSTRAINT valid_name CHECK (
+        name ~ '^[a-zA-Zа-яА-Я0-9\s\.\-_#№]+$' AND
+        name ~ '\S' AND
+        length(name) > 0 AND
+        length(name) <= 100
+    ),
+    CONSTRAINT valid_capacity CHECK (capacity > 0),
     CONSTRAINT valid_description CHECK (description IS NULL OR description ~ '\S')
 );
 

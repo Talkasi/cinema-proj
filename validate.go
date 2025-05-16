@@ -5,11 +5,19 @@ import (
 	"time"
 )
 
-// PrepareString безопасно подготавливает строку для работы с БД
 func PrepareString(input string) string {
 	trimmed := strings.TrimSpace(input)
 
 	return trimmed
+}
+
+func PrepareStringPointer(input *string) *string {
+	if input != nil {
+		trimmed := strings.TrimSpace(*input)
+		return &trimmed
+	}
+
+	return nil
 }
 
 func MustParseTime(ts string) time.Time {

@@ -63,6 +63,8 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("PUT /genres/{id}", Midleware(RoleBasedHandler(UpdateGenre)))
 	mux.HandleFunc("DELETE /genres/{id}", Midleware(RoleBasedHandler(DeleteGenre)))
 
+	mux.HandleFunc("GET /halls/by-screen-type", Midleware(RoleBasedHandler(GetHallsByScreenType)))
+	mux.HandleFunc("GET /halls/search", Midleware(RoleBasedHandler(SearchHallsByName)))
 	mux.HandleFunc("GET /halls", Midleware(RoleBasedHandler(GetHalls)))
 	mux.HandleFunc("GET /halls/{id}", Midleware(RoleBasedHandler(GetHallByID)))
 	mux.HandleFunc("POST /halls", Midleware(RoleBasedHandler(CreateHall)))

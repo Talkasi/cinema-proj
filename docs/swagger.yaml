@@ -654,6 +654,10 @@ paths:
           description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при создании кинозала
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
@@ -685,6 +689,10 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Данные не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при удалении кинозала
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -761,6 +769,10 @@ paths:
           description: Зал не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при обновлении кинозала
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
@@ -768,6 +780,76 @@ paths:
       security:
       - BearerAuth: []
       summary: Обновить кинозал
+      tags:
+      - Кинозалы
+  /halls/by-screen-type:
+    get:
+      description: Возвращает список залов с указанным типом экрана.
+      parameters:
+      - description: ID типа экрана
+        in: query
+        name: screen_type_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список найденных кинозалов
+          schema:
+            items:
+              $ref: '#/definitions/main.Hall'
+            type: array
+        "400":
+          description: Неверный формат ID типа экрана
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Залы не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить залы по типу экрана
+      tags:
+      - Кинозалы
+  /halls/search:
+    get:
+      description: Возвращает список залов, названия которых содержат указанную строку.
+      parameters:
+      - description: Строка для поиска
+        in: query
+        name: query
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список найденных кинозалов
+          schema:
+            items:
+              $ref: '#/definitions/main.Hall'
+            type: array
+        "400":
+          description: Строка поиска пуста
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Залы не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Поиск залов по названию
       tags:
       - Кинозалы
   /movie-shows:

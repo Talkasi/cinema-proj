@@ -278,7 +278,7 @@ func SearchGenres(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		if len(genres) == 0 {
-			http.Error(w, "Жанры не найдены", http.StatusNotFound)
+			http.Error(w, "Жанры по запросу не найдены", http.StatusNotFound)
 			return
 		}
 

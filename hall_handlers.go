@@ -13,7 +13,7 @@ import (
 
 func validateAllHallData(w http.ResponseWriter, h HallData) bool {
 	h.Name = PrepareString(h.Name)
-	h.Description = PrepareString(h.Description)
+	h.Description = PrepareStringPointer(h.Description)
 
 	if err := validateHallName(h.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -42,8 +42,13 @@ func validateHallName(name string) error {
 	if !regexp.MustCompile(`^[a-zA-Zа-яА-Я0-9\s\.\-_#№]+$`).MatchString(name) {
 		return errors.New("название зала содержит запрещённые символы. Разрешены буквы, цифры, пробелы, точки, дефисы, подчёркивания, # и №")
 	}
-	if len(name) > 100 {
-		return errors.New("название зала не может превышать 100 символов")
+
+	if !regexp.MustCompile(`\S`).MatchString(name) {
+		return errors.New("название зала не может состоять только из пробелов")
+	}
+
+	if len(name) == 0 || len(name) > 100 {
+		return errors.New("название зала не может быть пустым или превышать 100 символов")
 	}
 	return nil
 }
@@ -62,9 +67,15 @@ func validateScreenTypeID(screenTypeID string) error {
 	return nil
 }
 
-func validateHallDescription(description string) error {
-	if description != "" && len(description) > 1000 {
-		return errors.New("описание зала не может превышать 1000 символов")
+func validateHallDescription(description *string) error {
+	if description != nil {
+		if !regexp.MustCompile(`\S`).MatchString(*description) {
+			return errors.New("описание зала должно содержать хотя бы один непробельный символ")
+		}
+
+		if len(*description) > 1000 {
+			return errors.New("описание зала не может превышать 1000 символов")
+		}
 	}
 	return nil
 }
@@ -149,6 +160,7 @@ func GetHallByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Success 201 {object} CreateResponse "ID созданного кинозала"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 409 {object} ErrorResponse "Конфликт при создании кинозала"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /halls [post]
 func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
@@ -189,6 +201,7 @@ func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Зал не найден"
+// @Failure 409 {object} ErrorResponse "Конфликт при обновлении кинозала"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /halls/{id} [put]
 func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
@@ -219,16 +232,8 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		updatedHall := Hall{
-			ID:           id.String(),
-			Name:         h.Name,
-			Capacity:     h.Capacity,
-			ScreenTypeID: h.ScreenTypeID,
-			Description:  h.Description,
-		}
-
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(updatedHall)
+		json.NewEncoder(w)
 	}
 }
 
@@ -241,6 +246,7 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Данные не найдены"
+// @Failure 409 {object} ErrorResponse "Конфликт при удалении кинозала"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /halls/{id} [delete]
 func DeleteHall(db *pgxpool.Pool) http.HandlerFunc {
@@ -262,5 +268,100 @@ func DeleteHall(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// @Summary Получить залы по типу экрана
+// @Description Возвращает список залов с указанным типом экрана.
+// @Tags Кинозалы
+// @Produce json
+// @Param screen_type_id query string true "ID типа экрана"
+// @Security BearerAuth
+// @Success 200 {array} Hall "Список найденных кинозалов"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID типа экрана"
+// @Failure 404 {object} ErrorResponse "Залы не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /halls/by-screen-type [get]
+func GetHallsByScreenType(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		screenTypeID := r.URL.Query().Get("screen_type_id")
+		if _, err := uuid.Parse(screenTypeID); err != nil {
+			http.Error(w, "Неверный формат ID типа экрана", http.StatusBadRequest)
+			return
+		}
+
+		rows, err := db.Query(context.Background(),
+			`SELECT h.id, h.name, h.capacity, h.screen_type_id, h.description 
+             FROM halls h
+             WHERE h.screen_type_id = $1`, screenTypeID)
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var halls []Hall
+		for rows.Next() {
+			var h Hall
+			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
+				return
+			}
+			halls = append(halls, h)
+		}
+
+		if len(halls) == 0 {
+			http.Error(w, "Кинозалы с указанным типом экрана не найдены", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(halls)
+	}
+}
+
+// @Summary Поиск залов по названию
+// @Description Возвращает список залов, названия которых содержат указанную строку.
+// @Tags Кинозалы
+// @Produce json
+// @Param query query string true "Строка для поиска"
+// @Security BearerAuth
+// @Success 200 {array} Hall "Список найденных кинозалов"
+// @Failure 400 {object} ErrorResponse "Строка поиска пуста"
+// @Failure 404 {object} ErrorResponse "Залы не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /halls/search [get]
+func SearchHallsByName(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("query")
+		query = PrepareString(query)
+		if query == "" {
+			http.Error(w, "Строка поиска пуста", http.StatusBadRequest)
+			return
+		}
+
+		rows, err := db.Query(context.Background(),
+			`SELECT id, name, capacity, screen_type_id, description 
+              FROM halls 
+              WHERE name ILIKE '%' || $1 || '%'`, query)
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var halls []Hall
+		for rows.Next() {
+			var h Hall
+			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
+				return
+			}
+			halls = append(halls, h)
+		}
+
+		if len(halls) == 0 {
+			http.Error(w, "Кинозалы по запросу не найдены", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(halls)
 	}
 }

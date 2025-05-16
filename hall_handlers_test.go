@@ -2,33 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 )
-
-func getHallByID(t *testing.T, ts *httptest.Server, token string, index int) Hall {
-	req := createRequest(t, "GET", ts.URL+"/halls", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var halls []Hall
-	parseResponseBody(t, resp, &halls)
-
-	if len(halls) == 0 {
-		t.Fatal("Expected at least one hall, got none")
-	}
-
-	if index >= len(halls) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return halls[index]
-}
 
 func TestGetHalls(t *testing.T) {
 	tests := []struct {
@@ -84,7 +67,7 @@ func TestGetHallByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getHallByID(t, ts, "", 0).ID
+		return ts, HallsData[0].ID
 	}
 
 	tests := []struct {
@@ -199,21 +182,21 @@ func TestCreateHall(t *testing.T) {
 		Name:         "Test Hall",
 		Capacity:     100,
 		ScreenTypeID: ScreenTypesData[3].ID,
-		Description:  "Test Description",
+		Description:  ptr("Test Description"),
 	}
 
 	invalidHall := HallData{
 		Name:         "",
 		Capacity:     0,
 		ScreenTypeID: "",
-		Description:  "",
+		Description:  nil,
 	}
 
 	invalidForainKeyHall := HallData{
 		Name:         "Test Hall",
 		Capacity:     100,
 		ScreenTypeID: uuid.New().String(),
-		Description:  "Test Description",
+		Description:  ptr("Test Description"),
 	}
 
 	tests := []struct {
@@ -317,7 +300,7 @@ func TestCreateHall(t *testing.T) {
 				Name:         "Min Capacity",
 				Capacity:     1,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+				Description:  nil,
 			},
 			func(t *testing.T) { SeedAll(TestAdminDB) },
 			http.StatusCreated,
@@ -329,7 +312,7 @@ func TestCreateHall(t *testing.T) {
 				Name:         strings.Repeat("a", 100),
 				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+				Description:  ptr("Test"),
 			},
 			func(t *testing.T) { SeedAll(TestAdminDB) },
 			http.StatusCreated,
@@ -341,7 +324,7 @@ func TestCreateHall(t *testing.T) {
 				Name:         strings.Repeat("a", 101),
 				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+				Description:  nil,
 			},
 			nil,
 			http.StatusBadRequest,
@@ -353,7 +336,7 @@ func TestCreateHall(t *testing.T) {
 				Name:         "Test Hall",
 				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  strings.Repeat("a", 1000),
+				Description:  ptr(strings.Repeat("a", 1000)),
 			},
 			func(t *testing.T) { SeedAll(TestAdminDB) },
 			http.StatusCreated,
@@ -393,22 +376,22 @@ func TestUpdateHall(t *testing.T) {
 	validUpdateData := HallData{
 		Name:         "Updated Hall",
 		Capacity:     150,
-		ScreenTypeID: ScreenTypesData[7].ID,
-		Description:  "Updated Description",
+		ScreenTypeID: ScreenTypesData[6].ID,
+		Description:  ptr("Updated Description"),
 	}
 
 	invalidUpdateData := HallData{
 		Name:         "",
 		Capacity:     0,
 		ScreenTypeID: "",
-		Description:  "",
+		Description:  nil,
 	}
 
 	// Setup function for tests needing existing hall
 	setupExistingHall := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getHallByID(t, ts, "", 0).ID
+		return ts, HallsData[0].ID
 	}
 
 	tests := []struct {
@@ -439,12 +422,12 @@ func TestUpdateHall(t *testing.T) {
 				Name:         "Min Capacity",
 				Capacity:     1,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+				Description:  nil,
 			},
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+				return ts, HallsData[0].ID
 			},
 			http.StatusOK,
 		},
@@ -456,7 +439,7 @@ func TestUpdateHall(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				hall := getHallByID(t, ts, "", 0)
+				hall := HallsData[0]
 				_, err := TestAdminDB.Exec(context.Background(),
 					"UPDATE halls SET name=$1, capacity=$2, screen_type_id=$3, description=$4 WHERE id=$5",
 					validUpdateData.Name, validUpdateData.Capacity,
@@ -476,12 +459,12 @@ func TestUpdateHall(t *testing.T) {
 				Name:         strings.Repeat("a", 100),
 				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+				Description:  ptr("Test"),
 			},
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+				return ts, HallsData[0].ID
 			},
 			http.StatusOK,
 		},
@@ -493,12 +476,12 @@ func TestUpdateHall(t *testing.T) {
 				Name:         strings.Repeat("a", 101),
 				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  "Test",
+				Description:  nil,
 			},
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+				return ts, HallsData[0].ID
 			},
 			http.StatusBadRequest,
 		},
@@ -510,12 +493,12 @@ func TestUpdateHall(t *testing.T) {
 				Name:         "Test Hall",
 				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
-				Description:  strings.Repeat("a", 1000),
+				Description:  ptr(strings.Repeat("a", 1000)),
 			},
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+				return ts, HallsData[0].ID
 			},
 			http.StatusOK,
 		},
@@ -676,7 +659,7 @@ func TestDeleteHall(t *testing.T) {
 	setupExistingHall := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getHallByID(t, ts, "", 0).ID
+		return ts, HallsData[0].ID
 	}
 
 	tests := []struct {
@@ -726,7 +709,7 @@ func TestDeleteHall(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				hall := getHallByID(t, ts, "", 4)
+				hall := HallsData[4]
 				req := createRequest(t, "DELETE", ts.URL+"/halls/"+hall.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), nil)
 				resp := executeRequest(t, req, http.StatusNoContent)
 				resp.Body.Close()
@@ -789,7 +772,7 @@ func TestDeleteHall(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, getHallByID(t, ts, "", 4).ID
+				return ts, HallsData[4].ID
 			},
 			http.StatusNoContent,
 		},
@@ -809,6 +792,241 @@ func TestDeleteHall(t *testing.T) {
 			req := createRequest(t, "DELETE", ts.URL+"/halls/"+effectiveID, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
+		})
+	}
+}
+
+func TestGetHallsByScreenType(t *testing.T) {
+	setupWithData := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, ScreenTypesData[0].ID
+	}
+
+	tests := []struct {
+		name           string
+		role           string
+		screenTypeID   string
+		setup          func(t *testing.T) (*httptest.Server, string)
+		expectedStatus int
+		expectedCount  int
+	}{
+		{
+			"Guest access allowed",
+			"",
+			"",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"User access allowed",
+			"CLAIM_ROLE_USER",
+			"",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Admin access allowed",
+			"CLAIM_ROLE_ADMIN",
+			"",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Invalid UUID format",
+			"CLAIM_ROLE_USER",
+			"invalid-uuid",
+			func(t *testing.T) (*httptest.Server, string) {
+				return setupTestServer(), ""
+			},
+			http.StatusBadRequest,
+			0,
+		},
+		{
+			"Non-existent screen type",
+			"CLAIM_ROLE_USER",
+			"",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, uuid.New().String()
+			},
+			http.StatusNotFound,
+			0,
+		},
+		{
+			"Empty screen type ID",
+			"CLAIM_ROLE_USER",
+			"",
+			func(t *testing.T) (*httptest.Server, string) {
+				return setupTestServer(), ""
+			},
+			http.StatusBadRequest,
+			0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, screenTypeID := tt.setup(t)
+			defer ts.Close()
+
+			effectiveID := tt.screenTypeID
+			if effectiveID == "" {
+				effectiveID = screenTypeID
+			}
+
+			req := createRequest(t, "GET", ts.URL+"/halls/by-screen-type?screen_type_id="+effectiveID, generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var halls []Hall
+				if err := json.NewDecoder(resp.Body).Decode(&halls); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(halls) != tt.expectedCount {
+					t.Errorf("Expected %d halls, got %d", tt.expectedCount, len(halls))
+				}
+			}
+		})
+	}
+}
+
+func TestSearchHallsByName(t *testing.T) {
+	setupWithData := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		db := TestAdminDB
+
+		_ = SeedAll(db)
+		ClearTable(db, "halls")
+
+		_, err := db.Exec(context.Background(), `
+            INSERT INTO halls (id, name, capacity, screen_type_id, description)
+            VALUES 
+                ($1, 'IMAX Premium', 250, (SELECT id FROM screen_types WHERE name = 'IMAX'), 'Премиум зал IMAX'),
+                ($2, 'LED Standard', 150, (SELECT id FROM screen_types WHERE name = 'LED'), 'Стандартный LED зал'),
+                ($3, '3D Atmos', 200, (SELECT id FROM screen_types WHERE name = 'Система 3D'), 'Зал с 3D и звуком Atmos')
+            `,
+			uuid.New(), uuid.New(), uuid.New(),
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		role           string
+		query          string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+		expectedCount  int
+	}{
+		{
+			"Guest access forbidden",
+			"",
+			"IMAX",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Search 'IMAX' (user)",
+			"CLAIM_ROLE_USER",
+			"IMAX",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Search 'Standard' (admin)",
+			"CLAIM_ROLE_ADMIN",
+			"Standard",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Search '3D' (partial match)",
+			"CLAIM_ROLE_USER",
+			"3D",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Search 'premium' (case insensitive)",
+			"CLAIM_ROLE_USER",
+			"premium",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Search non-existent hall",
+			"CLAIM_ROLE_USER",
+			"VIP Lounge",
+			setupWithData,
+			http.StatusNotFound,
+			0,
+		},
+		{
+			"Search is short",
+			"CLAIM_ROLE_USER",
+			"at",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Search with special chars (#)",
+			"CLAIM_ROLE_USER",
+			"#1",
+			func(t *testing.T) *httptest.Server {
+				ts := setupTestServer()
+				db := TestAdminDB
+				_ = SeedAll(db)
+				ClearTable(db, "halls")
+				_, err := db.Exec(context.Background(),
+					"INSERT INTO halls (id, name, capacity, screen_type_id) VALUES ($1, 'Hall #1', 100, $2)",
+					uuid.New(), ScreenTypesData[0].ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return ts
+			},
+			http.StatusOK,
+			1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			req := createRequest(t, "GET", ts.URL+"/halls/search?query="+url.QueryEscape(tt.query),
+				generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var halls []Hall
+				if err := json.NewDecoder(resp.Body).Decode(&halls); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(halls) != tt.expectedCount {
+					t.Errorf("Expected %d halls, got %d", tt.expectedCount, len(halls))
+				}
+			}
 		})
 	}
 }

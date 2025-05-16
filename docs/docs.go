@@ -424,6 +424,122 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "409": {
+                        "description": "Конфликт при создании кинозала",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/halls/by-screen-type": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список залов с указанным типом экрана.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Кинозалы"
+                ],
+                "summary": "Получить залы по типу экрана",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID типа экрана",
+                        "name": "screen_type_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список найденных кинозалов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Hall"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID типа экрана",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Залы не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/halls/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список залов, названия которых содержат указанную строку.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Кинозалы"
+                ],
+                "summary": "Поиск залов по названию",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Строка для поиска",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список найденных кинозалов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Hall"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Строка поиска пуста",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Залы не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Ошибка сервера",
                         "schema": {
@@ -541,6 +657,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "409": {
+                        "description": "Конфликт при обновлении кинозала",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Ошибка сервера",
                         "schema": {
@@ -587,6 +709,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Данные не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Конфликт при удалении кинозала",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }

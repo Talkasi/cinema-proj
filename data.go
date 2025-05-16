@@ -23,14 +23,11 @@ var GenresData = []Genre{
 var ScreenTypesData = []ScreenType{
 	{ID: uuid.New().String(), Name: "LED", Description: "Современные экраны, использующие светодиоды для отображения изображения с высокой яркостью и контрастностью."},
 	{ID: uuid.New().String(), Name: "LCD", Description: "Жидкокристаллические экраны, обеспечивающие хорошее качество изображения и энергоэффективность."},
-	{ID: uuid.New().String(), Name: "DLP", Description: "Цифровые проекторы на основе технологии цифровой обработки света, обеспечивающие высокое качество изображения."},
 	{ID: uuid.New().String(), Name: "OLED", Description: "Экраны с органическими светодиодами, обеспечивающие глубокие черные цвета и широкий угол обзора."},
-	{ID: uuid.New().String(), Name: "Проекционный экран", Description: "Экран, на который проецируется изображение с проектора."},
 	{ID: uuid.New().String(), Name: "Система 3D", Description: "Оборудование для показа фильмов в 3D-формате, включая специальные экраны и очки."},
 	{ID: uuid.New().String(), Name: "IMAX", Description: "Специальные экраны и проекторы для показа фильмов в формате IMAX, обеспечивающие уникальный опыт просмотра."},
 	{ID: uuid.New().String(), Name: "Сквозной экран", Description: "Экран, который позволяет зрителям видеть изображение с обеих сторон."},
 	{ID: uuid.New().String(), Name: "Мобильный экран", Description: "Переносные экраны, используемые для временных показов или мероприятий на открытом воздухе."},
-	{ID: uuid.New().String(), Name: "Система звука для экрана", Description: "Оборудование, интегрированное с экраном для обеспечения качественного звука."},
 }
 
 var SeatTypesData = []SeatType{
@@ -46,41 +43,45 @@ var SeatTypesData = []SeatType{
 	{ID: uuid.New().String(), Name: "Кресло с массажем", Description: "Кресло, которое предлагает функции массажа для расслабления зрителей."},
 }
 
+func ptr(s string) *string {
+	return &s
+}
+
 var HallsData = []Hall{
 	{
 		ID:           uuid.New().String(),
 		Name:         "Основной кинозал",
 		Capacity:     500,
 		ScreenTypeID: ScreenTypesData[0].ID,
-		Description:  "Главный кинозал кинотеатра с современным оборудованием",
+		Description:  ptr("Главный кинозал кинотеатра с современным оборудованием"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "Малый кинозал",
 		Capacity:     150,
 		ScreenTypeID: ScreenTypesData[3].ID,
-		Description:  "Небольшой уютный кинозал для камерных просмотров",
+		Description:  ptr("Небольшой уютный кинозал для камерных просмотров"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "VIP кинозал",
 		Capacity:     50,
 		ScreenTypeID: ScreenTypesData[2].ID,
-		Description:  "Премиальный кинозал с креслами-реклайнерами и сервисом",
+		Description:  ptr("Премиальный кинозал с креслами-реклайнерами и сервисом"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "IMAX кинозал",
 		Capacity:     300,
 		ScreenTypeID: ScreenTypesData[4].ID,
-		Description:  "Зал с технологией IMAX Laser для максимального погружения",
+		Description:  ptr("Зал с технологией IMAX Laser для максимального погружения"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "4DX кинозал",
 		Capacity:     200,
 		ScreenTypeID: ScreenTypesData[3].ID,
-		Description:  "Зал с движущимися креслами и спецэффектами",
+		Description:  ptr("Зал с движущимися креслами и спецэффектами"),
 	},
 }
 
