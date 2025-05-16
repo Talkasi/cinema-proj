@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,25 +13,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-func getMovieShowByID(t *testing.T, ts *httptest.Server, token string, index int) MovieShow {
-	req := createRequest(t, "GET", ts.URL+"/movie-shows", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var shows []MovieShow
-	parseResponseBody(t, resp, &shows)
-
-	if len(shows) == 0 {
-		t.Fatal("Expected at least one movie show, got none")
-	}
-
-	if index >= len(shows) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return shows[index]
-}
 
 func TestGetMovieShows(t *testing.T) {
 	tests := []struct {
@@ -75,7 +58,7 @@ func TestGetMovieShowByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getMovieShowByID(t, ts, "", 0).ID
+		return ts, MovieShowsData[0].ID
 	}
 
 	tests := []struct {
@@ -354,7 +337,7 @@ func TestUpdateMovieShow(t *testing.T) {
 	setupExistingShow := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getMovieShowByID(t, ts, "", 0).ID
+		return ts, MovieShowsData[0].ID
 	}
 
 	tests := []struct {
@@ -678,4 +661,272 @@ func TestMovieShowConflictTrigger(t *testing.T) {
 			t.Errorf("Expected no conflict with exact cleaning time gap, got error: %v", err)
 		}
 	})
+}
+
+func TestGetShowsByMovie(t *testing.T) {
+	setupWithData := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, MoviesData[0].ID
+	}
+
+	tests := []struct {
+		name           string
+		role           string
+		movieID        string
+		hours          string
+		setup          func(t *testing.T) (*httptest.Server, string)
+		expectedStatus int
+		expectedCount  int
+	}{
+		{
+			"Valid request with default hours",
+			"CLAIM_ROLE_USER",
+			"",
+			"",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Valid request with custom hours",
+			"CLAIM_ROLE_USER",
+			"",
+			"48",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+		{
+			"Invalid movie ID format",
+			"CLAIM_ROLE_USER",
+			"invalid-uuid",
+			"",
+			setupWithData,
+			http.StatusBadRequest,
+			0,
+		},
+		{
+			"Non-existent movie ID",
+			"CLAIM_ROLE_USER",
+			uuid.New().String(),
+			"",
+			setupWithData,
+			http.StatusNotFound,
+			0,
+		},
+		{
+			"Invalid hours parameter",
+			"CLAIM_ROLE_USER",
+			"",
+			"invalid",
+			setupWithData,
+			http.StatusBadRequest,
+			0,
+		},
+		{
+			"Negative hours parameter",
+			"CLAIM_ROLE_USER",
+			"",
+			"-10",
+			setupWithData,
+			http.StatusBadRequest,
+			0,
+		},
+		{
+			"Guest access allowed",
+			"",
+			"",
+			"",
+			setupWithData,
+			http.StatusOK,
+			1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, movieID := tt.setup(t)
+			defer ts.Close()
+
+			// Use provided ID or fallback to id from setup
+			effectiveID := tt.movieID
+			if effectiveID == "" {
+				effectiveID = movieID
+			}
+
+			url := fmt.Sprintf("%s/movies/%s/shows", ts.URL, effectiveID)
+			if tt.hours != "" {
+				url += "?hours=" + tt.hours
+			}
+
+			req := createRequest(t, "GET", url, generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var shows []MovieShow
+				if err := json.NewDecoder(resp.Body).Decode(&shows); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(shows) != tt.expectedCount {
+					t.Errorf("Expected %d shows, got %d", tt.expectedCount, len(shows))
+				}
+			}
+		})
+	}
+}
+
+func TestGetShowsByDate(t *testing.T) {
+	setupWithData := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		role           string
+		date           string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+	}{
+		{
+			"Valid date",
+			"CLAIM_ROLE_USER",
+			time.Now().Add(48 * time.Hour).Format("2006-01-02"),
+			setupWithData,
+			http.StatusOK,
+		},
+		{
+			"Invalid date format",
+			"CLAIM_ROLE_USER",
+			"2023\\01\\01",
+			setupWithData,
+			http.StatusBadRequest,
+		},
+		{
+			"Date with no shows",
+			"CLAIM_ROLE_USER",
+			"1900-01-01",
+			setupWithData,
+			http.StatusNotFound,
+		},
+		{
+			"Guest access allowed",
+			"",
+			time.Now().Add(48 * time.Hour).Format("2006-01-02"),
+			setupWithData,
+			http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			req := createRequest(t, "GET", ts.URL+"/movie-shows/by-date/"+tt.date, generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var shows []MovieShow
+				if err := json.NewDecoder(resp.Body).Decode(&shows); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(shows) == 0 {
+					t.Error("Expected at least one show, got zero")
+				}
+			}
+		})
+	}
+}
+
+func TestGetUpcomingShows(t *testing.T) {
+	setupWithData := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		role           string
+		hours          string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+	}{
+		{
+			"Default hours",
+			"CLAIM_ROLE_USER",
+			"",
+			setupWithData,
+			http.StatusOK,
+		},
+		{
+			"Custom valid hours",
+			"CLAIM_ROLE_USER",
+			"72",
+			setupWithData,
+			http.StatusOK,
+		},
+		{
+			"Invalid hours format",
+			"CLAIM_ROLE_USER",
+			"invalid",
+			setupWithData,
+			http.StatusBadRequest,
+		},
+		{
+			"Negative hours",
+			"CLAIM_ROLE_USER",
+			"-5",
+			setupWithData,
+			http.StatusBadRequest,
+		},
+		{
+			"Zero hours",
+			"CLAIM_ROLE_USER",
+			"0",
+			setupWithData,
+			http.StatusBadRequest,
+		},
+		{
+			"Guest access allowed",
+			"",
+			"",
+			setupWithData,
+			http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			url := ts.URL + "/movie-shows/upcoming"
+			if tt.hours != "" {
+				url += "?hours=" + tt.hours
+			}
+
+			req := createRequest(t, "GET", url, generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var shows []MovieShow
+				if err := json.NewDecoder(resp.Body).Decode(&shows); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(shows) == 0 {
+					t.Error("Expected at least one show, got zero")
+				}
+			}
+		})
+	}
 }

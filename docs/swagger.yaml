@@ -125,9 +125,6 @@ definitions:
       age_limit:
         example: 12
         type: integer
-      box_office_revenue:
-        example: 300000000
-        type: number
       description:
         example: Эпическая история о кольце власти.
         type: string
@@ -1103,6 +1100,10 @@ paths:
           description: Фильм не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при удалении фильма
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
@@ -1243,7 +1244,7 @@ paths:
               $ref: '#/definitions/main.Movie'
             type: array
         "400":
-          description: Пустой поисковый запрос
+          description: Строка поиска пуста
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":

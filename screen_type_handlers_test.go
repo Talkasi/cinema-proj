@@ -12,25 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func getScreenTypeByID(t *testing.T, ts *httptest.Server, token string, index int) ScreenType {
-	req := createRequest(t, "GET", ts.URL+"/screen-types", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var screen_types []ScreenType
-	parseResponseBody(t, resp, &screen_types)
-
-	if len(screen_types) == 0 {
-		t.Fatal("Expected at least one screen type, got none")
-	}
-
-	if index >= len(screen_types) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return screen_types[index]
-}
-
 func TestGetScreenTypes(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -69,7 +50,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getScreenTypeByID(t, ts, "", 0).ID
+		return ts, ScreenTypesData[0].ID
 	}
 
 	tests := []struct {
@@ -356,7 +337,7 @@ func TestUpdateScreenType(t *testing.T) {
 	setupExistingScreen := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, ScreenTypesData[0].ID
 	}
 
 	unknown_id := uuid.NewString()
@@ -536,7 +517,7 @@ func TestDeleteScreenType(t *testing.T) {
 	setupExistingScreen := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, ScreenTypesData[0].ID
 	}
 
 	tests := []struct {
@@ -634,7 +615,7 @@ func TestDeleteScreenType(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
+				return ts, ScreenTypesData[5].ID
 			},
 			http.StatusNoContent,
 		},
@@ -760,7 +741,7 @@ func TestScreenTypeConstraintsUpdate(t *testing.T) {
 			defer ts.Close()
 			_ = SeedAll(TestAdminDB)
 
-			screen_typeID := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+			screen_typeID := ScreenTypesData[0].ID
 
 			req := createRequest(t, "PUT", fmt.Sprintf("%s/screen-types/%s", ts.URL, screen_typeID), generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
@@ -774,8 +755,8 @@ func TestUpdateConflict(t *testing.T) {
 	defer ts.Close()
 
 	_ = SeedAll(TestAdminDB)
-	id1 := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
-	id2 := getScreenTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
+	id1 := ScreenTypesData[0]
+	id2 := ScreenTypesData[1]
 
 	updateData := ScreenTypeData{
 		Name:        id2.Name,

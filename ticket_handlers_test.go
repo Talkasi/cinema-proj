@@ -10,25 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func getTicketByID(t *testing.T, ts *httptest.Server, token string, index int) Ticket {
-	req := createRequest(t, "GET", ts.URL+"/tickets", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var tickets []Ticket
-	parseResponseBody(t, resp, &tickets)
-
-	if len(tickets) == 0 {
-		t.Fatal("Expected at least one ticket, got none")
-	}
-
-	if index >= len(tickets) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return tickets[index]
-}
-
 func TestCreateTicket(t *testing.T) {
 	validTicket := TicketData{
 		MovieShowID: MovieShowsData[0].ID,

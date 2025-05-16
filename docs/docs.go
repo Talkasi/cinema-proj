@@ -1179,7 +1179,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Пустой поисковый запрос",
+                        "description": "Строка поиска пуста",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1353,6 +1353,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Фильм не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Конфликт при удалении фильма",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3165,10 +3171,6 @@ const docTemplate = `{
                 "age_limit": {
                     "type": "integer",
                     "example": 12
-                },
-                "box_office_revenue": {
-                    "type": "number",
-                    "example": 300000000
                 },
                 "description": {
                     "type": "string",

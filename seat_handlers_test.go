@@ -10,26 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Вспомогательные функции для тестов
-func getSeatByID(t *testing.T, ts *httptest.Server, token string, index int) Seat {
-	req := createRequest(t, "GET", ts.URL+"/seats", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var seats []Seat
-	parseResponseBody(t, resp, &seats)
-
-	if len(seats) == 0 {
-		t.Fatal("Expected at least one seat, got none")
-	}
-
-	if index >= len(seats) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return seats[index]
-}
-
 func TestGetSeats(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -74,7 +54,7 @@ func TestGetSeatByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getSeatByID(t, ts, "", 0).ID
+		return ts, SeatsData[0].ID
 	}
 
 	tests := []struct {
@@ -404,7 +384,7 @@ func TestUpdateSeat(t *testing.T) {
 	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		SeedAll(TestAdminDB)
-		seat := getSeatByID(t, ts, "", 0)
+		seat := SeatsData[0]
 		validUpdate.HallID = seat.HallID
 		validUpdate.SeatTypeID = seat.SeatTypeID
 		return ts, seat.ID

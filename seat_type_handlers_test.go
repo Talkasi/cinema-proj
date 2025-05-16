@@ -12,25 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func getSeatTypeByID(t *testing.T, ts *httptest.Server, token string, index int) SeatType {
-	req := createRequest(t, "GET", ts.URL+"/seat-types", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var seat_types []SeatType
-	parseResponseBody(t, resp, &seat_types)
-
-	if len(seat_types) == 0 {
-		t.Fatal("Expected at least one seat type, got none")
-	}
-
-	if index >= len(seat_types) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return seat_types[index]
-}
-
 func TestGetSeatTypes(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -69,7 +50,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getSeatTypeByID(t, ts, "", 0).ID
+		return ts, SeatTypesData[0].ID
 	}
 
 	tests := []struct {
@@ -356,7 +337,7 @@ func TestUpdateSeatType(t *testing.T) {
 	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, SeatTypesData[0].ID
 	}
 
 	unknown_id := uuid.NewString()
@@ -536,7 +517,7 @@ func TestDeleteSeatType(t *testing.T) {
 	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+		return ts, SeatTypesData[0].ID
 	}
 
 	tests := []struct {
@@ -634,7 +615,7 @@ func TestDeleteSeatType(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
+				return ts, SeatTypesData[5].ID
 			},
 			http.StatusNoContent,
 		},
@@ -760,7 +741,7 @@ func TestSeatTypeConstraintsUpdate(t *testing.T) {
 			defer ts.Close()
 			_ = SeedAll(TestAdminDB)
 
-			seat_typeID := getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+			seat_typeID := SeatTypesData[0].ID
 
 			req := createRequest(t, "PUT", fmt.Sprintf("%s/seat-types/%s", ts.URL, seat_typeID), generateToken(t, tt.role), tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
@@ -774,8 +755,8 @@ func TestUpdateSeatConflict(t *testing.T) {
 	defer ts.Close()
 
 	_ = SeedAll(TestAdminDB)
-	id1 := getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0)
-	id2 := getSeatTypeByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 1)
+	id1 := SeatTypesData[0]
+	id2 := SeatTypesData[1]
 
 	updateData := SeatTypeData{
 		Name:        id2.Name,

@@ -10,25 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func getUserByID(t *testing.T, ts *httptest.Server, token string, index int) User {
-	req := createRequest(t, "GET", ts.URL+"/users", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var users []User
-	parseResponseBody(t, resp, &users)
-
-	if len(users) == 0 {
-		t.Fatal("Expected at least one user, got none")
-	}
-
-	if index >= len(users) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return users[index]
-}
-
 func TestGetUsers(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -73,7 +54,7 @@ func TestGetUserByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getUserByID(t, ts, "", 0).ID
+		return ts, UsersData[0].ID
 	}
 
 	tests := []struct {
@@ -193,7 +174,7 @@ func TestUpdateUser(t *testing.T) {
 	setupExistingUser := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getUserByID(t, ts, "", 0).ID
+		return ts, UsersData[0].ID
 	}
 
 	tests := []struct {
