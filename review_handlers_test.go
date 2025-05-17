@@ -11,25 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func getReviewByID(t *testing.T, ts *httptest.Server, token string, index int) Review {
-	req := createRequest(t, "GET", ts.URL+"/reviews", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var reviews []Review
-	parseResponseBody(t, resp, &reviews)
-
-	if len(reviews) == 0 {
-		t.Fatal("Expected at least one review, got none")
-	}
-
-	if index >= len(reviews) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return reviews[index]
-}
-
 func TestGetReviews(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -74,7 +55,7 @@ func TestGetReviewByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getReviewByID(t, ts, "", 0).ID
+		return ts, ReviewsData[0].ID
 	}
 
 	tests := []struct {
@@ -396,7 +377,7 @@ func TestUpdateReview(t *testing.T) {
 	setupExistingReview := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getReviewByID(t, ts, "", 0).ID
+		return ts, ReviewsData[0].ID
 	}
 
 	tests := []struct {
@@ -612,7 +593,7 @@ func TestDeleteReview(t *testing.T) {
 	setupExistingReview := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getReviewByID(t, ts, "", 0).ID
+		return ts, ReviewsData[0].ID
 	}
 
 	tests := []struct {
@@ -713,6 +694,246 @@ func TestCreateReviewDBError(t *testing.T) {
 			Rating:  8,
 			Comment: "Test comment",
 		})
+	resp := executeRequest(t, req, http.StatusInternalServerError)
+	defer resp.Body.Close()
+
+	if err := InitTestDB(); err != nil {
+		log.Fatal("ошибка подключения к БД: ", err)
+	}
+}
+
+func TestGetReviewsByMovieID(t *testing.T) {
+	setupTest := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		SeedAll(TestAdminDB)
+		return ts, MoviesData[0].ID // Используем ID первого фильма из тестовых данных
+	}
+
+	tests := []struct {
+		name           string
+		setup          func(t *testing.T) (*httptest.Server, string)
+		movieID        string
+		role           string
+		expectedStatus int
+	}{
+		{
+			"Valid movie ID with reviews",
+			setupTest,
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusOK,
+		},
+		{
+			"Invalid movie ID format",
+			setupTest,
+			"invalid-uuid",
+			"CLAIM_ROLE_USER",
+			http.StatusBadRequest,
+		},
+		{
+			"Non-existent movie ID",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, uuid.New().String()
+			},
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusNotFound,
+		},
+		{
+			"Movie without reviews",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				// Используем фильм без отзывов (например, последний в тестовых данных)
+				return ts, MoviesData[len(MoviesData)-1].ID
+			},
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusNotFound,
+		},
+		{
+			"As guest user",
+			setupTest,
+			"",
+			"",
+			http.StatusOK,
+		},
+		{
+			"As admin user",
+			setupTest,
+			"",
+			"CLAIM_ROLE_ADMIN",
+			http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, movieID := tt.setup(t)
+			defer ts.Close()
+
+			// Use provided movieID or fallback to id from setup
+			effectiveID := tt.movieID
+			if effectiveID == "" {
+				effectiveID = movieID
+			}
+
+			req := createRequest(t, "GET", ts.URL+"/movies/"+effectiveID+"/reviews", generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var reviews []Review
+				parseResponseBody(t, resp, &reviews)
+
+				if len(reviews) == 0 {
+					t.Error("Expected non-empty reviews list")
+				}
+
+				// Проверяем, что все отзывы относятся к запрошенному фильму
+				for _, review := range reviews {
+					if review.MovieID != movieID {
+						t.Errorf("Expected movie ID %v in review; got %v", movieID, review.MovieID)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetReviewsByUserID(t *testing.T) {
+	setupTest := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		SeedAll(TestAdminDB)
+		return ts, UsersData[0].ID
+	}
+
+	tests := []struct {
+		name           string
+		setup          func(t *testing.T) (*httptest.Server, string)
+		userID         string
+		role           string
+		expectedStatus int
+	}{
+		{
+			"Valid user ID with reviews",
+			setupTest,
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusOK,
+		},
+		{
+			"Invalid user ID format",
+			setupTest,
+			"invalid-uuid",
+			"CLAIM_ROLE_USER",
+			http.StatusBadRequest,
+		},
+		{
+			"Non-existent user ID",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, uuid.New().String()
+			},
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusNotFound,
+		},
+		{
+			"User without reviews",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				// Используем пользователя без отзывов (например, последнего в тестовых данных)
+				return ts, UsersData[len(UsersData)-1].ID
+			},
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusNotFound,
+		},
+		{
+			"As guest user",
+			setupTest,
+			"",
+			"",
+			http.StatusOK,
+		},
+		{
+			"As admin user",
+			setupTest,
+			"",
+			"CLAIM_ROLE_ADMIN",
+			http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, userID := tt.setup(t)
+			defer ts.Close()
+
+			// Use provided userID or fallback to id from setup
+			effectiveID := tt.userID
+			if effectiveID == "" {
+				effectiveID = userID
+			}
+
+			req := createRequest(t, "GET", ts.URL+"/users/"+effectiveID+"/reviews", generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var reviews []Review
+				parseResponseBody(t, resp, &reviews)
+
+				if len(reviews) == 0 {
+					t.Error("Expected non-empty reviews list")
+				}
+
+				// Проверяем, что все отзывы относятся к запрошенному пользователю
+				for _, review := range reviews {
+					if review.UserID != userID {
+						t.Errorf("Expected user ID %v in review; got %v", userID, review.UserID)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetReviewsByMovieIDDBError(t *testing.T) {
+	ts := setupTestServer()
+	defer ts.Close()
+
+	// Создаем ситуацию с ошибкой БД
+	TestAdminDB.Close()
+	TestGuestDB.Close()
+	TestUserDB.Close()
+
+	req := createRequest(t, "GET", ts.URL+"/movies/"+MoviesData[0].ID+"/reviews",
+		generateToken(t, "CLAIM_ROLE_USER"), nil)
+	resp := executeRequest(t, req, http.StatusInternalServerError)
+	defer resp.Body.Close()
+
+	if err := InitTestDB(); err != nil {
+		log.Fatal("ошибка подключения к БД: ", err)
+	}
+}
+
+func TestGetReviewsByUserIDDBError(t *testing.T) {
+	ts := setupTestServer()
+	defer ts.Close()
+
+	// Создаем ситуацию с ошибкой БД
+	TestAdminDB.Close()
+	TestGuestDB.Close()
+	TestUserDB.Close()
+
+	req := createRequest(t, "GET", ts.URL+"/users/"+UsersData[0].ID+"/reviews",
+		generateToken(t, "CLAIM_ROLE_USER"), nil)
 	resp := executeRequest(t, req, http.StatusInternalServerError)
 	defer resp.Body.Close()
 

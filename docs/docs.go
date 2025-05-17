@@ -814,6 +814,121 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "409": {
+                        "description": "Конфликт при создании киносеанса",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie-shows/by-date/{date}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает сеансы, начинающиеся в указанный день.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Киносеансы"
+                ],
+                "summary": "Получить сеансы на указанную дату",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные о киносеансах",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.MovieShow"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат даты",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Киносеансы в указанную дату не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie-shows/upcoming": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает сеансы, начинающиеся в ближайшие N часов.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Киносеансы"
+                ],
+                "summary": "Получить ближайшие сеансы",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Период в часах (по умолчанию 24)",
+                        "name": "hours",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные о киносеансах",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.MovieShow"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат даты",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Киносеансы в указанную дату не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Ошибка сервера",
                         "schema": {
@@ -931,6 +1046,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
+                    "409": {
+                        "description": "Конфликт при обновлении киносеанса",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Ошибка сервера",
                         "schema": {
@@ -977,6 +1098,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Киносеанс не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Конфликт при удалении киносеанса",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1359,6 +1486,122 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Конфликт при удалении фильма",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/movies/{movie_id}/reviews": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает все отзывы для указанного фильма.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Отзывы"
+                ],
+                "summary": "Получить отзывы по ID фильма",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID фильма",
+                        "name": "movie_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список отзывов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Review"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID фильма",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Отзывы не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/movies/{movie_id}/shows": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает киносеансы для указанного фильма в ближайшие N часов.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Киносеансы"
+                ],
+                "summary": "Получить киносеансы по ID фильма",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID фильма",
+                        "name": "movie_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Период в часах (по умолчанию 24)",
+                        "name": "hours",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные о найденных киносеансах",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.MovieShow"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID фильма или параметра hours",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Киносеансы для данного фильма не найдены",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2985,6 +3228,61 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/reviews": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает все отзывы указанного пользователя.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Отзывы"
+                ],
+                "summary": "Получить отзывы пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список отзывов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Review"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Отзывы не найдены",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }

@@ -89,6 +89,9 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("PUT /movie-shows/{id}", Midleware(RoleBasedHandler(UpdateMovieShow)))
 	mux.HandleFunc("DELETE /movie-shows/{id}", Midleware(RoleBasedHandler(DeleteMovieShow)))
 
+	mux.HandleFunc("GET /users/{user_id}/reviews", Midleware(RoleBasedHandler(GetReviewsByUserID)))
+	mux.HandleFunc("GET /movies/{movie_id}/reviews", Midleware(RoleBasedHandler(GetReviewsByMovieID)))
+
 	mux.HandleFunc("GET /reviews", Midleware(RoleBasedHandler(GetReviews)))
 	mux.HandleFunc("GET /reviews/{id}", Midleware(RoleBasedHandler(GetReviewByID)))
 	mux.HandleFunc("POST /reviews", Midleware(RoleBasedHandler(CreateReview)))

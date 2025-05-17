@@ -900,6 +900,10 @@ paths:
           description: Доступ запрещён
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при создании киносеанса
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
@@ -931,6 +935,10 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Киносеанс не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при удалении киносеанса
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -1007,6 +1015,10 @@ paths:
           description: Киносеанс не найден
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Конфликт при обновлении киносеанса
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
@@ -1014,6 +1026,75 @@ paths:
       security:
       - BearerAuth: []
       summary: Обновить киносеанс
+      tags:
+      - Киносеансы
+  /movie-shows/by-date/{date}:
+    get:
+      description: Возвращает сеансы, начинающиеся в указанный день.
+      parameters:
+      - description: Дата (YYYY-MM-DD)
+        in: path
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные о киносеансах
+          schema:
+            items:
+              $ref: '#/definitions/main.MovieShow'
+            type: array
+        "400":
+          description: Неверный формат даты
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Киносеансы в указанную дату не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить сеансы на указанную дату
+      tags:
+      - Киносеансы
+  /movie-shows/upcoming:
+    get:
+      description: Возвращает сеансы, начинающиеся в ближайшие N часов.
+      parameters:
+      - description: Период в часах (по умолчанию 24)
+        in: query
+        name: hours
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные о киносеансах
+          schema:
+            items:
+              $ref: '#/definitions/main.MovieShow'
+            type: array
+        "400":
+          description: Неверный формат даты
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Киносеансы в указанную дату не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить ближайшие сеансы
       tags:
       - Киносеансы
   /movies:
@@ -1187,6 +1268,80 @@ paths:
       summary: Обновить фильм
       tags:
       - Фильмы
+  /movies/{movie_id}/reviews:
+    get:
+      description: Возвращает все отзывы для указанного фильма.
+      parameters:
+      - description: ID фильма
+        in: path
+        name: movie_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список отзывов
+          schema:
+            items:
+              $ref: '#/definitions/main.Review'
+            type: array
+        "400":
+          description: Неверный формат ID фильма
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Отзывы не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить отзывы по ID фильма
+      tags:
+      - Отзывы
+  /movies/{movie_id}/shows:
+    get:
+      description: Возвращает киносеансы для указанного фильма в ближайшие N часов.
+      parameters:
+      - description: ID фильма
+        in: path
+        name: movie_id
+        required: true
+        type: string
+      - description: Период в часах (по умолчанию 24)
+        in: query
+        name: hours
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные о найденных киносеансах
+          schema:
+            items:
+              $ref: '#/definitions/main.MovieShow'
+            type: array
+        "400":
+          description: Неверный формат ID фильма или параметра hours
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Киносеансы для данного фильма не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить киносеансы по ID фильма
+      tags:
+      - Киносеансы
   /movies/by-genres/search:
     get:
       description: Возвращает фильмы, относящиеся ко всем указанным жанрам.
@@ -2299,6 +2454,41 @@ paths:
       summary: Обновить пользователя
       tags:
       - Пользователи
+  /users/{user_id}/reviews:
+    get:
+      description: Возвращает все отзывы указанного пользователя.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список отзывов
+          schema:
+            items:
+              $ref: '#/definitions/main.Review'
+            type: array
+        "400":
+          description: Неверный формат ID пользователя
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Отзывы не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить отзывы пользователя
+      tags:
+      - Отзывы
 securityDefinitions:
   BearerAuth:
     in: header

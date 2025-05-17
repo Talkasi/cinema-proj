@@ -251,3 +251,103 @@ func DeleteReview(db *pgxpool.Pool) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+// @Summary Получить отзывы по ID фильма
+// @Description Возвращает все отзывы для указанного фильма.
+// @Tags Отзывы
+// @Produce json
+// @Security BearerAuth
+// @Param movie_id path string true "ID фильма"
+// @Success 200 {array} Review "Список отзывов"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID фильма"
+// @Failure 404 {object} ErrorResponse "Отзывы не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /movies/{movie_id}/reviews [get]
+func GetReviewsByMovieID(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		movieID, ok := ParseUUIDFromPath(w, r.PathValue("movie_id"))
+		if !ok {
+			return
+		}
+
+		rows, err := db.Query(context.Background(),
+			"SELECT id, user_id, movie_id, rating, review_comment FROM reviews WHERE movie_id = $1",
+			movieID)
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var reviews []Review
+		for rows.Next() {
+			var review Review
+			if err := rows.Scan(&review.ID, &review.UserID, &review.MovieID, &review.Rating, &review.Comment); HandleDatabaseError(w, err, "отзывом") {
+				return
+			}
+			reviews = append(reviews, review)
+		}
+
+		if len(reviews) == 0 {
+			http.Error(w, "Отзывы не найдены", http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(reviews)
+	}
+}
+
+// @Summary Получить отзывы пользователя
+// @Description Возвращает все отзывы указанного пользователя.
+// @Tags Отзывы
+// @Produce json
+// @Security BearerAuth
+// @Param user_id path string true "ID пользователя"
+// @Success 200 {array} Review "Список отзывов"
+// @Failure 400 {object} ErrorResponse "Неверный формат ID пользователя"
+// @Failure 404 {object} ErrorResponse "Отзывы не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /users/{user_id}/reviews [get]
+func GetReviewsByUserID(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := uuid.Parse(r.PathValue("user_id"))
+		if err != nil {
+			http.Error(w, "Неверный формат ID пользователя", http.StatusBadRequest)
+			return
+		}
+
+		query := `
+            SELECT r.id, r.user_id, r.movie_id, r.rating, r.review_comment
+            FROM reviews r
+            WHERE r.user_id = $1`
+
+		rows, err := db.Query(context.Background(), query, userID)
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var reviews []Review
+		for rows.Next() {
+			var r Review
+			if err := rows.Scan(
+				&r.ID,
+				&r.UserID,
+				&r.MovieID,
+				&r.Rating,
+				&r.Comment,
+			); err != nil {
+				http.Error(w, "Ошибка обработки данных", http.StatusInternalServerError)
+				return
+			}
+			reviews = append(reviews, r)
+		}
+
+		if len(reviews) == 0 {
+			http.Error(w, "Отзывы не найдены", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(reviews)
+	}
+}
