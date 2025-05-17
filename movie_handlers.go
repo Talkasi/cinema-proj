@@ -402,7 +402,7 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить фильм
-// @Description Удаляет фильм по его ID.
+// @Description Удаляет фильм по ID.
 // @Tags Фильмы
 // @Param id path string true "ID фильма"
 // @Security BearerAuth

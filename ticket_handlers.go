@@ -40,7 +40,7 @@ func validateTicketStatus(status TicketStatusEnumType) error {
 	return nil
 }
 
-// @Summary Получить все билеты для сеанса фильма по его ID
+// @Summary Получить все билеты для сеанса фильма по ID
 // @Description Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.
 // @Tags Билеты
 // @Produce json
@@ -188,7 +188,7 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить билет
-// @Description Удаляет билет по его ID.
+// @Description Удаляет билет по ID.
 // @Tags Билеты
 // @Security BearerAuth
 // @Param id path string true "ID билета"

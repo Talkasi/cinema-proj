@@ -118,7 +118,7 @@ func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить кинозал по ID
-// @Description Возвращает кинозал по его ID.
+// @Description Возвращает кинозал по ID.
 // @Tags Кинозалы
 // @Produce json
 // @Param id path string true "ID зала"
@@ -238,7 +238,7 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить кинозал
-// @Description Удаляет кинозал по его ID.
+// @Description Удаляет кинозал по ID.
 // @Tags Кинозалы
 // @Param id path string true "ID кинозала"
 // @Security BearerAuth

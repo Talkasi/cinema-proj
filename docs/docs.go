@@ -179,7 +179,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Получить жанр по его ID",
+                "summary": "Получить жанр по ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -287,7 +287,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет жанр по его ID.",
+                "description": "Удаляет жанр по ID.",
                 "tags": [
                     "Жанры фильмов"
                 ],
@@ -611,7 +611,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает кинозал по его ID.",
+                "description": "Возвращает кинозал по ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -732,7 +732,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет кинозал по его ID.",
+                "description": "Удаляет кинозал по ID.",
                 "tags": [
                     "Кинозалы"
                 ],
@@ -1503,7 +1503,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет фильм по его ID.",
+                "description": "Удаляет фильм по ID.",
                 "tags": [
                     "Фильмы"
                 ],
@@ -1779,7 +1779,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить отзыв по его ID",
+                "summary": "Получить отзыв по ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1887,7 +1887,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет отзыв по его ID.",
+                "description": "Удаляет отзыв по ID.",
                 "tags": [
                     "Отзывы"
                 ],
@@ -2204,7 +2204,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип экрана по его ID.",
+                "description": "Удаляет тип экрана по ID.",
                 "tags": [
                     "Типы экранов"
                 ],
@@ -2521,7 +2521,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип места по его ID.",
+                "description": "Удаляет тип места по ID.",
                 "tags": [
                     "Типы мест"
                 ],
@@ -2783,7 +2783,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет место по его ID.",
+                "description": "Удаляет место по ID.",
                 "tags": [
                     "Места"
                 ],
@@ -2899,7 +2899,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить все билеты для сеанса фильма по его ID",
+                "summary": "Получить все билеты для сеанса фильма по ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -3081,7 +3081,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет билет по его ID.",
+                "description": "Удаляет билет по ID.",
                 "tags": [
                     "Билеты"
                 ],
@@ -3283,7 +3283,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает пользователя по его ID",
+                "description": "Возвращает пользователя по ID",
                 "produces": [
                     "application/json"
                 ],
@@ -3398,7 +3398,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет пользователя по его ID",
+                "description": "Удаляет пользователя по ID",
                 "tags": [
                     "Пользователи"
                 ],

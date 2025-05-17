@@ -171,7 +171,7 @@
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Получить жанр по его ID",
+                "summary": "Получить жанр по ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -279,7 +279,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет жанр по его ID.",
+                "description": "Удаляет жанр по ID.",
                 "tags": [
                     "Жанры фильмов"
                 ],
@@ -603,7 +603,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает кинозал по его ID.",
+                "description": "Возвращает кинозал по ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -724,7 +724,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет кинозал по его ID.",
+                "description": "Удаляет кинозал по ID.",
                 "tags": [
                     "Кинозалы"
                 ],
@@ -1495,7 +1495,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет фильм по его ID.",
+                "description": "Удаляет фильм по ID.",
                 "tags": [
                     "Фильмы"
                 ],
@@ -1771,7 +1771,7 @@
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить отзыв по его ID",
+                "summary": "Получить отзыв по ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -1879,7 +1879,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет отзыв по его ID.",
+                "description": "Удаляет отзыв по ID.",
                 "tags": [
                     "Отзывы"
                 ],
@@ -2196,7 +2196,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип экрана по его ID.",
+                "description": "Удаляет тип экрана по ID.",
                 "tags": [
                     "Типы экранов"
                 ],
@@ -2513,7 +2513,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип места по его ID.",
+                "description": "Удаляет тип места по ID.",
                 "tags": [
                     "Типы мест"
                 ],
@@ -2775,7 +2775,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет место по его ID.",
+                "description": "Удаляет место по ID.",
                 "tags": [
                     "Места"
                 ],
@@ -2891,7 +2891,7 @@
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить все билеты для сеанса фильма по его ID",
+                "summary": "Получить все билеты для сеанса фильма по ID",
                 "parameters": [
                     {
                         "type": "string",
@@ -3073,7 +3073,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет билет по его ID.",
+                "description": "Удаляет билет по ID.",
                 "tags": [
                     "Билеты"
                 ],
@@ -3275,7 +3275,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает пользователя по его ID",
+                "description": "Возвращает пользователя по ID",
                 "produces": [
                     "application/json"
                 ],
@@ -3390,7 +3390,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет пользователя по его ID",
+                "description": "Удаляет пользователя по ID",
                 "tags": [
                     "Пользователи"
                 ],

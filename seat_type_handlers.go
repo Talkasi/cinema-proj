@@ -194,7 +194,7 @@ func UpdateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить тип места
-// @Description Удаляет тип места по его ID.
+// @Description Удаляет тип места по ID.
 // @Tags Типы мест
 // @Param id path string true "ID типа места"
 // @Security BearerAuth

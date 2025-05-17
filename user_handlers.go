@@ -131,7 +131,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить пользователя по ID
-// @Description Возвращает пользователя по его ID
+// @Description Возвращает пользователя по ID
 // @Tags Пользователи
 // @Produce json
 // @Security BearerAuth
@@ -210,7 +210,7 @@ func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить пользователя
-// @Description Удаляет пользователя по его ID
+// @Description Удаляет пользователя по ID
 // @Tags Пользователи
 // @Param id path string true "ID пользователя"
 // @Security BearerAuth

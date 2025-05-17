@@ -461,7 +461,7 @@ paths:
       - Жанры фильмов
   /genres/{id}:
     delete:
-      description: Удаляет жанр по его ID.
+      description: Удаляет жанр по ID.
       parameters:
       - description: ID жанра
         in: path
@@ -525,7 +525,7 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить жанр по его ID
+      summary: Получить жанр по ID
       tags:
       - Жанры фильмов
     put:
@@ -707,7 +707,7 @@ paths:
       - Места
   /halls/{id}:
     delete:
-      description: Удаляет кинозал по его ID.
+      description: Удаляет кинозал по ID.
       parameters:
       - description: ID кинозала
         in: path
@@ -743,7 +743,7 @@ paths:
       tags:
       - Кинозалы
     get:
-      description: Возвращает кинозал по его ID.
+      description: Возвращает кинозал по ID.
       parameters:
       - description: ID зала
         in: path
@@ -1200,7 +1200,7 @@ paths:
       - Фильмы
   /movies/{id}:
     delete:
-      description: Удаляет фильм по его ID.
+      description: Удаляет фильм по ID.
       parameters:
       - description: ID фильма
         in: path
@@ -1518,7 +1518,7 @@ paths:
       - Отзывы
   /reviews/{id}:
     delete:
-      description: Удаляет отзыв по его ID.
+      description: Удаляет отзыв по ID.
       parameters:
       - description: ID отзыва
         in: path
@@ -1578,7 +1578,7 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить отзыв по его ID
+      summary: Получить отзыв по ID
       tags:
       - Отзывы
     put:
@@ -1685,7 +1685,7 @@ paths:
       - Типы экранов
   /screen-types/{id}:
     delete:
-      description: Удаляет тип экрана по его ID.
+      description: Удаляет тип экрана по ID.
       parameters:
       - description: ID типа экрана
         in: path
@@ -1887,7 +1887,7 @@ paths:
       - Типы мест
   /seat-types/{id}:
     delete:
-      description: Удаляет тип места по его ID.
+      description: Удаляет тип места по ID.
       parameters:
       - description: ID типа места
         in: path
@@ -2089,7 +2089,7 @@ paths:
       - Места
   /seats/{id}:
     delete:
-      description: Удаляет место по его ID.
+      description: Удаляет место по ID.
       parameters:
       - description: ID места
         in: path
@@ -2232,7 +2232,7 @@ paths:
       - Билеты
   /tickets/{id}:
     delete:
-      description: Удаляет билет по его ID.
+      description: Удаляет билет по ID.
       parameters:
       - description: ID билета
         in: path
@@ -2358,7 +2358,7 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить все билеты для сеанса фильма по его ID
+      summary: Получить все билеты для сеанса фильма по ID
       tags:
       - Билеты
   /tickets/user/{user_id}:
@@ -2484,7 +2484,7 @@ paths:
       - Пользователи
   /users/{id}:
     delete:
-      description: Удаляет пользователя по его ID
+      description: Удаляет пользователя по ID
       parameters:
       - description: ID пользователя
         in: path
@@ -2516,7 +2516,7 @@ paths:
       tags:
       - Пользователи
     get:
-      description: Возвращает пользователя по его ID
+      description: Возвращает пользователя по ID
       parameters:
       - description: ID пользователя
         in: path

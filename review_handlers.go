@@ -104,7 +104,7 @@ func GetReviews(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить отзыв по его ID
+// @Summary Получить отзыв по ID
 // @Description Возвращает отзыв по ID.
 // @Tags Отзывы
 // @Produce json
@@ -220,7 +220,7 @@ func UpdateReview(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить отзыв
-// @Description Удаляет отзыв по его ID.
+// @Description Удаляет отзыв по ID.
 // @Tags Отзывы
 // @Param id path string true "ID отзыва"
 // @Security BearerAuth

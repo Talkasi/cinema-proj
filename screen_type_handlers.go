@@ -199,7 +199,7 @@ func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить тип экрана
-// @Description Удаляет тип экрана по его ID.
+// @Description Удаляет тип экрана по ID.
 // @Tags Типы экранов
 // @Param id path string true "ID типа экрана"
 // @Security BearerAuth

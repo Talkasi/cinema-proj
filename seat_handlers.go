@@ -222,7 +222,7 @@ func UpdateSeat(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить место
-// @Description Удаляет место по его ID.
+// @Description Удаляет место по ID.
 // @Tags Места
 // @Param id path string true "ID места"
 // @Security BearerAuth

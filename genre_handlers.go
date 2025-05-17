@@ -90,7 +90,7 @@ func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить жанр по его ID
+// @Summary Получить жанр по ID
 // @Description Возвращает жанр по ID.
 // @Tags Жанры фильмов
 // @Produce json
@@ -206,7 +206,7 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Удалить жанр
-// @Description Удаляет жанр по его ID.
+// @Description Удаляет жанр по ID.
 // @Tags Жанры фильмов
 // @Param id path string true "ID жанра"
 // @Security BearerAuth
