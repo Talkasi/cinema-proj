@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -50,14 +51,14 @@ func TestCreateTicket(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validTicket,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validTicket,
 			nil,
 			http.StatusCreated,
@@ -71,14 +72,14 @@ func TestCreateTicket(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -92,14 +93,14 @@ func TestCreateTicket(t *testing.T) {
 		},
 		{
 			"Invalid data User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidTicket,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid data Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidTicket,
 			nil,
 			http.StatusBadRequest,
@@ -113,14 +114,14 @@ func TestCreateTicket(t *testing.T) {
 		},
 		{
 			"Conflict User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validTicket,
 			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Conflict Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validTicket,
 			setupConflictTest,
 			http.StatusConflict,
@@ -165,17 +166,18 @@ func TestGetTicketsByMovieShowID(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
 			defer ts.Close()
+			SeedUsers(TestAdminDB)
 
 			if tt.seedData {
 				_ = SeedAll(TestAdminDB)
@@ -229,7 +231,7 @@ func TestGetTicketByID(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -239,7 +241,7 @@ func TestGetTicketByID(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -264,6 +266,7 @@ func TestGetTicketByID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
+			SeedUsers(TestAdminDB)
 
 			req := createRequest(t, "GET", ts.URL+"/tickets/"+id, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
@@ -329,7 +332,7 @@ func TestUpdateTicket(t *testing.T) {
 		},
 		{
 			"Invalid data as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			Ticket{Status: "INVALID_STATUS", Price: -100},
 			setupExistingTicket,
@@ -345,7 +348,7 @@ func TestUpdateTicket(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingTicket,
@@ -357,6 +360,7 @@ func TestUpdateTicket(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
+			SeedUsers(TestAdminDB)
 
 			effectiveID := tt.id
 			if effectiveID == "" {
@@ -402,7 +406,7 @@ func TestDeleteTicket(t *testing.T) {
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingTicket,
 			http.StatusNoContent,
@@ -413,6 +417,7 @@ func TestDeleteTicket(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
 			defer ts.Close()
+			SeedUsers(TestAdminDB)
 
 			effectiveID := tt.id
 			if effectiveID == "" {
@@ -435,7 +440,7 @@ func TestTicketConstraints(t *testing.T) {
 	}{
 		{
 			"Negative price",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
@@ -446,7 +451,7 @@ func TestTicketConstraints(t *testing.T) {
 		},
 		{
 			"Invalid status",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
@@ -457,7 +462,7 @@ func TestTicketConstraints(t *testing.T) {
 		},
 		{
 			"Empty movie show ID",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			TicketData{
 				MovieShowID: "",
 				SeatID:      SeatsData[3].ID,
@@ -468,7 +473,7 @@ func TestTicketConstraints(t *testing.T) {
 		},
 		{
 			"Valid data",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
@@ -495,6 +500,7 @@ func TestTicketConstraints(t *testing.T) {
 func TestTicketDBError(t *testing.T) {
 	ts := setupTestServer()
 	defer ts.Close()
+	SeedUsers(TestAdminDB)
 
 	// Create DB error situation
 	TestAdminDB.Close()
@@ -503,7 +509,7 @@ func TestTicketDBError(t *testing.T) {
 
 	t.Run("Create ticket DB error", func(t *testing.T) {
 		req := createRequest(t, "POST", ts.URL+"/tickets",
-			generateToken(t, "CLAIM_ROLE_ADMIN"),
+			generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
 			TicketData{
 				MovieShowID: MovieShowsData[0].ID,
 				SeatID:      SeatsData[3].ID,
@@ -516,7 +522,7 @@ func TestTicketDBError(t *testing.T) {
 
 	t.Run("Get ticket DB error", func(t *testing.T) {
 		req := createRequest(t, "GET", ts.URL+"/tickets/"+uuid.New().String(),
-			generateToken(t, "CLAIM_ROLE_ADMIN"), nil)
+			generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")), nil)
 		resp := executeRequest(t, req, http.StatusInternalServerError)
 		defer resp.Body.Close()
 	})
@@ -550,14 +556,14 @@ func TestGetTicketsByUserID(t *testing.T) {
 			"Valid user ID with tickets",
 			setupTest,
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Invalid user ID format",
 			setupTest,
 			"invalid-uuid",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -568,7 +574,7 @@ func TestGetTicketsByUserID(t *testing.T) {
 				return ts, uuid.New().String()
 			},
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -579,7 +585,7 @@ func TestGetTicketsByUserID(t *testing.T) {
 				return ts, UsersData[3].ID
 			},
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 	}
@@ -588,6 +594,7 @@ func TestGetTicketsByUserID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, userID := tt.setup(t)
 			defer ts.Close()
+			SeedUsers(TestAdminDB)
 
 			effectiveID := tt.userID
 			if effectiveID == "" {

@@ -232,7 +232,7 @@ func GetTicketsByUserID(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(context.Background(), `
-			SELECT id, movie_show_id, seat_id, ticket_status, price
+			SELECT id, movie_show_id, seat_id, user_id, ticket_status, price
 			FROM tickets
 			WHERE user_id = $1`, userID)
 		if IsError(w, err) {
@@ -243,7 +243,8 @@ func GetTicketsByUserID(db *pgxpool.Pool) http.HandlerFunc {
 		var tickets []Ticket
 		for rows.Next() {
 			var t Ticket
-			if err := rows.Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.Status, &t.Price); err != nil {
+			if err := rows.Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.UserID, &t.Status, &t.Price); err != nil {
+				println(err.Error())
 				http.Error(w, "Ошибка при сканировании", http.StatusInternalServerError)
 				return
 			}

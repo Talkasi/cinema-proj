@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -19,16 +20,17 @@ func TestGetReviews(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -81,7 +83,7 @@ func TestGetReviewByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -91,7 +93,7 @@ func TestGetReviewByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -111,7 +113,7 @@ func TestGetReviewByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -121,7 +123,7 @@ func TestGetReviewByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -133,13 +135,13 @@ func TestGetReviewByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -147,6 +149,7 @@ func TestGetReviewByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/reviews/"+id, generateToken(t, tt.role), nil)
@@ -189,14 +192,14 @@ func TestCreateReview(t *testing.T) {
 	}{
 		{
 			"Success User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validReview,
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validReview,
 			nil,
 			http.StatusCreated,
@@ -210,28 +213,28 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid UserID",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidReview,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid MovieID",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: "invalid",
@@ -243,7 +246,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Rating too low (0)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -255,7 +258,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Rating too high (11)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -267,7 +270,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Empty comment",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -279,7 +282,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Comment with only spaces",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -291,7 +294,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Comment exactly 2000 chars",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -303,7 +306,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Comment too long (2001 chars)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -315,7 +318,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Duplicate review",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validReview,
 			func(t *testing.T) {
 				_, err := TestAdminDB.Exec(context.Background(),
@@ -390,7 +393,7 @@ func TestUpdateReview(t *testing.T) {
 	}{
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -402,7 +405,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -414,7 +417,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -426,7 +429,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -438,7 +441,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingReview,
@@ -446,7 +449,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingReview,
@@ -454,7 +457,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Invalid UserID in JSON",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			invalidUpdateData,
 			setupExistingReview,
@@ -462,7 +465,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Invalid MovieID in JSON",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -475,7 +478,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Rating too low (0)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -488,7 +491,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Rating too high (11)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -501,7 +504,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Empty comment",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -514,7 +517,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Comment with only spaces",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -527,7 +530,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Comment exactly 2000 chars",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -540,7 +543,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Comment too long (2001 chars)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
 				UserID:  UsersData[0].ID,
@@ -553,7 +556,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Success User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			setupExistingReview,
@@ -561,7 +564,7 @@ func TestUpdateReview(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingReview,
@@ -605,7 +608,7 @@ func TestDeleteReview(t *testing.T) {
 	}{
 		{
 			"Not Found as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -616,7 +619,7 @@ func TestDeleteReview(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -627,7 +630,7 @@ func TestDeleteReview(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -636,7 +639,7 @@ func TestDeleteReview(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -645,14 +648,14 @@ func TestDeleteReview(t *testing.T) {
 		},
 		{
 			"Success as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupExistingReview,
 			http.StatusNoContent,
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingReview,
 			http.StatusNoContent,
@@ -662,6 +665,7 @@ func TestDeleteReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -687,7 +691,7 @@ func TestCreateReviewDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "POST", ts.URL+"/reviews",
-		generateToken(t, "CLAIM_ROLE_USER"),
+		generateToken(t, os.Getenv("CLAIM_ROLE_USER")),
 		ReviewData{
 			UserID:  UsersData[0].ID,
 			MovieID: MoviesData[1].ID,
@@ -723,14 +727,14 @@ func TestGetReviewsByMovieID(t *testing.T) {
 			"Valid movie ID with reviews",
 			setupTest,
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Invalid movie ID format",
 			setupTest,
 			"invalid-uuid",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -741,7 +745,7 @@ func TestGetReviewsByMovieID(t *testing.T) {
 				return ts, uuid.New().String()
 			},
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -753,7 +757,7 @@ func TestGetReviewsByMovieID(t *testing.T) {
 				return ts, MoviesData[len(MoviesData)-1].ID
 			},
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -767,7 +771,7 @@ func TestGetReviewsByMovieID(t *testing.T) {
 			"As admin user",
 			setupTest,
 			"",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -775,6 +779,7 @@ func TestGetReviewsByMovieID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, movieID := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided movieID or fallback to id from setup
@@ -824,14 +829,14 @@ func TestGetReviewsByUserID(t *testing.T) {
 			"Valid user ID with reviews",
 			setupTest,
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Invalid user ID format",
 			setupTest,
 			"invalid-uuid",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -842,7 +847,7 @@ func TestGetReviewsByUserID(t *testing.T) {
 				return ts, uuid.New().String()
 			},
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -854,7 +859,7 @@ func TestGetReviewsByUserID(t *testing.T) {
 				return ts, UsersData[len(UsersData)-1].ID
 			},
 			"",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -868,7 +873,7 @@ func TestGetReviewsByUserID(t *testing.T) {
 			"As admin user",
 			setupTest,
 			"",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -876,6 +881,7 @@ func TestGetReviewsByUserID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, userID := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided userID or fallback to id from setup
@@ -909,6 +915,7 @@ func TestGetReviewsByUserID(t *testing.T) {
 
 func TestGetReviewsByMovieIDDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Создаем ситуацию с ошибкой БД
@@ -917,7 +924,7 @@ func TestGetReviewsByMovieIDDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "GET", ts.URL+"/movies/"+MoviesData[0].ID+"/reviews",
-		generateToken(t, "CLAIM_ROLE_USER"), nil)
+		generateToken(t, os.Getenv("CLAIM_ROLE_USER")), nil)
 	resp := executeRequest(t, req, http.StatusInternalServerError)
 	defer resp.Body.Close()
 
@@ -928,6 +935,7 @@ func TestGetReviewsByMovieIDDBError(t *testing.T) {
 
 func TestGetReviewsByUserIDDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Создаем ситуацию с ошибкой БД
@@ -936,7 +944,7 @@ func TestGetReviewsByUserIDDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "GET", ts.URL+"/users/"+UsersData[0].ID+"/reviews",
-		generateToken(t, "CLAIM_ROLE_USER"), nil)
+		generateToken(t, os.Getenv("CLAIM_ROLE_USER")), nil)
 	resp := executeRequest(t, req, http.StatusInternalServerError)
 	defer resp.Body.Close()
 

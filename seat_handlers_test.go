@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,16 +20,17 @@ func TestGetSeats(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -81,7 +83,7 @@ func TestGetSeatByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -91,7 +93,7 @@ func TestGetSeatByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -111,7 +113,7 @@ func TestGetSeatByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -121,7 +123,7 @@ func TestGetSeatByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -133,13 +135,13 @@ func TestGetSeatByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -147,6 +149,7 @@ func TestGetSeatByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/seats/"+id, generateToken(t, tt.role), nil)
@@ -198,7 +201,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validSeat,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -207,7 +210,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validSeat,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -225,7 +228,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -234,7 +237,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -252,7 +255,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Invalid data User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidSeat,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -261,7 +264,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Invalid data Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidSeat,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -270,7 +273,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Conflict Admin - duplicate seat",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validSeat,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -286,7 +289,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Invalid Hall ID",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			SeatData{
 				HallID:     uuid.New().String(), // Несуществующий зал
 				SeatTypeID: SeatTypesData[0].ID,
@@ -300,7 +303,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Invalid Seat Type ID",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			SeatData{
 				HallID:     HallsData[0].ID,
 				SeatTypeID: uuid.New().String(), // Несуществующий тип
@@ -314,7 +317,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Row number too big",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			SeatData{
 				HallID:     HallsData[0].ID,
 				SeatTypeID: SeatTypesData[0].ID,
@@ -326,7 +329,7 @@ func TestCreateSeat(t *testing.T) {
 		},
 		{
 			"Seat number too big",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			SeatData{
 				HallID:     HallsData[0].ID,
 				SeatTypeID: SeatTypesData[0].ID,
@@ -341,6 +344,7 @@ func TestCreateSeat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -413,7 +417,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -425,7 +429,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -449,7 +453,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -461,7 +465,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdate,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -481,7 +485,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingSeat,
@@ -489,7 +493,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingSeat,
@@ -505,7 +509,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Invalid data as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			invalidUpdate,
 			setupExistingSeat,
@@ -513,7 +517,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Invalid data as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			invalidUpdate,
 			setupExistingSeat,
@@ -529,7 +533,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdate,
 			setupExistingSeat,
@@ -537,7 +541,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdate,
 			setupExistingSeat,
@@ -545,7 +549,7 @@ func TestUpdateSeat(t *testing.T) {
 		},
 		{
 			"Conflict Admin - duplicate seat",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			SeatData{SeatsData[0].HallID, SeatsData[2].SeatTypeID, SeatsData[0].RowNumber, SeatsData[0].SeatNumber},
 			func(t *testing.T) (*httptest.Server, string) {
@@ -560,6 +564,7 @@ func TestUpdateSeat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -607,7 +612,7 @@ func TestDeleteSeat(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -618,7 +623,7 @@ func TestDeleteSeat(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -638,7 +643,7 @@ func TestDeleteSeat(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -647,7 +652,7 @@ func TestDeleteSeat(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -663,21 +668,21 @@ func TestDeleteSeat(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupExistingSeat,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingSeat,
 			http.StatusConflict,
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingSeatNotTouched,
 			http.StatusNoContent,
@@ -687,6 +692,7 @@ func TestDeleteSeat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -703,6 +709,7 @@ func TestDeleteSeat(t *testing.T) {
 
 func TestCreateSeatDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Создаем ситуацию с ошибкой БД
@@ -711,7 +718,7 @@ func TestCreateSeatDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "POST", ts.URL+"/seats",
-		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
 		SeatData{
 			HallID:     uuid.New().String(),
 			SeatTypeID: uuid.New().String(),
@@ -773,9 +780,10 @@ func TestGetSeatsByHallID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
-			req := createRequest(t, "GET", ts.URL+"/halls/"+tt.hallID+"/seats", generateToken(t, "CLAIM_ROLE_USER"), nil)
+			req := createRequest(t, "GET", ts.URL+"/halls/"+tt.hallID+"/seats", generateToken(t, os.Getenv("CLAIM_ROLE_USER")), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 

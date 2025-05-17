@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,11 +19,11 @@ func TestGetUsers(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusForbidden},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -80,7 +81,7 @@ func TestGetUserByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -90,7 +91,7 @@ func TestGetUserByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -110,7 +111,7 @@ func TestGetUserByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -120,7 +121,7 @@ func TestGetUserByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -132,13 +133,13 @@ func TestGetUserByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -146,6 +147,7 @@ func TestGetUserByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/users/"+id, generateToken(t, tt.role), nil)
@@ -187,7 +189,7 @@ func TestUpdateUser(t *testing.T) {
 	}{
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -199,7 +201,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -211,7 +213,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -223,7 +225,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -235,7 +237,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingUser,
@@ -243,7 +245,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingUser,
@@ -251,7 +253,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Invalid Name",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			UserData{
 				Name:      "Name123!",
@@ -263,7 +265,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Invalid Email",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			UserData{
 				Name:      "Valid Name",
@@ -275,7 +277,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Future Birth Date",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			UserData{
 				Name:      "Valid Name",
@@ -287,7 +289,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Too Old Birth Date",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			UserData{
 				Name:      "Valid Name",
@@ -299,7 +301,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Success User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			setupExistingUser,
@@ -307,7 +309,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingUser,
@@ -318,6 +320,7 @@ func TestUpdateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -342,7 +345,7 @@ func TestDeleteUser(t *testing.T) {
 	}{
 		{
 			"Forbidden as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -353,7 +356,7 @@ func TestDeleteUser(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -364,7 +367,7 @@ func TestDeleteUser(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -373,7 +376,7 @@ func TestDeleteUser(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -382,7 +385,7 @@ func TestDeleteUser(t *testing.T) {
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -396,6 +399,7 @@ func TestDeleteUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -509,6 +513,7 @@ func TestRegisterUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -621,6 +626,7 @@ func TestLoginUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -645,6 +651,7 @@ func TestLoginUser(t *testing.T) {
 
 func TestCreateUserDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Create DB error situation

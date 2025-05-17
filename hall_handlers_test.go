@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -21,16 +22,17 @@ func TestGetHalls(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -93,7 +95,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -103,7 +105,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -123,7 +125,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -133,7 +135,7 @@ func TestGetHallByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -145,13 +147,13 @@ func TestGetHallByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -159,6 +161,7 @@ func TestGetHallByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/halls/"+id, generateToken(t, tt.role), nil)
@@ -215,14 +218,14 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validHall,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validHall,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -231,7 +234,7 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Unknown forain key Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidForainKeyHall,
 			nil,
 			http.StatusConflict,
@@ -245,14 +248,14 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -266,21 +269,21 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidHall,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty fields in JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidHall,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Conflict Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validHall,
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -295,7 +298,7 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Capacity 1 as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         "Min Capacity",
 				Capacity:     1,
@@ -307,7 +310,7 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Max name length as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         strings.Repeat("a", 100),
 				Capacity:     100,
@@ -319,7 +322,7 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Name too long as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         strings.Repeat("a", 101),
 				Capacity:     100,
@@ -331,7 +334,7 @@ func TestCreateHall(t *testing.T) {
 		},
 		{
 			"Max description length as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         "Test Hall",
 				Capacity:     100,
@@ -346,6 +349,7 @@ func TestCreateHall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -416,7 +420,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Capacity 1 as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			HallData{
 				Name:         "Min Capacity",
@@ -433,7 +437,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Update With Same Data as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -453,7 +457,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Max name length as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			HallData{
 				Name:         strings.Repeat("a", 100),
@@ -470,7 +474,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Name too long as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			HallData{
 				Name:         strings.Repeat("a", 101),
@@ -487,7 +491,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Max description length as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			HallData{
 				Name:         "Test Hall",
@@ -504,7 +508,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -516,7 +520,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -540,7 +544,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -552,7 +556,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -572,7 +576,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingHall,
@@ -580,7 +584,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingHall,
@@ -596,7 +600,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			invalidUpdateData,
 			setupExistingHall,
@@ -604,7 +608,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Empty fields in as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			invalidUpdateData,
 			setupExistingHall,
@@ -620,7 +624,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			setupExistingHall,
@@ -628,7 +632,7 @@ func TestUpdateHall(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingHall,
@@ -639,6 +643,7 @@ func TestUpdateHall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -682,7 +687,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -693,7 +698,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -704,13 +709,13 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Double Delete as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
 				hall := HallsData[4]
-				req := createRequest(t, "DELETE", ts.URL+"/halls/"+hall.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), nil)
+				req := createRequest(t, "DELETE", ts.URL+"/halls/"+hall.ID, generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")), nil)
 				resp := executeRequest(t, req, http.StatusNoContent)
 				resp.Body.Close()
 				return ts, hall.ID
@@ -728,7 +733,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -737,7 +742,7 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -753,21 +758,21 @@ func TestDeleteHall(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupExistingHall,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingHall,
 			http.StatusConflict,
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -781,6 +786,7 @@ func TestDeleteHall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -821,7 +827,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 		},
 		{
 			"User access allowed",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupWithData,
 			http.StatusOK,
@@ -829,7 +835,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 		},
 		{
 			"Admin access allowed",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupWithData,
 			http.StatusOK,
@@ -837,7 +843,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 		},
 		{
 			"Invalid UUID format",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), ""
@@ -847,7 +853,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 		},
 		{
 			"Non-existent screen type",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -859,7 +865,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 		},
 		{
 			"Empty screen type ID",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), ""
@@ -872,6 +878,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, screenTypeID := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.screenTypeID
@@ -900,6 +907,7 @@ func TestGetHallsByScreenType(t *testing.T) {
 func TestSearchHallsByName(t *testing.T) {
 	setupWithData := func(t *testing.T) *httptest.Server {
 		ts := setupTestServer()
+		SeedUsers(TestAdminDB)
 		db := TestAdminDB
 
 		_ = SeedAll(db)
@@ -939,7 +947,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search 'IMAX' (user)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"IMAX",
 			setupWithData,
 			http.StatusOK,
@@ -947,7 +955,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search 'Standard' (admin)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"Standard",
 			setupWithData,
 			http.StatusOK,
@@ -955,7 +963,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search '3D' (partial match)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"3D",
 			setupWithData,
 			http.StatusOK,
@@ -963,7 +971,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search 'premium' (case insensitive)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"premium",
 			setupWithData,
 			http.StatusOK,
@@ -971,7 +979,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search non-existent hall",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"VIP Lounge",
 			setupWithData,
 			http.StatusNotFound,
@@ -979,7 +987,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search is short",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"at",
 			setupWithData,
 			http.StatusOK,
@@ -987,7 +995,7 @@ func TestSearchHallsByName(t *testing.T) {
 		},
 		{
 			"Search with special chars (#)",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"#1",
 			func(t *testing.T) *httptest.Server {
 				ts := setupTestServer()
@@ -1010,6 +1018,7 @@ func TestSearchHallsByName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/halls/search?query="+url.QueryEscape(tt.query),

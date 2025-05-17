@@ -128,14 +128,6 @@ func NewRouter() *http.ServeMux {
 	return mux
 }
 
-type Claims struct {
-	Email string `json:"email"`
-	Role  string `json:"role"`
-	jwt.StandardClaims
-}
-
-var SecretKey = []byte("TOKEN_KEY")
-
 var (
 	GuestDB *pgxpool.Pool
 	UserDB  *pgxpool.Pool
@@ -205,6 +197,36 @@ func InitTestDB() error {
 	return nil
 }
 
+var SecretKey = []byte(os.Getenv("TOKEN_KEY"))
+
+type Claims struct {
+	Role   string `json:"role"`
+	UserID string `json:"user_id"`
+	jwt.StandardClaims
+}
+
+func GenerateToken(role string, user_id string) (string, error) {
+	claims := Claims{
+		Role:   role,
+		UserID: user_id,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour / 2).Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(SecretKey)
+}
+
+func validRoleClaim(db *pgxpool.Pool, userID string, claimed_is_admin bool) (bool, error) {
+	var is_admin bool
+	err := db.QueryRow(context.Background(), "SELECT is_admin FROM users WHERE id = $1", userID).Scan(&is_admin)
+	if err != nil {
+		return false, err
+	}
+	return is_admin == claimed_is_admin, nil
+}
+
 func Midleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
@@ -219,25 +241,13 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
+			r.Header.Set("UserID", claims.UserID)
 			r.Header.Set("Role", claims.Role)
 		} else {
-			r.Header.Set("Role", "CLAIM_ROLE_GUEST")
+			r.Header.Set("Role", os.Getenv("CLAIM_ROLE_GUEST"))
 		}
 		next.ServeHTTP(w, r)
 	}
-}
-
-func GenerateToken(email, role string) (string, error) {
-	claims := Claims{
-		Email: email,
-		Role:  role,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour).Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(SecretKey)
 }
 
 var IsTestMode bool
@@ -250,18 +260,50 @@ var (
 func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+
 		var db *pgxpool.Pool
 
 		switch role {
-		case "CLAIM_ROLE_ADMIN":
+		case os.Getenv("CLAIM_ROLE_ADMIN"):
 			db = AdminDB
 			if IsTestMode {
 				db = TestAdminDB
 			}
-		case "CLAIM_ROLE_USER":
+
+			ok, err := validRoleClaim(db, user_id, true)
+			if err != nil {
+				if isNoRows(err) {
+					http.Error(w, "Token error", http.StatusForbidden)
+					return
+				}
+				http.Error(w, fmt.Sprintf("Fatal database error %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			if !ok {
+				http.Error(w, "Token error", http.StatusForbidden)
+				return
+			}
+		case os.Getenv("CLAIM_ROLE_USER"):
 			db = UserDB
 			if IsTestMode {
 				db = TestUserDB
+			}
+
+			ok, err := validRoleClaim(db, user_id, false)
+			if err != nil {
+				if isNoRows(err) {
+					http.Error(w, "Token error", http.StatusForbidden)
+					return
+				}
+				http.Error(w, fmt.Sprintf("Fatal database error %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			if !ok {
+				http.Error(w, "Token error", http.StatusForbidden)
+				return
 			}
 		default:
 			db = GuestDB

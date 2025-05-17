@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"regexp"
 	"time"
 
@@ -351,9 +352,9 @@ func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		role := "CLAIM_ROLE_USER"
+		role := os.Getenv("CLAIM_ROLE_USER")
 		if user.IsAdmin {
-			role = "CLAIM_ROLE_ADMIN"
+			role = os.Getenv("CLAIM_ROLE_ADMIN")
 		}
 
 		token, err := GenerateToken(creds.Email, role)

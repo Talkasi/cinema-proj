@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -22,16 +23,17 @@ func TestGetScreenTypes(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -78,7 +80,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -88,7 +90,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -106,7 +108,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 				ts := setupTestServer()
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -115,7 +117,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 				ts := setupTestServer()
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -135,7 +137,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -145,7 +147,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 				_ = SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -157,13 +159,13 @@ func TestGetScreenTypeByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -171,6 +173,7 @@ func TestGetScreenTypeByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/screen-types/"+id, generateToken(t, tt.role), nil)
@@ -223,14 +226,14 @@ func TestCreateScreenType(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validScreenType,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validScreenType,
 			nil,
 			http.StatusCreated,
@@ -244,14 +247,14 @@ func TestCreateScreenType(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -265,14 +268,14 @@ func TestCreateScreenType(t *testing.T) {
 		},
 		{
 			"Empty field in JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidScreenType,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty field in JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidScreenType,
 			nil,
 			http.StatusBadRequest,
@@ -286,14 +289,14 @@ func TestCreateScreenType(t *testing.T) {
 		},
 		{
 			"Insert Error User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validScreenType,
 			setupConflictTest,
 			http.StatusForbidden,
 		},
 		{
 			"Insert Error Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validScreenType,
 			setupConflictTest,
 			http.StatusConflict,
@@ -303,6 +306,7 @@ func TestCreateScreenType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -366,7 +370,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -378,7 +382,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -402,7 +406,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			unknown_id,
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -413,7 +417,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			unknown_id,
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -432,7 +436,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingScreen,
@@ -440,7 +444,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingScreen,
@@ -456,7 +460,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Empty Name as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ScreenTypeData{Name: "", Description: "Test"},
 			setupExistingScreen,
@@ -464,7 +468,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Empty Name as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			ScreenTypeData{Name: "", Description: "Test"},
 			setupExistingScreen,
@@ -480,7 +484,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			setupExistingScreen,
@@ -488,7 +492,7 @@ func TestUpdateScreenType(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingScreen,
@@ -499,6 +503,7 @@ func TestUpdateScreenType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -542,7 +547,7 @@ func TestDeleteScreenType(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -553,7 +558,7 @@ func TestDeleteScreenType(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -573,7 +578,7 @@ func TestDeleteScreenType(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), ""
@@ -582,7 +587,7 @@ func TestDeleteScreenType(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), ""
@@ -598,21 +603,21 @@ func TestDeleteScreenType(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupExistingScreen,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingScreen,
 			http.StatusConflict,
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -626,6 +631,7 @@ func TestDeleteScreenType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -650,31 +656,31 @@ func TestScreenTypeConstraintsCreate(t *testing.T) {
 	}{
 		{
 			"Empty name",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "   ", Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Valid", Description: "   "},
 			http.StatusBadRequest,
 		},
 		{
 			"Name too long",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Description too long",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			http.StatusBadRequest,
 		},
 		{
 			"Special characters in name",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Тест <script>", Description: "Valid"},
 			http.StatusCreated,
 		},
@@ -683,6 +689,7 @@ func TestScreenTypeConstraintsCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "POST", ts.URL+"/screen-types", generateToken(t, tt.role), tt.body)
@@ -701,37 +708,37 @@ func TestScreenTypeConstraintsUpdate(t *testing.T) {
 	}{
 		{
 			"Empty name",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "   ", Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Valid", Description: "   "},
 			http.StatusBadRequest,
 		},
 		{
 			"Name too long",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
 			http.StatusBadRequest,
 		},
 		{
 			"Description too long",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			http.StatusBadRequest,
 		},
 		{
 			"Special characters in name",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Тест <script>", Description: "Valid"},
 			http.StatusOK,
 		},
 		{
 			"Valid update",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ScreenTypeData{Name: "Valid Name", Description: "Valid Description"},
 			http.StatusOK,
 		},
@@ -765,13 +772,14 @@ func TestUpdateConflict(t *testing.T) {
 		Description: "Updated",
 	}
 
-	req := createRequest(t, "PUT", ts.URL+"/screen-types/"+id1.ID, generateToken(t, "CLAIM_ROLE_ADMIN"), updateData)
+	req := createRequest(t, "PUT", ts.URL+"/screen-types/"+id1.ID, generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")), updateData)
 	resp := executeRequest(t, req, http.StatusConflict)
 	defer resp.Body.Close()
 }
 
 func TestCreateScreenTypeDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Создаем ситуацию с ошибкой БД
@@ -780,7 +788,7 @@ func TestCreateScreenTypeDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "POST", ts.URL+"/screen-types",
-		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
 		ScreenTypeData{
 			Name:        "name",
 			Description: "Updated",
@@ -814,7 +822,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusBadRequest,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Только пробельные символы - ошибка",
@@ -822,7 +830,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusBadRequest,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Короткий запрос",
@@ -830,7 +838,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Нет совпадений",
@@ -838,7 +846,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusNotFound,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Точное совпадение - LED",
@@ -846,7 +854,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			2,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Частичное совпадение - 'сте'",
@@ -854,7 +862,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Поиск без учета регистра - 'oLeD'",
@@ -862,7 +870,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Поиск с пробелами - 'LCD'",
@@ -870,7 +878,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Частичное совпадение с пробелами - 'система'",
@@ -878,7 +886,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Админ имеет доступ",
@@ -886,7 +894,7 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 		},
 		{
 			"Гость имеет доступ",
@@ -902,13 +910,14 @@ func TestSearchScreenTypes(t *testing.T) {
 			setupWithScreenTypes,
 			http.StatusNotFound,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/screen-types/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)

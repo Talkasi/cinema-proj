@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -22,16 +23,17 @@ func TestGetMovieShows(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -84,7 +86,7 @@ func TestGetMovieShowByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -94,7 +96,7 @@ func TestGetMovieShowByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -118,6 +120,7 @@ func TestGetMovieShowByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/movie-shows/"+id, generateToken(t, tt.role), nil)
@@ -176,14 +179,14 @@ func TestCreateMovieShow(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validMovieShow,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validMovieShow,
 			nil,
 			http.StatusCreated,
@@ -197,14 +200,14 @@ func TestCreateMovieShow(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -218,28 +221,28 @@ func TestCreateMovieShow(t *testing.T) {
 		},
 		{
 			"Invalid data User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidMovieShow,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid data Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidMovieShow,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Conflict Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validMovieShow,
 			setupConflictTest,
 			http.StatusConflict,
 		},
 		{
 			"Invalid movie ID",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieShowData{
 				MovieID:   "invalid",
 				HallID:    HallsData[0].ID,
@@ -253,7 +256,7 @@ func TestCreateMovieShow(t *testing.T) {
 		},
 		{
 			"Invalid hall ID",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieShowData{
 				MovieID:   MoviesData[0].ID,
 				HallID:    "invalid",
@@ -265,7 +268,7 @@ func TestCreateMovieShow(t *testing.T) {
 		},
 		{
 			"Start time in past",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieShowData{
 				MovieID:   MoviesData[0].ID,
 				HallID:    HallsData[0].ID,
@@ -277,7 +280,7 @@ func TestCreateMovieShow(t *testing.T) {
 		},
 		{
 			"Invalid language",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieShowData{
 				MovieID:   MoviesData[0].ID,
 				HallID:    HallsData[0].ID,
@@ -374,7 +377,7 @@ func TestUpdateMovieShow(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -386,7 +389,7 @@ func TestUpdateMovieShow(t *testing.T) {
 		},
 		{
 			"Invalid data as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			invalidUpdateData,
 			setupExistingShow,
@@ -402,7 +405,7 @@ func TestUpdateMovieShow(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingShow,
@@ -413,6 +416,7 @@ func TestUpdateMovieShow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -459,7 +463,7 @@ func TestDeleteMovieShow(t *testing.T) {
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingShow,
 			http.StatusNoContent,
@@ -469,6 +473,7 @@ func TestDeleteMovieShow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -485,6 +490,7 @@ func TestDeleteMovieShow(t *testing.T) {
 
 func TestCreateMovieShowDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Create DB error situation
@@ -493,7 +499,7 @@ func TestCreateMovieShowDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "POST", ts.URL+"/movie-shows",
-		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
 		MovieShowData{
 			MovieID:   uuid.New().String(),
 			HallID:    uuid.New().String(),
@@ -681,7 +687,7 @@ func TestGetShowsByMovie(t *testing.T) {
 	}{
 		{
 			"Valid request with default hours",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"",
 			setupWithData,
@@ -690,7 +696,7 @@ func TestGetShowsByMovie(t *testing.T) {
 		},
 		{
 			"Valid request with custom hours",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"48",
 			setupWithData,
@@ -699,7 +705,7 @@ func TestGetShowsByMovie(t *testing.T) {
 		},
 		{
 			"Invalid movie ID format",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			"",
 			setupWithData,
@@ -708,7 +714,7 @@ func TestGetShowsByMovie(t *testing.T) {
 		},
 		{
 			"Non-existent movie ID",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			uuid.New().String(),
 			"",
 			setupWithData,
@@ -717,7 +723,7 @@ func TestGetShowsByMovie(t *testing.T) {
 		},
 		{
 			"Invalid hours parameter",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid",
 			setupWithData,
@@ -726,7 +732,7 @@ func TestGetShowsByMovie(t *testing.T) {
 		},
 		{
 			"Negative hours parameter",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"-10",
 			setupWithData,
@@ -747,6 +753,7 @@ func TestGetShowsByMovie(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, movieID := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -794,21 +801,21 @@ func TestGetShowsByDate(t *testing.T) {
 	}{
 		{
 			"Valid date",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			time.Now().Add(48 * time.Hour).Format("2006-01-02"),
 			setupWithData,
 			http.StatusOK,
 		},
 		{
 			"Invalid date format",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"2023\\01\\01",
 			setupWithData,
 			http.StatusBadRequest,
 		},
 		{
 			"Date with no shows",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"1900-01-01",
 			setupWithData,
 			http.StatusNotFound,
@@ -825,6 +832,7 @@ func TestGetShowsByDate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/movie-shows/by-date/"+tt.date, generateToken(t, tt.role), nil)
@@ -861,35 +869,35 @@ func TestGetUpcomingShows(t *testing.T) {
 	}{
 		{
 			"Default hours",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupWithData,
 			http.StatusOK,
 		},
 		{
 			"Custom valid hours",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"72",
 			setupWithData,
 			http.StatusOK,
 		},
 		{
 			"Invalid hours format",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid",
 			setupWithData,
 			http.StatusBadRequest,
 		},
 		{
 			"Negative hours",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"-5",
 			setupWithData,
 			http.StatusBadRequest,
 		},
 		{
 			"Zero hours",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"0",
 			setupWithData,
 			http.StatusBadRequest,
@@ -906,6 +914,7 @@ func TestGetUpcomingShows(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			url := ts.URL + "/movie-shows/upcoming"

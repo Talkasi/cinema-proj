@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -21,16 +22,17 @@ func TestGetGenres(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -83,7 +85,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -93,7 +95,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -113,7 +115,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -123,7 +125,7 @@ func TestGetGenreByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -135,13 +137,13 @@ func TestGetGenreByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -194,14 +196,14 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validGenre,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validGenre,
 			nil,
 			http.StatusCreated,
@@ -215,14 +217,14 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
@@ -236,21 +238,21 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty fields in JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			invalidGenre,
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Conflict Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validGenre,
 			func(t *testing.T) {
 				_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO genres (name, description) VALUES ($1, $2)", validGenre.Name, validGenre.Description)
@@ -262,70 +264,70 @@ func TestCreateGenre(t *testing.T) {
 		},
 		{
 			"Name with invalid characters",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Action123!", Description: "Valid"},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Name with only spaces",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "   ", Description: "Valid"},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Name exactly 64 chars",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: strings.Repeat("a", 64), Description: "Valid"},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Name too long (65 chars)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: strings.Repeat("a", 65), Description: "Valid"},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Name with Unicode (кириллица)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Комедия", Description: "Valid"},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Name with hyphen",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Sci-Fi", Description: "Valid"},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Empty description",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Valid", Description: ""},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Description with only spaces",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Valid", Description: "   "},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Description exactly 1000 chars",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Valid", Description: strings.Repeat("a", 1000)},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Description too long (1001 chars)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			GenreData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			nil,
 			http.StatusBadRequest,
@@ -335,6 +337,7 @@ func TestCreateGenre(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.setup != nil {
@@ -400,7 +403,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -412,7 +415,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -436,7 +439,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -448,7 +451,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			func(t *testing.T) (*httptest.Server, string) {
@@ -468,7 +471,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingGenre,
@@ -476,7 +479,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingGenre,
@@ -492,7 +495,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Empty fields in JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			invalidUpdateData,
 			setupExistingGenre,
@@ -500,7 +503,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Empty fields in as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			invalidUpdateData,
 			setupExistingGenre,
@@ -516,7 +519,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			setupExistingGenre,
@@ -524,7 +527,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingGenre,
@@ -532,7 +535,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Name with invalid characters",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Action123!", Description: "Valid"},
 			setupExistingGenre,
@@ -540,7 +543,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Name with only spaces",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "   ", Description: "Valid"},
 			setupExistingGenre,
@@ -548,7 +551,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Name exactly 64 chars",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: strings.Repeat("a", 64), Description: "Valid"},
 			setupExistingGenre,
@@ -556,7 +559,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Name too long (65 chars)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: strings.Repeat("a", 65), Description: "Valid"},
 			setupExistingGenre,
@@ -564,7 +567,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Name with Unicode (кириллица)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Комедия новая", Description: "Valid"},
 			setupExistingGenre,
@@ -572,7 +575,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Name with hyphen",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Sci-Fi", Description: "Valid"},
 			setupExistingGenre,
@@ -580,7 +583,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Empty description",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Valid", Description: ""},
 			setupExistingGenre,
@@ -588,7 +591,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Description with only spaces",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Valid", Description: "   "},
 			setupExistingGenre,
@@ -596,7 +599,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Description exactly 1000 chars",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Valid", Description: strings.Repeat("a", 1000)},
 			setupExistingGenre,
@@ -604,7 +607,7 @@ func TestUpdateGenre(t *testing.T) {
 		},
 		{
 			"Description too long (1001 chars)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			GenreData{Name: "Valid", Description: strings.Repeat("a", 1001)},
 			setupExistingGenre,
@@ -615,6 +618,7 @@ func TestUpdateGenre(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -658,7 +662,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -669,7 +673,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -689,7 +693,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -698,7 +702,7 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -714,21 +718,21 @@ func TestDeleteGenre(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupExistingGenre,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			setupExistingGenre,
 			http.StatusConflict,
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -742,6 +746,7 @@ func TestDeleteGenre(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Use provided ID or fallback to id from setup
@@ -759,6 +764,7 @@ func TestDeleteGenre(t *testing.T) {
 
 func TestCreateGenreDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	// Создаем ситуацию с ошибкой БД
@@ -767,7 +773,7 @@ func TestCreateGenreDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "POST", ts.URL+"/genres",
-		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
 		GenreData{Name: "Test", Description: "Test"})
 	resp := executeRequest(t, req, http.StatusInternalServerError)
 	defer resp.Body.Close()
@@ -798,7 +804,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusBadRequest,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Только пробельные символы - ошибка",
@@ -806,7 +812,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusBadRequest,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Короткий запрос",
@@ -814,7 +820,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			3,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Нет совпадений",
@@ -822,7 +828,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusNotFound,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Точное совпадение - Драма",
@@ -830,7 +836,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Частичное совпадение - 'рама'",
@@ -838,7 +844,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Частичное совпадение - 'ик'",
@@ -846,7 +852,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			4,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Поиск без учета регистра - 'кОмЕдИя'",
@@ -854,7 +860,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Поиск с пробелами - 'Научная фантастика'",
@@ -862,7 +868,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Частичное совпадение с пробелами - 'научная'",
@@ -870,7 +876,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 		{
 			"Админ имеет доступ",
@@ -878,7 +884,7 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusOK,
 			1,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 		},
 		{
 			"Гость имеет доступ",
@@ -894,13 +900,14 @@ func TestSearchGenres(t *testing.T) {
 			setupWithGenres,
 			http.StatusNotFound,
 			0,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/genres/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)

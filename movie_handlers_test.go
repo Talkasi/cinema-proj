@@ -6,31 +6,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-func getMovieByID(t *testing.T, ts *httptest.Server, token string, index int) Movie {
-	req := createRequest(t, "GET", ts.URL+"/movies", token, nil)
-	resp := executeRequest(t, req, http.StatusOK)
-	defer resp.Body.Close()
-
-	var movies []Movie
-	parseResponseBody(t, resp, &movies)
-
-	if len(movies) == 0 {
-		t.Fatal("Expected at least one movie, got none")
-	}
-
-	if index >= len(movies) {
-		t.Fatal("Index is greater than length of data array")
-	}
-
-	return movies[index]
-}
 
 func TestGetMovies(t *testing.T) {
 	tests := []struct {
@@ -40,16 +22,17 @@ func TestGetMovies(t *testing.T) {
 		expectedStatus int
 	}{
 		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-		{"Empty as Admin", false, "CLAIM_ROLE_ADMIN", http.StatusNotFound},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
 		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-		{"NonEmpty as Admin", true, "CLAIM_ROLE_ADMIN", http.StatusOK},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			if tt.seedData {
@@ -75,8 +58,8 @@ func TestGetMovies(t *testing.T) {
 func TestGetMovieByID(t *testing.T) {
 	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)                 // Заполняем базу данных тестовыми данными
-		return ts, getMovieByID(t, ts, "", 0).ID // Предполагается, что эта функция возвращает ID существующего фильма
+		_ = SeedAll(TestAdminDB)
+		return ts, MoviesData[0].ID
 	}
 
 	tests := []struct {
@@ -102,7 +85,7 @@ func TestGetMovieByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusNotFound,
 		},
 		{
@@ -112,7 +95,7 @@ func TestGetMovieByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
@@ -132,7 +115,7 @@ func TestGetMovieByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusBadRequest,
 		},
 		{
@@ -142,7 +125,7 @@ func TestGetMovieByID(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusBadRequest,
 		},
 		{
@@ -154,13 +137,13 @@ func TestGetMovieByID(t *testing.T) {
 		{
 			"Valid ID as User",
 			setupValidIDTest,
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
 			setupValidIDTest,
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
 	}
@@ -168,6 +151,7 @@ func TestGetMovieByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/movies/"+id, generateToken(t, tt.role), nil)
@@ -218,14 +202,14 @@ func TestCreateMovie(t *testing.T) {
 		},
 		{
 			"Forbidden User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			validMovie,
 			nil,
 			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validMovie,
 			nil,
 			http.StatusCreated,
@@ -239,91 +223,91 @@ func TestCreateMovie(t *testing.T) {
 		},
 		{
 			"Invalid JSON User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid JSON Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"{invalid json}",
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty title",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid duration",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "00:00:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid age limit",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 10, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Valid age limit (0)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 0, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (6)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 6, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (12)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (16)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (18)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 18, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Invalid age limit (19)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 19, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Valid box office revenue (positive)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
@@ -333,6 +317,7 @@ func TestCreateMovie(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 			err := SeedGenres(TestAdminDB)
 			if err != nil {
@@ -367,7 +352,7 @@ func TestUpdateMovie(t *testing.T) {
 	setupExistingMovieWithGenresID := func(t *testing.T) (*httptest.Server, string, []string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getMovieByID(t, ts, "", 0).ID, []string{
+		return ts, MoviesData[0].ID, []string{
 			GenresData[0].ID,
 			GenresData[3].ID,
 			GenresData[2].ID,
@@ -424,7 +409,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			validUpdateData,
 			setupInvalidID,
@@ -432,7 +417,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			validUpdateData,
 			setupInvalidID,
@@ -448,7 +433,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Unknown UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
 			setupUnknownID,
@@ -456,7 +441,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Unknown UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupUnknownID,
@@ -472,7 +457,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Invalid JSON as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
 			setupExistingMovieWithGenresID,
@@ -480,7 +465,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Invalid JSON as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
 			setupExistingMovieWithGenresID,
@@ -496,7 +481,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Invalid duration as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			MovieData{Title: "Valid Title", Duration: "invalid-duration", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
@@ -504,7 +489,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Invalid age limit as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 99, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
@@ -512,7 +497,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Success Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
 			setupExistingMovieWithGenresID,
@@ -520,7 +505,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Title with only spaces",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			MovieData{Title: "   ", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
@@ -528,7 +513,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Description too long (1001 chars)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: strings.Repeat("a", 1001), AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
@@ -536,7 +521,7 @@ func TestUpdateMovie(t *testing.T) {
 		},
 		{
 			"Valid update with future release date",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
 			setupExistingMovieWithGenresID,
@@ -547,6 +532,7 @@ func TestUpdateMovie(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id, genres_ids := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			effectiveID := tt.id
@@ -575,7 +561,7 @@ func TestDeleteMovie(t *testing.T) {
 	setupExistingMovie := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, getMovieByID(t, ts, "", 0).ID
+		return ts, MoviesData[0].ID
 	}
 
 	tests := []struct {
@@ -598,7 +584,7 @@ func TestDeleteMovie(t *testing.T) {
 		},
 		{
 			"Not Found as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -609,7 +595,7 @@ func TestDeleteMovie(t *testing.T) {
 		},
 		{
 			"Not Found as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
@@ -629,7 +615,7 @@ func TestDeleteMovie(t *testing.T) {
 		},
 		{
 			"Invalid UUID as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -638,7 +624,7 @@ func TestDeleteMovie(t *testing.T) {
 		},
 		{
 			"Invalid UUID as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"invalid-uuid",
 			func(t *testing.T) (*httptest.Server, string) {
 				return setupTestServer(), "invalid-uuid"
@@ -654,30 +640,30 @@ func TestDeleteMovie(t *testing.T) {
 		},
 		{
 			"Forbidden as User",
-			"CLAIM_ROLE_USER",
+			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			setupExistingMovie,
 			http.StatusForbidden,
 		},
 		{
 			"Dependency error as Admin (У фильма были сеансы)",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getMovieByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 0).ID
+				return ts, MoviesData[0].ID
 			},
 			http.StatusConflict,
 		},
 		{
 			"Success as Admin",
-			"CLAIM_ROLE_ADMIN",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				return ts, getMovieByID(t, ts, generateToken(t, "CLAIM_ROLE_ADMIN"), 5).ID
+				return ts, MoviesData[5].ID
 			},
 			http.StatusNoContent,
 		},
@@ -686,6 +672,7 @@ func TestDeleteMovie(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			// Используем предоставленный ID или берем ID из setup
@@ -708,6 +695,7 @@ func TestDeleteMovie(t *testing.T) {
 
 func TestCreateMovieDBError(t *testing.T) {
 	ts := setupTestServer()
+	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
 	validMovieData := MovieData{
@@ -726,7 +714,7 @@ func TestCreateMovieDBError(t *testing.T) {
 	TestUserDB.Close()
 
 	req := createRequest(t, "POST", ts.URL+"/movies",
-		generateToken(t, "CLAIM_ROLE_ADMIN"),
+		generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
 		validMovieData)
 	resp := executeRequest(t, req, http.StatusInternalServerError)
 	defer resp.Body.Close()
@@ -811,6 +799,7 @@ func TestSearchMovies(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServerWithData(t)
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			req := createRequest(t, "GET", ts.URL+"/movies/by-title/search?query="+url.QueryEscape(tt.query), "", nil)
@@ -974,6 +963,7 @@ func TestGetMoviesByAllGenres(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
+			SeedUsers(TestAdminDB)
 			defer ts.Close()
 
 			var genreIDs []string
@@ -1021,6 +1011,7 @@ func TestGetMoviesByAllGenres(t *testing.T) {
 
 	t.Run("Ошибка базы данных", func(t *testing.T) {
 		ts := setupTestServer()
+		SeedUsers(TestAdminDB)
 		defer ts.Close()
 
 		TestGuestDB.Close()
@@ -1039,6 +1030,7 @@ func TestGetMoviesByAllGenres(t *testing.T) {
 	t.Run("Проверка прав доступа", func(t *testing.T) {
 		ts := setupTestServer()
 		defer ts.Close()
+		SeedUsers(TestAdminDB)
 		SeedAll(TestAdminDB)
 
 		genreID := GenresData[0].ID
@@ -1049,8 +1041,8 @@ func TestGetMoviesByAllGenres(t *testing.T) {
 			expectedStatus int
 		}{
 			{"Доступ гостя", "", http.StatusOK},
-			{"Доступ пользователя", "CLAIM_ROLE_USER", http.StatusOK},
-			{"Доступ администратора", "CLAIM_ROLE_ADMIN", http.StatusOK},
+			{"Доступ пользователя", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+			{"Доступ администратора", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 		}
 
 		for _, tt := range tests {

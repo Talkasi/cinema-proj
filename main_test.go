@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -22,7 +23,14 @@ func setupTestServer() *httptest.Server {
 }
 
 func generateToken(t *testing.T, role string) string {
-	token, err := GenerateToken("email", role)
+	var user_id string
+	switch role {
+	case os.Getenv("CLAIM_ROLE_ADMIN"):
+		user_id = UsersData[len(UsersData)-2].ID
+	case os.Getenv("CLAIM_ROLE_USER"):
+		user_id = UsersData[len(UsersData)-1].ID
+	}
+	token, err := GenerateToken(role, user_id)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
