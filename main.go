@@ -50,6 +50,7 @@ func NewRouter() *http.ServeMux {
 
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
+	mux.HandleFunc("GET /screen-types/search", Midleware(RoleBasedHandler(SearchScreenTypes)))
 	mux.HandleFunc("GET /screen-types", Midleware(RoleBasedHandler(GetScreenTypes)))
 	mux.HandleFunc("GET /screen-types/{id}", Midleware(RoleBasedHandler(GetScreenTypeByID)))
 	mux.HandleFunc("POST /screen-types", Midleware(RoleBasedHandler(CreateScreenType)))
@@ -104,6 +105,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("PUT /seats/{id}", Midleware(RoleBasedHandler(UpdateSeat)))
 	mux.HandleFunc("DELETE /seats/{id}", Midleware(RoleBasedHandler(DeleteSeat)))
 
+	mux.HandleFunc("GET /seat-types/search", Midleware(RoleBasedHandler(SearchSeatTypes)))
 	mux.HandleFunc("GET /seat-types", Midleware(RoleBasedHandler(GetSeatTypes)))
 	mux.HandleFunc("GET /seat-types/{id}", Midleware(RoleBasedHandler(GetSeatTypeByID)))
 	mux.HandleFunc("POST /seat-types", Midleware(RoleBasedHandler(CreateSeatType)))

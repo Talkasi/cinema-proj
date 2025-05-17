@@ -1972,6 +1972,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/screen-types/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает типы экранов, название которых содержит указанную строку.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Типы экранов"
+                ],
+                "summary": "Поиск типов экранов по названию",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Поисковый запрос",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список типов экранов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.ScreenType"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Строка поиска пуста",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Типы экранов не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/screen-types/{id}": {
             "get": {
                 "security": [
@@ -2221,6 +2276,61 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/seat-types/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает типы места, название которых содержит указанную строку.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Типы мест"
+                ],
+                "summary": "Поиск типов места по названию",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Поисковый запрос",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список типов мест",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.SeatType"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Строка поиска пуста",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Типы мест не найдены",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }

@@ -229,3 +229,48 @@ func DeleteScreenType(db *pgxpool.Pool) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+// @Summary Поиск типов экранов по названию
+// @Description Возвращает типы экранов, название которых содержит указанную строку.
+// @Tags Типы экранов
+// @Produce json
+// @Security BearerAuth
+// @Param query query string true "Поисковый запрос"
+// @Success 200 {array} ScreenType "Список типов экранов"
+// @Failure 400 {object} ErrorResponse "Строка поиска пуста"
+// @Failure 404 {object} ErrorResponse "Типы экранов не найдены"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /screen-types/search [get]
+func SearchScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("query")
+		query = PrepareString(query)
+		if query == "" {
+			http.Error(w, "Строка поиска пуста", http.StatusBadRequest)
+			return
+		}
+
+		rows, err := db.Query(context.Background(),
+			"SELECT id, name, description FROM screen_types WHERE name ILIKE $1", "%"+query+"%")
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var types []ScreenType
+		for rows.Next() {
+			var e ScreenType
+			if err := rows.Scan(&e.ID, &e.Name, &e.Description); IsError(w, err) {
+				return
+			}
+			types = append(types, e)
+		}
+
+		if len(types) == 0 {
+			http.Error(w, "Типы экранов не найдены", http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(types)
+	}
+}

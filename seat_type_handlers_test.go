@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -788,5 +790,149 @@ func TestCreateSeatTypeDBError(t *testing.T) {
 
 	if err := InitTestDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
+	}
+}
+
+func TestSearchSeatTypes(t *testing.T) {
+	setupWithSeatTypes := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		_ = SeedSeatTypes(TestAdminDB)
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		query          string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+		expectedCount  int
+		role           string
+	}{
+		{
+			"Пустой запрос - ошибка",
+			"",
+			setupWithSeatTypes,
+			http.StatusBadRequest,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Только пробельные символы - ошибка",
+			"          		",
+			setupWithSeatTypes,
+			http.StatusBadRequest,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Короткий запрос",
+			"С",
+			setupWithSeatTypes,
+			http.StatusOK,
+			7,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Нет совпадений",
+			"Кресло для отдыха",
+			setupWithSeatTypes,
+			http.StatusNotFound,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Точное совпадение - VIP",
+			"VIP",
+			setupWithSeatTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение - 'стандарт'",
+			"стандарт",
+			setupWithSeatTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Поиск без учета регистра - 'люКС'",
+			"люКС",
+			setupWithSeatTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Поиск с пробелами - 'Семейное'",
+			"Семейное",
+			setupWithSeatTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение с пробелами - 'кресло'",
+			"  кресло    ",
+			setupWithSeatTypes,
+			http.StatusOK,
+			3,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Админ имеет доступ",
+			"Люкс",
+			setupWithSeatTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_ADMIN",
+		},
+		{
+			"Гость имеет доступ",
+			"Люкс",
+			setupWithSeatTypes,
+			http.StatusOK,
+			1,
+			"",
+		},
+		{
+			"Специальные символы в запросе - 'VIP/'",
+			"VIP/",
+			setupWithSeatTypes,
+			http.StatusNotFound,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			req := createRequest(t, "GET", ts.URL+"/seat-types/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var seatTypes []SeatType
+				if err := json.NewDecoder(resp.Body).Decode(&seatTypes); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(seatTypes) != tt.expectedCount {
+					t.Errorf("Expected %d seat types, got %d: %v", tt.expectedCount, len(seatTypes), seatTypes)
+				}
+
+				lowerQuery := strings.ToLower(tt.query)
+				lowerQuery = PrepareString(lowerQuery)
+				for _, seatType := range seatTypes {
+					if !strings.Contains(strings.ToLower(seatType.Name), lowerQuery) {
+						t.Errorf("Seat type name '%s' does not contain query '%s'", seatType.Name, tt.query)
+					}
+				}
+			}
+		})
 	}
 }

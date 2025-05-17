@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -788,5 +790,149 @@ func TestCreateScreenTypeDBError(t *testing.T) {
 
 	if err := InitTestDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
+	}
+}
+
+func TestSearchScreenTypes(t *testing.T) {
+	setupWithScreenTypes := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		_ = SeedScreenTypes(TestAdminDB)
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		query          string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+		expectedCount  int
+		role           string
+	}{
+		{
+			"Пустой запрос - ошибка",
+			"",
+			setupWithScreenTypes,
+			http.StatusBadRequest,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Только пробельные символы - ошибка",
+			"          		",
+			setupWithScreenTypes,
+			http.StatusBadRequest,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Короткий запрос",
+			"Л",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Нет совпадений",
+			"Плазма",
+			setupWithScreenTypes,
+			http.StatusNotFound,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Точное совпадение - LED",
+			"LED",
+			setupWithScreenTypes,
+			http.StatusOK,
+			2,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение - 'сте'",
+			"сте",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Поиск без учета регистра - 'oLeD'",
+			"oLeD",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Поиск с пробелами - 'LCD'",
+			"LCD",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Частичное совпадение с пробелами - 'система'",
+			"  система    ",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_USER",
+		},
+		{
+			"Админ имеет доступ",
+			"OLED",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"CLAIM_ROLE_ADMIN",
+		},
+		{
+			"Гость имеет доступ",
+			"OLED",
+			setupWithScreenTypes,
+			http.StatusOK,
+			1,
+			"",
+		},
+		{
+			"Специальные символы в запросе - 'LED/'",
+			"LED/",
+			setupWithScreenTypes,
+			http.StatusNotFound,
+			0,
+			"CLAIM_ROLE_USER",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			req := createRequest(t, "GET", ts.URL+"/screen-types/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var screenTypes []ScreenType
+				if err := json.NewDecoder(resp.Body).Decode(&screenTypes); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(screenTypes) != tt.expectedCount {
+					t.Errorf("Expected %d screen types, got %d: %v", tt.expectedCount, len(screenTypes), screenTypes)
+				}
+
+				lowerQuery := strings.ToLower(tt.query)
+				lowerQuery = PrepareString(lowerQuery)
+				for _, screenType := range screenTypes {
+					if !strings.Contains(strings.ToLower(screenType.Name), lowerQuery) {
+						t.Errorf("Screen type name '%s' does not contain query '%s'", screenType.Name, tt.query)
+					}
+				}
+			}
+		})
 	}
 }
