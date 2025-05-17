@@ -143,9 +143,14 @@ CREATE TABLE IF NOT EXISTS tickets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     movie_show_id UUID REFERENCES movie_shows(id),
     seat_id UUID REFERENCES seats(id),
+    user_id UUID REFERENCES users(id),
     ticket_status ticket_status_enum NOT NULL,
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
-    CONSTRAINT unique_ticket UNIQUE (movie_show_id, seat_id)
+    CONSTRAINT unique_ticket UNIQUE (movie_show_id, seat_id),
+    CONSTRAINT user_id_status_check CHECK (
+        (user_id IS NULL AND ticket_status = 'Available') OR
+        (user_id IS NOT NULL)
+    )
 );
 
 CREATE OR REPLACE FUNCTION update_box_office_revenue()

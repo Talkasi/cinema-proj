@@ -190,14 +190,15 @@ func SeedSeats(db *pgxpool.Pool) error {
 func SeedTickets(db *pgxpool.Pool) error {
 	for _, t := range TicketsData {
 		_, err := db.Exec(context.Background(), `INSERT INTO tickets 
-            (id, movie_show_id, seat_id, ticket_status, price)
-            VALUES ($1, $2, $3, $4, $5)
+            (id, movie_show_id, seat_id, user_id, ticket_status, price)
+            VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (id) DO UPDATE SET
                 movie_show_id = EXCLUDED.movie_show_id,
                 seat_id = EXCLUDED.seat_id,
+				user_id = EXCLUDED.user_id,
                 ticket_status = EXCLUDED.ticket_status,
                 price = EXCLUDED.price`,
-			t.ID, t.MovieShowID, t.SeatID, t.Status, t.Price)
+			t.ID, t.MovieShowID, t.SeatID, t.UserID, t.Status, t.Price)
 		if err != nil {
 			return fmt.Errorf("ошибка при вставке билета: %v", err)
 		}

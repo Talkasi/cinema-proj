@@ -549,6 +549,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/halls/{hall_id}/seats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список мест в указанном зале.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Места"
+                ],
+                "summary": "Получить места по ID зала",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID зала",
+                        "name": "hall_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список мест",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Seat"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID зала",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Места не найдены",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/halls/{id}": {
             "get": {
                 "security": [
@@ -2873,6 +2928,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/tickets/user/{user_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Билеты"
+                ],
+                "summary": "Получить билеты пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Ticket"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tickets/{id}": {
             "get": {
                 "security": [
@@ -3840,6 +3932,10 @@ const docTemplate = `{
                         }
                     ],
                     "example": "Purchased"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
                 }
             }
         },
@@ -3865,6 +3961,10 @@ const docTemplate = `{
                         }
                     ],
                     "example": "Available"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
                 }
             }
         },

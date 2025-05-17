@@ -705,7 +705,10 @@ func TestCreateReviewDBError(t *testing.T) {
 func TestGetReviewsByMovieID(t *testing.T) {
 	setupTest := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
-		SeedAll(TestAdminDB)
+		err := SeedAll(TestAdminDB)
+		if err != nil {
+			println(err.Error())
+		}
 		return ts, MoviesData[0].ID // Используем ID первого фильма из тестовых данных
 	}
 

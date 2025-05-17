@@ -306,6 +306,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/main.TicketStatusEnumType'
         example: Purchased
+      user_id:
+        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        type: string
     type: object
   main.TicketData:
     properties:
@@ -322,6 +325,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/main.TicketStatusEnumType'
         example: Available
+      user_id:
+        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        type: string
     type: object
   main.TicketStatusEnumType:
     enum:
@@ -664,6 +670,41 @@ paths:
       summary: Создать кинозал
       tags:
       - Кинозалы
+  /halls/{hall_id}/seats:
+    get:
+      description: Возвращает список мест в указанном зале.
+      parameters:
+      - description: ID зала
+        in: path
+        name: hall_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список мест
+          schema:
+            items:
+              $ref: '#/definitions/main.Seat'
+            type: array
+        "400":
+          description: Неверный формат ID зала
+          schema:
+            type: string
+        "404":
+          description: Места не найдены
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить места по ID зала
+      tags:
+      - Места
   /halls/{id}:
     delete:
       description: Удаляет кинозал по его ID.
@@ -2318,6 +2359,30 @@ paths:
       security:
       - BearerAuth: []
       summary: Получить все билеты для сеанса фильма по его ID
+      tags:
+      - Билеты
+  /tickets/user/{user_id}:
+    get:
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Ticket'
+            type: array
+        "500":
+          description: Ошибка
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Получить билеты пользователя
       tags:
       - Билеты
   /user/login:

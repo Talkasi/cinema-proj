@@ -112,7 +112,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("DELETE /seat-types/{id}", Midleware(RoleBasedHandler(DeleteSeatType)))
 
 	mux.HandleFunc("GET /tickets/movie-show/{movie_show_id}", Midleware(RoleBasedHandler(GetTicketsByMovieShowID)))
-	// mux.HandleFunc("GET /tickets/user/{user_id}", Midleware(RoleBasedHandler(GetTicketsByUserID)))
+	mux.HandleFunc("GET /tickets/user/{user_id}", Midleware(RoleBasedHandler(GetTicketsByUserID)))
 	mux.HandleFunc("GET /tickets/{id}", Midleware(RoleBasedHandler(GetTicketByID)))
 	mux.HandleFunc("POST /tickets", Midleware(RoleBasedHandler(CreateTicket)))
 	mux.HandleFunc("PUT /tickets/{id}", Midleware(RoleBasedHandler(UpdateTicket)))

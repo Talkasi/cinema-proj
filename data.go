@@ -185,6 +185,24 @@ var UsersData = []User{
 		IsBlocked:    true,
 		IsAdmin:      false,
 	},
+	{
+		ID:           uuid.New().String(),
+		Name:         "Администратор",
+		Email:        "admin@admin.com",
+		PasswordHash: "$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C",
+		BirthDate:    "1990-05-15",
+		IsBlocked:    false,
+		IsAdmin:      true,
+	},
+	{
+		ID:           uuid.New().String(),
+		Name:         "Пользователь",
+		Email:        "user@user.com",
+		PasswordHash: "$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C",
+		BirthDate:    "1990-05-15",
+		IsBlocked:    false,
+		IsAdmin:      false,
+	},
 }
 
 var MovieShowsData = []MovieShow{
@@ -254,6 +272,7 @@ var TicketsData = []Ticket{
 		ID:          uuid.New().String(),
 		MovieShowID: MovieShowsData[0].ID,
 		SeatID:      SeatsData[0].ID,
+		UserID:      &UsersData[0].ID,
 		Status:      "Purchased",
 		Price:       500.00,
 	},
@@ -261,6 +280,7 @@ var TicketsData = []Ticket{
 		ID:          uuid.New().String(),
 		MovieShowID: MovieShowsData[1].ID,
 		SeatID:      SeatsData[1].ID,
+		UserID:      &UsersData[0].ID,
 		Status:      "Reserved",
 		Price:       750.00,
 	},

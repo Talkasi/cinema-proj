@@ -285,7 +285,7 @@ func TestUpdateTicket(t *testing.T) {
 	validUpdateData := TicketData{
 		MovieShowID: MovieShowsData[0].ID,
 		SeatID:      SeatsData[3].ID,
-		Status:      Reserved,
+		Status:      Available,
 		Price:       1500,
 	}
 
@@ -426,48 +426,6 @@ func TestDeleteTicket(t *testing.T) {
 	}
 }
 
-// func TestGetTicketsByUserID(t *testing.T) {
-// 	tests := []struct {
-// 		name           string
-// 		seedData       bool
-// 		role           string
-// 		expectedStatus int
-// 	}{
-// 		{"Empty as Guest", false, "", http.StatusNotFound},
-// 		{"Empty as User", false, "CLAIM_ROLE_USER", http.StatusNotFound},
-// 		{"NonEmpty as User", true, "CLAIM_ROLE_USER", http.StatusOK},
-// 	}
-
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			ts := setupTestServer()
-// 			defer ts.Close()
-
-// 			if tt.seedData {
-// 				_ = SeedAll(TestAdminDB)
-// 			}
-
-// 			userID := uuid.New().String()
-// 			if tt.seedData {
-// 				userID = TicketsData[0]
-// 			}
-
-// 			req := createRequest(t, "GET", ts.URL+"/tickets/user/"+userID, generateToken(t, tt.role), nil)
-// 			resp := executeRequest(t, req, tt.expectedStatus)
-// 			defer resp.Body.Close()
-
-// 			if tt.expectedStatus == http.StatusOK {
-// 				var tickets []Ticket
-// 				parseResponseBody(t, resp, &tickets)
-
-// 				if len(tickets) == 0 {
-// 					t.Error("Expected at least one ticket, got none")
-// 				}
-// 			}
-// 		})
-// 	}
-// }
-
 func TestTicketConstraints(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -565,5 +523,95 @@ func TestTicketDBError(t *testing.T) {
 
 	if err := InitTestDB(); err != nil {
 		log.Fatal("Failed to reconnect to DB: ", err)
+	}
+}
+
+func TestGetTicketsByUserID(t *testing.T) {
+	setupTest := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		SeedAll(TestAdminDB)
+		_, err := TestAdminDB.Exec(context.Background(),
+			"UPDATE tickets SET user_id = $1 WHERE id = $2",
+			UsersData[0].ID, TicketsData[0].ID)
+		if err != nil {
+			t.Fatalf("Failed to update test ticket: %v", err)
+		}
+		return ts, UsersData[0].ID
+	}
+
+	tests := []struct {
+		name           string
+		setup          func(t *testing.T) (*httptest.Server, string)
+		userID         string
+		role           string
+		expectedStatus int
+	}{
+		{
+			"Valid user ID with tickets",
+			setupTest,
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusOK,
+		},
+		{
+			"Invalid user ID format",
+			setupTest,
+			"invalid-uuid",
+			"CLAIM_ROLE_USER",
+			http.StatusBadRequest,
+		},
+		{
+			"Non-existent user ID",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, uuid.New().String()
+			},
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusNotFound,
+		},
+		{
+			"User without tickets",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, UsersData[3].ID
+			},
+			"",
+			"CLAIM_ROLE_USER",
+			http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts, userID := tt.setup(t)
+			defer ts.Close()
+
+			effectiveID := tt.userID
+			if effectiveID == "" {
+				effectiveID = userID
+			}
+
+			req := createRequest(t, "GET", ts.URL+"/tickets/user/"+effectiveID, generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var tickets []Ticket
+				parseResponseBody(t, resp, &tickets)
+
+				if len(tickets) == 0 {
+					t.Error("Expected non-empty tickets list")
+				}
+
+				for _, ticket := range tickets {
+					if ticket.UserID == nil || *ticket.UserID != userID {
+						t.Errorf("Expected user ID %v in ticket; got %v", userID, ticket.UserID)
+					}
+				}
+			}
+		})
 	}
 }
