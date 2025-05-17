@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -722,5 +723,72 @@ func TestCreateSeatDBError(t *testing.T) {
 
 	if err := InitTestDB(); err != nil {
 		log.Fatal("ошибка подключения к БД: ", err)
+	}
+}
+
+func TestGetSeatsByHallID(t *testing.T) {
+	setupWithHallsAndSeats := func(t *testing.T) *httptest.Server {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts
+	}
+
+	tests := []struct {
+		name           string
+		hallID         string
+		setup          func(t *testing.T) *httptest.Server
+		expectedStatus int
+		expectedCount  int
+	}{
+		{
+			"Неверный формат ID зала - ошибка",
+			"invalid-uuid",
+			setupWithHallsAndSeats,
+			http.StatusBadRequest,
+			0,
+		},
+		{
+			"Зал не найден - ошибка",
+			uuid.New().String(),
+			setupWithHallsAndSeats,
+			http.StatusNotFound,
+			0,
+		},
+		{
+			"Получение мест по ID зала",
+			HallsData[0].ID,
+			setupWithHallsAndSeats,
+			http.StatusOK,
+			3,
+		},
+		{
+			"Получение мест по ID малого кинозала",
+			HallsData[1].ID,
+			setupWithHallsAndSeats,
+			http.StatusOK,
+			1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := tt.setup(t)
+			defer ts.Close()
+
+			req := createRequest(t, "GET", ts.URL+"/halls/"+tt.hallID+"/seats", generateToken(t, "CLAIM_ROLE_USER"), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var seats []Seat
+				if err := json.NewDecoder(resp.Body).Decode(&seats); err != nil {
+					t.Fatalf("Could not decode response: %v", err)
+				}
+
+				if len(seats) != tt.expectedCount {
+					t.Errorf("Expected %d seats, got %d: %v", tt.expectedCount, len(seats), seats)
+				}
+			}
+		})
 	}
 }

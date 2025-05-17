@@ -253,3 +253,50 @@ func DeleteSeat(db *pgxpool.Pool) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+// @Summary Получить места по ID зала
+// @Description Возвращает список мест в указанном зале.
+// @Tags Места
+// @Produce json
+// @Security BearerAuth
+// @Param hall_id path string true "ID зала"
+// @Success 200 {array} Seat "Список мест"
+// @Failure 400 {string} string "Неверный формат ID зала"
+// @Failure 404 {string} string "Места не найдены"
+// @Failure 500 {string} string "Ошибка сервера"
+// @Router /halls/{hall_id}/seats [get]
+func GetSeatsByHallID(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hallID, ok := ParseUUIDFromPath(w, r.PathValue("hall_id"))
+		if !ok {
+			return
+		}
+
+		rows, err := db.Query(context.Background(), `
+            SELECT s.id, s.hall_id, s.seat_type_id, s.row_number, s.seat_number
+            FROM seats s
+            WHERE s.hall_id = $1
+            ORDER BY s.row_number, s.seat_number`, hallID)
+		if IsError(w, err) {
+			return
+		}
+		defer rows.Close()
+
+		var seats []Seat
+		for rows.Next() {
+			var s Seat
+			if err := rows.Scan(&s.ID, &s.HallID, &s.SeatTypeID, &s.RowNumber, &s.SeatNumber); IsError(w, err) {
+				return
+			}
+			seats = append(seats, s)
+		}
+
+		if len(seats) == 0 {
+			http.Error(w, "Места не найдены", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(seats)
+	}
+}

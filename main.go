@@ -83,7 +83,6 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("GET /movie-shows/upcoming", Midleware(RoleBasedHandler(GetUpcomingShows)))
 	mux.HandleFunc("GET /movie-shows/by-date/{date}", Midleware(RoleBasedHandler(GetShowsByDate)))
 	mux.HandleFunc("GET /movies/{movie_id}/shows", Midleware(RoleBasedHandler(GetShowsByMovie)))
-
 	mux.HandleFunc("GET /movie-shows", Midleware(RoleBasedHandler(GetMovieShows)))
 	mux.HandleFunc("GET /movie-shows/{id}", Midleware(RoleBasedHandler(GetMovieShowByID)))
 	mux.HandleFunc("POST /movie-shows", Midleware(RoleBasedHandler(CreateMovieShow)))
@@ -92,13 +91,13 @@ func NewRouter() *http.ServeMux {
 
 	mux.HandleFunc("GET /users/{user_id}/reviews", Midleware(RoleBasedHandler(GetReviewsByUserID)))
 	mux.HandleFunc("GET /movies/{movie_id}/reviews", Midleware(RoleBasedHandler(GetReviewsByMovieID)))
-
 	mux.HandleFunc("GET /reviews", Midleware(RoleBasedHandler(GetReviews)))
 	mux.HandleFunc("GET /reviews/{id}", Midleware(RoleBasedHandler(GetReviewByID)))
 	mux.HandleFunc("POST /reviews", Midleware(RoleBasedHandler(CreateReview)))
 	mux.HandleFunc("PUT /reviews/{id}", Midleware(RoleBasedHandler(UpdateReview)))
 	mux.HandleFunc("DELETE /reviews/{id}", Midleware(RoleBasedHandler(DeleteReview)))
 
+	mux.HandleFunc("GET /halls/{hall_id}/seats", Midleware(RoleBasedHandler(GetSeatsByHallID)))
 	mux.HandleFunc("GET /seats", Midleware(RoleBasedHandler(GetSeats)))
 	mux.HandleFunc("GET /seats/{id}", Midleware(RoleBasedHandler(GetSeatByID)))
 	mux.HandleFunc("POST /seats", Midleware(RoleBasedHandler(CreateSeat)))
@@ -121,7 +120,6 @@ func NewRouter() *http.ServeMux {
 
 	mux.HandleFunc("POST /user/register", Midleware(RoleBasedHandler(RegisterUser)))
 	mux.HandleFunc("POST /user/login", Midleware(RoleBasedHandler(LoginUser)))
-
 	mux.HandleFunc("GET /users", Midleware(RoleBasedHandler(GetUsers)))
 	mux.HandleFunc("GET /users/{id}", Midleware(RoleBasedHandler(GetUserByID)))
 	mux.HandleFunc("PUT /users/{id}", Midleware(RoleBasedHandler(UpdateUser)))
