@@ -53,14 +53,13 @@ func SeedGenres(db *pgxpool.Pool) error {
 
 func SeedHalls(db *pgxpool.Pool) error {
 	for _, h := range HallsData {
-		_, err := db.Exec(context.Background(), `INSERT INTO halls (id, name, capacity, screen_type_id, description)
-            VALUES ($1, $2, $3, $4, $5)
+		_, err := db.Exec(context.Background(), `INSERT INTO halls (id, name, screen_type_id, description)
+            VALUES ($1, $2, $3, $4)
             ON CONFLICT (id) DO UPDATE SET
-                capacity = EXCLUDED.capacity,
                 screen_type_id = EXCLUDED.screen_type_id,
                 description = EXCLUDED.description,
                 name = EXCLUDED.name`,
-			h.ID, h.Name, h.Capacity, h.ScreenTypeID, h.Description)
+			h.ID, h.Name, h.ScreenTypeID, h.Description)
 		if err != nil {
 			return err
 		}

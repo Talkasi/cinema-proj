@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"regexp"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -136,7 +138,7 @@ func GetReviewByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать отзыв (user | admin)
+// @Summary Создать отзыв (user* | admin)
 // @Description Создаёт новый отзыв.
 // @Tags Отзывы
 // @Accept json
@@ -159,12 +161,23 @@ func CreateReview(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		// println("from token", user_id)
+		// println("from body", reviewData.UserID)
+		// println("from test", UsersData[len(UsersData)-1].ID)
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (reviewData.UserID != user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
 		id := uuid.New()
 		_, err := db.Exec(context.Background(),
 			"INSERT INTO reviews (id, user_id, movie_id, rating, review_comment) VALUES ($1, $2, $3, $4, $5)",
 			id, reviewData.UserID, reviewData.MovieID, reviewData.Rating, reviewData.Comment)
 
 		if IsError(w, err) {
+			println(err.Error())
 			return
 		}
 
@@ -203,6 +216,13 @@ func UpdateReview(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (reviewData.UserID != user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
 		res, err := db.Exec(context.Background(),
 			"UPDATE reviews SET user_id=$1, movie_id=$2, rating=$3, review_comment=$4 WHERE id=$5",
 			reviewData.UserID, reviewData.MovieID, reviewData.Rating, reviewData.Comment, id)
@@ -237,8 +257,17 @@ func DeleteReview(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		res, err := db.Exec(context.Background(),
-			"DELETE FROM reviews WHERE id = $1", id)
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		var err error
+		var res pgconn.CommandTag
+		if role == os.Getenv("CLAIM_ROLE_ADMIN") {
+			res, err = db.Exec(context.Background(),
+				"DELETE FROM reviews WHERE id = $1", id)
+		} else {
+			res, err = db.Exec(context.Background(),
+				"DELETE FROM reviews WHERE id = $1 AND user_id = $2", id, user_id)
+		}
 
 		if IsError(w, err) {
 			return
@@ -311,6 +340,13 @@ func GetReviewsByUserID(db *pgxpool.Pool) http.HandlerFunc {
 		userID, err := uuid.Parse(r.PathValue("user_id"))
 		if err != nil {
 			http.Error(w, "Неверный формат ID пользователя", http.StatusBadRequest)
+			return
+		}
+
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (userID.String() != user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 

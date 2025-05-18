@@ -115,10 +115,11 @@ func TestMain(m *testing.M) {
 		log.Fatal("ошибка подключения к БД: ", err)
 	}
 
-	m.Run()
+	code := m.Run()
 
 	TestAdminDB.Close()
 	TestGuestDB.Close()
 	TestUserDB.Close()
 
+	os.Exit(code)
 }

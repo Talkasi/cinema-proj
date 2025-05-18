@@ -554,8 +554,12 @@ func TestGetTicketsByUserID(t *testing.T) {
 	}{
 		{
 			"Valid user ID with tickets",
-			setupTest,
-			"",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, UsersData[len(UsersData)-1].ID
+			},
+			UsersData[len(UsersData)-1].ID,
 			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
@@ -575,7 +579,7 @@ func TestGetTicketsByUserID(t *testing.T) {
 			},
 			"",
 			os.Getenv("CLAIM_ROLE_USER"),
-			http.StatusNotFound,
+			http.StatusForbidden,
 		},
 		{
 			"User without tickets",
@@ -585,7 +589,7 @@ func TestGetTicketsByUserID(t *testing.T) {
 				return ts, UsersData[3].ID
 			},
 			"",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 	}

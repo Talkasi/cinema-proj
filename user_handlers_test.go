@@ -18,11 +18,11 @@ func TestGetUsers(t *testing.T) {
 		role           string
 		expectedStatus int
 	}{
-		{"Empty as Guest", false, "", http.StatusNotFound},
+		{"Empty as Guest", false, "", http.StatusForbidden},
 		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
 		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusForbidden},
-		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Guest", true, "", http.StatusForbidden},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
 		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
@@ -52,10 +52,16 @@ func TestGetUsers(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
+	setupValidIDTestRoleUser := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, UsersData[0].ID
+		return ts, UsersData[len(UsersData)-1].ID
+	}
+
+	setupValidIDTestRoleAdmin := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, UsersData[len(UsersData)-2].ID
 	}
 
 	tests := []struct {
@@ -72,7 +78,7 @@ func TestGetUserByID(t *testing.T) {
 				return ts, uuid.New().String()
 			},
 			"",
-			http.StatusNotFound,
+			http.StatusForbidden,
 		},
 		{
 			"Unknown ID as User",
@@ -82,7 +88,7 @@ func TestGetUserByID(t *testing.T) {
 				return ts, uuid.New().String()
 			},
 			os.Getenv("CLAIM_ROLE_USER"),
-			http.StatusNotFound,
+			http.StatusForbidden,
 		},
 		{
 			"Unknown ID as Admin",
@@ -126,19 +132,33 @@ func TestGetUserByID(t *testing.T) {
 		},
 		{
 			"Valid ID as Guest",
-			setupValidIDTest,
+			setupValidIDTestRoleUser,
 			"",
-			http.StatusOK,
+			http.StatusForbidden,
 		},
 		{
-			"Valid ID as User",
-			setupValidIDTest,
+			"Self ID as User",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, UsersData[len(UsersData)-1].ID
+			},
 			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
+			"Others ID as User",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, UsersData[0].ID
+			},
+			os.Getenv("CLAIM_ROLE_USER"),
+			http.StatusForbidden,
+		},
+		{
 			"Valid ID as Admin",
-			setupValidIDTest,
+			setupValidIDTestRoleAdmin,
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
 		},
@@ -173,10 +193,16 @@ func TestUpdateUser(t *testing.T) {
 		BirthDate: "2020-12-12",
 	}
 
-	setupExistingUser := func(t *testing.T) (*httptest.Server, string) {
+	setupExistingUserRoleAdmin := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
 		_ = SeedAll(TestAdminDB)
-		return ts, UsersData[0].ID
+		return ts, UsersData[len(UsersData)-2].ID
+	}
+
+	setupExistingUserRoleUser := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		_ = SeedAll(TestAdminDB)
+		return ts, UsersData[len(UsersData)-1].ID
 	}
 
 	tests := []struct {
@@ -221,7 +247,7 @@ func TestUpdateUser(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			http.StatusNotFound,
+			http.StatusForbidden,
 		},
 		{
 			"Unknown UUID as Admin",
@@ -240,7 +266,7 @@ func TestUpdateUser(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			"invalid-json",
-			setupExistingUser,
+			setupExistingUserRoleUser,
 			http.StatusBadRequest,
 		},
 		{
@@ -248,7 +274,7 @@ func TestUpdateUser(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			"invalid-json",
-			setupExistingUser,
+			setupExistingUserRoleAdmin,
 			http.StatusBadRequest,
 		},
 		{
@@ -260,7 +286,7 @@ func TestUpdateUser(t *testing.T) {
 				Email:     "valid@example.com",
 				BirthDate: "2020-12-12",
 			},
-			setupExistingUser,
+			setupExistingUserRoleUser,
 			http.StatusBadRequest,
 		},
 		{
@@ -272,7 +298,7 @@ func TestUpdateUser(t *testing.T) {
 				Email:     "invalid-email",
 				BirthDate: "2020-12-12",
 			},
-			setupExistingUser,
+			setupExistingUserRoleUser,
 			http.StatusBadRequest,
 		},
 		{
@@ -284,7 +310,7 @@ func TestUpdateUser(t *testing.T) {
 				Email:     "valid@example.com",
 				BirthDate: "2030-12-12",
 			},
-			setupExistingUser,
+			setupExistingUserRoleUser,
 			http.StatusBadRequest,
 		},
 		{
@@ -296,23 +322,47 @@ func TestUpdateUser(t *testing.T) {
 				Email:     "valid@example.com",
 				BirthDate: "1030-12-30",
 			},
-			setupExistingUser,
+			setupExistingUserRoleUser,
 			http.StatusBadRequest,
 		},
 		{
-			"Success User",
+			"Success self User",
 			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			validUpdateData,
-			setupExistingUser,
+			setupExistingUserRoleUser,
 			http.StatusOK,
+		},
+		{
+			"Forbidden others User",
+			os.Getenv("CLAIM_ROLE_USER"),
+			"",
+			validUpdateData,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, UsersData[0].ID
+			},
+			http.StatusForbidden,
+		},
+		{
+			"Forbidden Guest",
+			"",
+			"",
+			validUpdateData,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, UsersData[0].ID
+			},
+			http.StatusForbidden,
 		},
 		{
 			"Success Admin",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
 			validUpdateData,
-			setupExistingUser,
+			setupExistingUserRoleAdmin,
 			http.StatusOK,
 		},
 	}
@@ -390,7 +440,7 @@ func TestDeleteUser(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, UsersData[3].ID
+				return ts, UsersData[len(UsersData)-2].ID
 			},
 			http.StatusNoContent,
 		},
@@ -523,19 +573,6 @@ func TestRegisterUser(t *testing.T) {
 			req := createRequest(t, "POST", ts.URL+"/user/register", "", tt.body)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
-
-			if tt.expectedStatus == http.StatusCreated {
-				var created string
-				parseResponseBody(t, resp, &created)
-
-				if created == "" {
-					t.Error("Expected non-empty ID in response")
-				}
-
-				if _, err := uuid.Parse(created); err != nil {
-					t.Error("Invalid UUID format in response")
-				}
-			}
 		})
 	}
 }

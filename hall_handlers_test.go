@@ -51,7 +51,7 @@ func TestGetHalls(t *testing.T) {
 					t.Error("Expected non-empty halls list")
 				}
 
-				requiredFields := []string{"ID", "Name", "Capacity", "ScreenTypeID", "Description"}
+				requiredFields := []string{"ID", "Name", "ScreenTypeID", "Description"}
 				for _, hall := range halls {
 					v := reflect.ValueOf(hall)
 					for _, field := range requiredFields {
@@ -183,21 +183,18 @@ func TestGetHallByID(t *testing.T) {
 func TestCreateHall(t *testing.T) {
 	validHall := HallData{
 		Name:         "Test Hall",
-		Capacity:     100,
 		ScreenTypeID: ScreenTypesData[3].ID,
 		Description:  ptr("Test Description"),
 	}
 
 	invalidHall := HallData{
 		Name:         "",
-		Capacity:     0,
 		ScreenTypeID: "",
 		Description:  nil,
 	}
 
 	invalidForainKeyHall := HallData{
 		Name:         "Test Hall",
-		Capacity:     100,
 		ScreenTypeID: uuid.New().String(),
 		Description:  ptr("Test Description"),
 	}
@@ -288,8 +285,8 @@ func TestCreateHall(t *testing.T) {
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
 				_, err := TestAdminDB.Exec(context.Background(),
-					"INSERT INTO halls (name, capacity, screen_type_id, description) VALUES ($1, $2, $3, $4)",
-					validHall.Name, validHall.Capacity, validHall.ScreenTypeID, validHall.Description)
+					"INSERT INTO halls (name, screen_type_id, description) VALUES ($1, $2, $3)",
+					validHall.Name, validHall.ScreenTypeID, validHall.Description)
 				if err != nil {
 					t.Fatalf("Failed to insert into test database: %v", err)
 				}
@@ -301,7 +298,6 @@ func TestCreateHall(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         "Min Capacity",
-				Capacity:     1,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  nil,
 			},
@@ -313,7 +309,6 @@ func TestCreateHall(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         strings.Repeat("a", 100),
-				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  ptr("Test"),
 			},
@@ -325,7 +320,6 @@ func TestCreateHall(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         strings.Repeat("a", 101),
-				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  nil,
 			},
@@ -337,7 +331,6 @@ func TestCreateHall(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			HallData{
 				Name:         "Test Hall",
-				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  ptr(strings.Repeat("a", 1000)),
 			},
@@ -369,7 +362,7 @@ func TestCreateHall(t *testing.T) {
 				}
 
 				if _, err := uuid.Parse(created); err != nil {
-					t.Error("Неверный формат возврещённого UUID")
+					t.Error("Неверный формат возвращённого UUID")
 				}
 			}
 		})
@@ -379,14 +372,12 @@ func TestCreateHall(t *testing.T) {
 func TestUpdateHall(t *testing.T) {
 	validUpdateData := HallData{
 		Name:         "Updated Hall",
-		Capacity:     150,
 		ScreenTypeID: ScreenTypesData[6].ID,
 		Description:  ptr("Updated Description"),
 	}
 
 	invalidUpdateData := HallData{
 		Name:         "",
-		Capacity:     0,
 		ScreenTypeID: "",
 		Description:  nil,
 	}
@@ -424,7 +415,6 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			HallData{
 				Name:         "Min Capacity",
-				Capacity:     1,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  nil,
 			},
@@ -445,8 +435,8 @@ func TestUpdateHall(t *testing.T) {
 				SeedAll(TestAdminDB)
 				hall := HallsData[0]
 				_, err := TestAdminDB.Exec(context.Background(),
-					"UPDATE halls SET name=$1, capacity=$2, screen_type_id=$3, description=$4 WHERE id=$5",
-					validUpdateData.Name, validUpdateData.Capacity,
+					"UPDATE halls SET name=$1, screen_type_id=$2, description=$3 WHERE id=$4",
+					validUpdateData.Name,
 					validUpdateData.ScreenTypeID, validUpdateData.Description, hall.ID)
 				if err != nil {
 					t.Fatal(err)
@@ -461,7 +451,6 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			HallData{
 				Name:         strings.Repeat("a", 100),
-				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  ptr("Test"),
 			},
@@ -478,7 +467,6 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			HallData{
 				Name:         strings.Repeat("a", 101),
-				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  nil,
 			},
@@ -495,7 +483,6 @@ func TestUpdateHall(t *testing.T) {
 			"",
 			HallData{
 				Name:         "Test Hall",
-				Capacity:     100,
 				ScreenTypeID: ScreenTypesData[0].ID,
 				Description:  ptr(strings.Repeat("a", 1000)),
 			},
@@ -914,11 +901,11 @@ func TestSearchHallsByName(t *testing.T) {
 		ClearTable(db, "halls")
 
 		_, err := db.Exec(context.Background(), `
-            INSERT INTO halls (id, name, capacity, screen_type_id, description)
+            INSERT INTO halls (id, name, screen_type_id, description)
             VALUES 
-                ($1, 'IMAX Premium', 250, (SELECT id FROM screen_types WHERE name = 'IMAX'), 'Премиум зал IMAX'),
-                ($2, 'LED Standard', 150, (SELECT id FROM screen_types WHERE name = 'LED'), 'Стандартный LED зал'),
-                ($3, '3D Atmos', 200, (SELECT id FROM screen_types WHERE name = 'Система 3D'), 'Зал с 3D и звуком Atmos')
+                ($1, 'IMAX Premium', (SELECT id FROM screen_types WHERE name = 'IMAX'), 'Премиум зал IMAX'),
+                ($2, 'LED Standard', (SELECT id FROM screen_types WHERE name = 'LED'), 'Стандартный LED зал'),
+                ($3, '3D Atmos', (SELECT id FROM screen_types WHERE name = 'Система 3D'), 'Зал с 3D и звуком Atmos')
             `,
 			uuid.New(), uuid.New(), uuid.New(),
 		)
@@ -1003,7 +990,7 @@ func TestSearchHallsByName(t *testing.T) {
 				_ = SeedAll(db)
 				ClearTable(db, "halls")
 				_, err := db.Exec(context.Background(),
-					"INSERT INTO halls (id, name, capacity, screen_type_id) VALUES ($1, 'Hall #1', 100, $2)",
+					"INSERT INTO halls (id, name, screen_type_id) VALUES ($1, 'Hall #1', $2)",
 					uuid.New(), ScreenTypesData[0].ID)
 				if err != nil {
 					t.Fatal(err)

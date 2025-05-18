@@ -191,9 +191,21 @@ func TestCreateReview(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			"Success User",
+			"Forbidden other User",
 			os.Getenv("CLAIM_ROLE_USER"),
 			validReview,
+			nil,
+			http.StatusForbidden,
+		},
+		{
+			"Success self User",
+			os.Getenv("CLAIM_ROLE_USER"),
+			ReviewData{
+				UserID:  UsersData[len(UsersData)-1].ID,
+				MovieID: MoviesData[1].ID,
+				Rating:  8,
+				Comment: "Great movie!",
+			},
 			nil,
 			http.StatusCreated,
 		},
@@ -234,7 +246,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Invalid MovieID",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: "invalid",
@@ -246,7 +258,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Rating too low (0)",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -258,7 +270,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Rating too high (11)",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -270,7 +282,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Empty comment",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -282,7 +294,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Comment with only spaces",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -294,7 +306,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Comment exactly 2000 chars",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -306,7 +318,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Comment too long (2001 chars)",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			ReviewData{
 				UserID:  UsersData[0].ID,
 				MovieID: MoviesData[1].ID,
@@ -318,7 +330,7 @@ func TestCreateReview(t *testing.T) {
 		},
 		{
 			"Duplicate review",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			validReview,
 			func(t *testing.T) {
 				_, err := TestAdminDB.Exec(context.Background(),
@@ -355,7 +367,7 @@ func TestCreateReview(t *testing.T) {
 				}
 
 				if _, err := uuid.Parse(created); err != nil {
-					t.Error("Неверный формат возврещённого UUID")
+					t.Error("Неверный формат возвращённого UUID")
 				}
 			}
 		})
@@ -826,11 +838,29 @@ func TestGetReviewsByUserID(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			"Valid user ID with reviews",
+			"Valid user ID with reviews as Admin",
 			setupTest,
+			"",
+			os.Getenv("CLAIM_ROLE_ADMIN"),
+			http.StatusOK,
+		},
+		{
+			"Valid user ID with reviews as that User",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, UsersData[len(UsersData)-1].ID
+			},
 			"",
 			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
+		},
+		{
+			"Valid user ID with reviews as other User",
+			setupTest,
+			"",
+			os.Getenv("CLAIM_ROLE_USER"),
+			http.StatusForbidden,
 		},
 		{
 			"Invalid user ID format",
@@ -840,7 +870,7 @@ func TestGetReviewsByUserID(t *testing.T) {
 			http.StatusBadRequest,
 		},
 		{
-			"Non-existent user ID",
+			"Non-existent user ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
@@ -848,29 +878,28 @@ func TestGetReviewsByUserID(t *testing.T) {
 			},
 			"",
 			os.Getenv("CLAIM_ROLE_USER"),
-			http.StatusNotFound,
+			http.StatusForbidden,
 		},
 		{
-			"User without reviews",
+			"Non-existent user ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				SeedAll(TestAdminDB)
-				// Используем пользователя без отзывов (например, последнего в тестовых данных)
-				return ts, UsersData[len(UsersData)-1].ID
+				return ts, uuid.New().String()
 			},
 			"",
-			os.Getenv("CLAIM_ROLE_USER"),
+			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusNotFound,
 		},
 		{
-			"As guest user",
+			"As guest",
 			setupTest,
 			"",
 			"",
-			http.StatusOK,
+			http.StatusForbidden,
 		},
 		{
-			"As admin user",
+			"As admin",
 			setupTest,
 			"",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
@@ -938,7 +967,6 @@ func TestGetReviewsByUserIDDBError(t *testing.T) {
 	SeedUsers(TestAdminDB)
 	defer ts.Close()
 
-	// Создаем ситуацию с ошибкой БД
 	TestAdminDB.Close()
 	TestGuestDB.Close()
 	TestUserDB.Close()
