@@ -112,11 +112,3 @@ func validateTicketStatus(fl validator.FieldLevel) bool {
 		return false
 	}
 }
-
-// func validateAdminNotBlocked(sl validator.StructLevel) {
-// 	// Соответствует: CHECK (NOT (is_blocked AND is_admin))
-// 	user := sl.Current().Interface().(UserData)
-// 	if user.IsBlocked && user.IsAdmin {
-// 		sl.ReportError(user.IsBlocked, "is_blocked", "IsBlocked", "adminNotBlocked", "")
-// 	}
-// }
