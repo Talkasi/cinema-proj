@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,11 +41,10 @@ func validateTicketStatus(status TicketStatusEnumType) error {
 	return nil
 }
 
-// @Summary Получить все билеты для сеанса фильма по ID
+// @Summary Получить все билеты для сеанса фильма по ID (guest | user | admin) ПОДУМАТЬ
 // @Description Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.
 // @Tags Билеты
 // @Produce json
-// @Security BearerAuth
 // @Param movie_show_id path string true "ID показа фильма"
 // @Success 200 {array} Ticket
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -82,11 +82,10 @@ func GetTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить билет по ID
+// @Summary Получить билет по ID (guest | user | admin) ПОДУМАТЬ
 // @Description Возвращает билет по ID.
 // @Tags Билеты
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID билета"
 // @Success 200 {object} Ticket "Билет"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
@@ -110,7 +109,7 @@ func GetTicketByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать билет
+// @Summary Создать билет (admin)
 // @Description Создаёт новый билет.
 // @Tags Билеты
 // @Accept json
@@ -145,7 +144,7 @@ func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить билет
+// @Summary Обновить билет (user | admin)
 // @Description Обновляет существующий билет.
 // @Tags Билеты
 // @Accept json
@@ -187,7 +186,7 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить билет
+// @Summary Удалить билет (admin)
 // @Description Удаляет билет по ID.
 // @Tags Билеты
 // @Security BearerAuth
@@ -217,7 +216,7 @@ func DeleteTicket(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить билеты пользователя
+// @Summary Получить билеты пользователя (user* | admin)
 // @Tags Билеты
 // @Produce json
 // @Param user_id path string true "ID пользователя"
@@ -228,6 +227,13 @@ func GetTicketsByUserID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := ParseUUIDFromPath(w, r.PathValue("user_id"))
 		if !ok {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (userID.String() != user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 

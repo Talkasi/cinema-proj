@@ -80,11 +80,10 @@ func validateHallDescription(description *string) error {
 	return nil
 }
 
-// @Summary Получить все кинозалы
+// @Summary Получить все кинозалы (guest | user | admin)
 // @Description Возвращает список всех кинозалов, содержащихся в базе данных.
 // @Tags Кинозалы
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} Hall "Список кинозалов"
 // @Failure 404 {object} ErrorResponse "Данные не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -117,12 +116,11 @@ func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить кинозал по ID
+// @Summary Получить кинозал по ID (guest | user | admin)
 // @Description Возвращает кинозал по ID.
 // @Tags Кинозалы
 // @Produce json
 // @Param id path string true "ID зала"
-// @Security BearerAuth
 // @Success 200 {object} Hall "Данные кинозала"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
 // @Failure 404 {object} ErrorResponse "Данные не найдены"
@@ -150,7 +148,7 @@ func GetHallByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать кинозал
+// @Summary Создать кинозал (admin)
 // @Description Создаёт новый кинозал.
 // @Tags Кинозалы
 // @Accept json
@@ -189,7 +187,7 @@ func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить кинозал
+// @Summary Обновить кинозал (admin)
 // @Description Обновляет существующий кинозал.
 // @Tags Кинозалы
 // @Accept json
@@ -237,7 +235,7 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить кинозал
+// @Summary Удалить кинозал (admin)
 // @Description Удаляет кинозал по ID.
 // @Tags Кинозалы
 // @Param id path string true "ID кинозала"
@@ -271,12 +269,11 @@ func DeleteHall(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить залы по типу экрана
+// @Summary Получить залы по типу экрана (guest | user | admin)
 // @Description Возвращает список залов с указанным типом экрана.
 // @Tags Кинозалы
 // @Produce json
 // @Param screen_type_id query string true "ID типа экрана"
-// @Security BearerAuth
 // @Success 200 {array} Hall "Список найденных кинозалов"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID типа экрана"
 // @Failure 404 {object} ErrorResponse "Залы не найдены"
@@ -318,12 +315,11 @@ func GetHallsByScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Поиск залов по названию
+// @Summary Поиск залов по названию (guest | user | admin)
 // @Description Возвращает список залов, названия которых содержат указанную строку.
 // @Tags Кинозалы
 // @Produce json
 // @Param query query string true "Строка для поиска"
-// @Security BearerAuth
 // @Success 200 {array} Hall "Список найденных кинозалов"
 // @Failure 400 {object} ErrorResponse "Строка поиска пуста"
 // @Failure 404 {object} ErrorResponse "Залы не найдены"

@@ -55,7 +55,7 @@ func validateGenreDescription(description string) error {
 	return nil
 }
 
-// @Summary Получить все жанры
+// @Summary Получить все жанры (guest | user | admin)
 // @Description Возвращает список всех жанров, хранящихся в базе данных.
 // @Tags Жанры фильмов
 // @Produce json
@@ -89,7 +89,7 @@ func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить жанр по ID
+// @Summary Получить жанр по ID (guest | user | admin)
 // @Description Возвращает жанр по ID.
 // @Tags Жанры фильмов
 // @Produce json
@@ -120,7 +120,7 @@ func GetGenreByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать жанр
+// @Summary Создать жанр (admin)
 // @Description Создаёт новый жанр.
 // @Tags Жанры фильмов
 // @Accept json
@@ -157,7 +157,7 @@ func CreateGenre(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить жанр
+// @Summary Обновить жанр (admin)
 // @Description Обновляет существующий жанр.
 // @Tags Жанры фильмов
 // @Accept json
@@ -203,7 +203,7 @@ func UpdateGenre(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить жанр
+// @Summary Удалить жанр (admin)
 // @Description Удаляет жанр по ID.
 // @Tags Жанры фильмов
 // @Param id path string true "ID жанра"
@@ -237,7 +237,7 @@ func DeleteGenre(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Поиск жанров по имени
+// @Summary Поиск жанров по имени (guest | user | admin)
 // @Description Возвращает список жанров, имена которых содержат указанную строку (регистронезависимый поиск).
 // @Tags Жанры фильмов
 // @Produce json

@@ -24,7 +24,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Получить все жанры",
+                "summary": "Получить все жанры (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список жанров",
@@ -65,7 +65,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Создать жанр",
+                "summary": "Создать жанр (admin)",
                 "parameters": [
                     {
                         "description": "Данные жанра",
@@ -114,7 +114,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Поиск жанров по имени",
+                "summary": "Поиск жанров по имени (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -164,7 +164,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Получить жанр по ID",
+                "summary": "Получить жанр по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -217,7 +217,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Обновить жанр",
+                "summary": "Обновить жанр (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -276,7 +276,7 @@ const docTemplate = `{
                 "tags": [
                     "Жанры фильмов"
                 ],
-                "summary": "Удалить жанр",
+                "summary": "Удалить жанр (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -325,11 +325,6 @@ const docTemplate = `{
         },
         "/halls": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех кинозалов, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -337,7 +332,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Получить все кинозалы",
+                "summary": "Получить все кинозалы (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список кинозалов",
@@ -378,7 +373,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Создать кинозал",
+                "summary": "Создать кинозал (admin)",
                 "parameters": [
                     {
                         "description": "Данные кинозала",
@@ -426,11 +421,6 @@ const docTemplate = `{
         },
         "/halls/by-screen-type": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список залов с указанным типом экрана.",
                 "produces": [
                     "application/json"
@@ -438,7 +428,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Получить залы по типу экрана",
+                "summary": "Получить залы по типу экрана (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -481,11 +471,6 @@ const docTemplate = `{
         },
         "/halls/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список залов, названия которых содержат указанную строку.",
                 "produces": [
                     "application/json"
@@ -493,7 +478,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Поиск залов по названию",
+                "summary": "Поиск залов по названию (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -536,11 +521,6 @@ const docTemplate = `{
         },
         "/halls/{hall_id}/seats": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список мест в указанном зале.",
                 "produces": [
                     "application/json"
@@ -548,7 +528,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить места по ID зала",
+                "summary": "Получить места по ID зала (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -591,11 +571,6 @@ const docTemplate = `{
         },
         "/halls/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает кинозал по ID.",
                 "produces": [
                     "application/json"
@@ -603,7 +578,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Получить кинозал по ID",
+                "summary": "Получить кинозал по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -656,7 +631,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Обновить кинозал",
+                "summary": "Обновить кинозал (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -721,7 +696,7 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Удалить кинозал",
+                "summary": "Удалить кинозал (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -770,11 +745,6 @@ const docTemplate = `{
         },
         "/movie-shows": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех киносеансов, хранящихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -782,7 +752,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить все киносеансы",
+                "summary": "Получить все киносеансы (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список киносеансов",
@@ -823,7 +793,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Создать киносеанс",
+                "summary": "Создать киносеанс (admin)",
                 "parameters": [
                     {
                         "description": "Данные киносеанса",
@@ -871,11 +841,6 @@ const docTemplate = `{
         },
         "/movie-shows/by-date/{date}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает сеансы, начинающиеся в указанный день.",
                 "produces": [
                     "application/json"
@@ -883,7 +848,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить сеансы на указанную дату",
+                "summary": "Получить сеансы на указанную дату (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -926,11 +891,6 @@ const docTemplate = `{
         },
         "/movie-shows/upcoming": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает сеансы, начинающиеся в ближайшие N часов.",
                 "produces": [
                     "application/json"
@@ -938,7 +898,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить ближайшие сеансы",
+                "summary": "Получить ближайшие сеансы (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -980,11 +940,6 @@ const docTemplate = `{
         },
         "/movie-shows/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает даныне о киносеансе по ID.",
                 "produces": [
                     "application/json"
@@ -992,7 +947,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить киносеанс по ID",
+                "summary": "Получить киносеанс по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1045,7 +1000,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Обновить киносеанс",
+                "summary": "Обновить киносеанс (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1110,7 +1065,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Удалить киносеанс фильма",
+                "summary": "Удалить киносеанс фильма (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1159,11 +1114,6 @@ const docTemplate = `{
         },
         "/movies": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех фильмов, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -1171,7 +1121,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Получить все фильмы",
+                "summary": "Получить все фильмы (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список фильмов",
@@ -1212,7 +1162,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Создать фильм",
+                "summary": "Создать фильм (admin)",
                 "parameters": [
                     {
                         "description": "Данные фильма",
@@ -1254,11 +1204,6 @@ const docTemplate = `{
         },
         "/movies/by-genres/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает фильмы, относящиеся ко всем указанным жанрам.",
                 "produces": [
                     "application/json"
@@ -1266,7 +1211,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Получить фильмы по списку жанров",
+                "summary": "Получить фильмы по списку жанров (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "array",
@@ -1313,11 +1258,6 @@ const docTemplate = `{
         },
         "/movies/by-title/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает фильмы, в названии которых содержится заданная строка.",
                 "produces": [
                     "application/json"
@@ -1325,7 +1265,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Поиск фильмов по названию",
+                "summary": "Поиск фильмов по названию (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1368,11 +1308,6 @@ const docTemplate = `{
         },
         "/movies/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает фильм по ID.",
                 "produces": [
                     "application/json"
@@ -1380,7 +1315,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Получить фильм по ID",
+                "summary": "Получить фильм по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1433,7 +1368,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Обновить фильм",
+                "summary": "Обновить фильм (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1492,7 +1427,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Удалить фильм",
+                "summary": "Удалить фильм (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1541,11 +1476,6 @@ const docTemplate = `{
         },
         "/movies/{movie_id}/reviews": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает все отзывы для указанного фильма.",
                 "produces": [
                     "application/json"
@@ -1553,7 +1483,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить отзывы по ID фильма",
+                "summary": "Получить отзывы по ID фильма (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1596,11 +1526,6 @@ const docTemplate = `{
         },
         "/movies/{movie_id}/shows": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает киносеансы для указанного фильма в ближайшие N часов.",
                 "produces": [
                     "application/json"
@@ -1608,7 +1533,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить киносеансы по ID фильма",
+                "summary": "Получить киносеансы по ID фильма (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1710,7 +1635,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Создать отзыв",
+                "summary": "Создать отзыв (user | admin)",
                 "parameters": [
                     {
                         "description": "Данные отзыва",
@@ -1817,7 +1742,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Обновить отзыв",
+                "summary": "Обновить отзыв (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1876,7 +1801,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Удалить отзыв",
+                "summary": "Удалить отзыв (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1919,11 +1844,6 @@ const docTemplate = `{
         },
         "/screen-types": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех типов экранов, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -1931,7 +1851,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Получить все типы экранов",
+                "summary": "Получить все типы экранов (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список типов экранов",
@@ -1972,7 +1892,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Создать тип экрана",
+                "summary": "Создать тип экрана (admin)",
                 "parameters": [
                     {
                         "description": "Данные типа экрана",
@@ -2014,11 +1934,6 @@ const docTemplate = `{
         },
         "/screen-types/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает типы экранов, название которых содержит указанную строку.",
                 "produces": [
                     "application/json"
@@ -2026,7 +1941,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Поиск типов экранов по названию",
+                "summary": "Поиск типов экранов по названию (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2069,11 +1984,6 @@ const docTemplate = `{
         },
         "/screen-types/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает тип экрана по ID.",
                 "produces": [
                     "application/json"
@@ -2081,7 +1991,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Получить тип экрана по ID",
+                "summary": "Получить тип экрана по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2134,7 +2044,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Обновить тип экрана",
+                "summary": "Обновить тип экрана (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2193,7 +2103,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Удалить тип экрана",
+                "summary": "Удалить тип экрана (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2236,11 +2146,6 @@ const docTemplate = `{
         },
         "/seat-types": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех типов мест, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -2248,7 +2153,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Получить все типы мест",
+                "summary": "Получить все типы мест (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список типов мест",
@@ -2289,7 +2194,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Создать тип места",
+                "summary": "Создать тип места (admin)",
                 "parameters": [
                     {
                         "description": "Данные типа места",
@@ -2331,11 +2236,6 @@ const docTemplate = `{
         },
         "/seat-types/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает типы места, название которых содержит указанную строку.",
                 "produces": [
                     "application/json"
@@ -2343,7 +2243,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Поиск типов места по названию",
+                "summary": "Поиск типов места по названию (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2386,11 +2286,6 @@ const docTemplate = `{
         },
         "/seat-types/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает тип места по ID.",
                 "produces": [
                     "application/json"
@@ -2398,7 +2293,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Получить тип места по ID",
+                "summary": "Получить тип места по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2451,7 +2346,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Обновить тип места",
+                "summary": "Обновить тип места (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2510,7 +2405,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Удалить тип места",
+                "summary": "Удалить тип места (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2553,11 +2448,6 @@ const docTemplate = `{
         },
         "/seats": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех мест, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -2565,7 +2455,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить все места",
+                "summary": "Получить все места (guest | user | admin)",
                 "responses": {
                     "200": {
                         "description": "Список мест",
@@ -2606,7 +2496,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Создать место",
+                "summary": "Создать место (admin)",
                 "parameters": [
                     {
                         "description": "Данные места",
@@ -2632,7 +2522,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещен",
+                        "description": "Доступ запрещён",
                         "schema": {
                             "type": "string"
                         }
@@ -2648,11 +2538,6 @@ const docTemplate = `{
         },
         "/seats/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает место по ID.",
                 "produces": [
                     "application/json"
@@ -2660,7 +2545,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить место по ID",
+                "summary": "Получить место по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2713,7 +2598,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Обновить место",
+                "summary": "Обновить место (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2743,7 +2628,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещен",
+                        "description": "Доступ запрещён",
                         "schema": {
                             "type": "string"
                         }
@@ -2772,7 +2657,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Удалить место",
+                "summary": "Удалить место (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2830,7 +2715,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Создать билет",
+                "summary": "Создать билет (admin)",
                 "parameters": [
                     {
                         "description": "Билет",
@@ -2872,11 +2757,6 @@ const docTemplate = `{
         },
         "/tickets/movie-show/{movie_show_id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -2884,7 +2764,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить все билеты для сеанса фильма по ID",
+                "summary": "Получить все билеты для сеанса фильма по ID (guest | user | admin) ПОДУМАТЬ",
                 "parameters": [
                     {
                         "type": "string",
@@ -2921,7 +2801,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить билеты пользователя",
+                "summary": "Получить билеты пользователя (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2952,11 +2832,6 @@ const docTemplate = `{
         },
         "/tickets/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает билет по ID.",
                 "produces": [
                     "application/json"
@@ -2964,7 +2839,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить билет по ID",
+                "summary": "Получить билет по ID (guest | user | admin) ПОДУМАТЬ",
                 "parameters": [
                     {
                         "type": "string",
@@ -3017,7 +2892,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Обновить билет",
+                "summary": "Обновить билет (user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3070,7 +2945,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Удалить билет",
+                "summary": "Удалить билет (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3113,7 +2988,7 @@ const docTemplate = `{
         },
         "/user/login": {
             "post": {
-                "description": "Аутентифицирует пользователя и возвращает токен",
+                "description": "Аутентифицирует пользователя и возвращает JWT-токен.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3123,7 +2998,7 @@ const docTemplate = `{
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Вход пользователя",
+                "summary": "Вход пользователя (guest | user | admin)",
                 "parameters": [
                     {
                         "description": "Данные для входа",
@@ -3137,7 +3012,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Токен авторизации",
+                        "description": "Данные авторизации",
                         "schema": {
                             "$ref": "#/definitions/main.AuthResponse"
                         }
@@ -3154,12 +3029,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
-                    "403": {
-                        "description": "Пользователь заблокирован",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Ошибка сервера",
                         "schema": {
@@ -3171,7 +3040,7 @@ const docTemplate = `{
         },
         "/user/register": {
             "post": {
-                "description": "Регистрирует нового пользователя в системе",
+                "description": "Регистрирует нового пользователя в системе.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3181,7 +3050,7 @@ const docTemplate = `{
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Зарегистрировать нового пользователя",
+                "summary": "Зарегистрировать нового пользователя (guest | user | admin)",
                 "parameters": [
                     {
                         "description": "Данные для регистрации",
@@ -3195,10 +3064,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного пользователя",
-                        "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
-                        }
+                        "description": "Пользователь успешно зарегистрирован в системе"
                     },
                     "400": {
                         "description": "В запросе предоставлены неверные данные",
@@ -3228,14 +3094,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех пользователей",
+                "description": "Возвращает список всех пользователей.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Получить всех пользователей",
+                "summary": "Получить всех пользователей (admin)",
                 "responses": {
                     "200": {
                         "description": "Список пользователей",
@@ -3244,6 +3110,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/main.User"
                             }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "404": {
@@ -3275,7 +3147,7 @@ const docTemplate = `{
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Получить пользователя по ID",
+                "summary": "Получить пользователя по ID (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3328,7 +3200,7 @@ const docTemplate = `{
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Обновить пользователя",
+                "summary": "Обновить пользователя (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3387,7 +3259,7 @@ const docTemplate = `{
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Удалить пользователя",
+                "summary": "Удалить пользователя (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3442,7 +3314,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить отзывы пользователя",
+                "summary": "Получить отзывы пользователя (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3491,6 +3363,10 @@ const docTemplate = `{
                 "token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
                 }
             }
         },

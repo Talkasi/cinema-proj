@@ -37,11 +37,10 @@ func validateMovieShowData(w http.ResponseWriter, ms MovieShowData) bool {
 	return true
 }
 
-// @Summary Получить все киносеансы
+// @Summary Получить все киносеансы (guest | user | admin)
 // @Description Возвращает список всех киносеансов, хранящихся в базе данных.
 // @Tags Киносеансы
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} MovieShow "Список киносеансов"
 // @Failure 404 {object} ErrorResponse "Киносеансы не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -73,11 +72,10 @@ func GetMovieShows(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить киносеанс по ID
+// @Summary Получить киносеанс по ID (guest | user | admin)
 // @Description Возвращает даныне о киносеансе по ID.
 // @Tags Киносеансы
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID киносеанса фильма"
 // @Success 200 {object} MovieShow "Данные киносеанса"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
@@ -105,7 +103,7 @@ func GetMovieShowByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать киносеанс
+// @Summary Создать киносеанс (admin)
 // @Description Создаёт новый киносеанс.
 // @Tags Киносеансы
 // @Accept json
@@ -143,7 +141,7 @@ func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить киносеанс
+// @Summary Обновить киносеанс (admin)
 // @Description Обновляет данные о киносеансе.
 // @Tags Киносеансы
 // @Accept json
@@ -190,7 +188,7 @@ func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить киносеанс фильма
+// @Summary Удалить киносеанс фильма (admin)
 // @Description Удаляет данные о киносеансе.
 // @Tags Киносеансы
 // @Param id path string true "ID киносеанса"
@@ -224,11 +222,10 @@ func DeleteMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить киносеансы по ID фильма
+// @Summary Получить киносеансы по ID фильма (guest | user | admin)
 // @Description Возвращает киносеансы для указанного фильма в ближайшие N часов.
 // @Tags Киносеансы
 // @Produce json
-// @Security BearerAuth
 // @Param movie_id path string true "ID фильма"
 // @Param hours query integer false "Период в часах (по умолчанию 24)"
 // @Success 200 {array} MovieShow "Данные о найденных киносеансах"
@@ -288,11 +285,10 @@ func GetShowsByMovie(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить сеансы на указанную дату
+// @Summary Получить сеансы на указанную дату (guest | user | admin)
 // @Description Возвращает сеансы, начинающиеся в указанный день.
 // @Tags Киносеансы
 // @Produce json
-// @Security BearerAuth
 // @Param date path string true "Дата (YYYY-MM-DD)"
 // @Success 200 {array} MovieShow "Данные о киносеансах"
 // @Failure 400 {object} ErrorResponse "Неверный формат даты"
@@ -338,11 +334,10 @@ func GetShowsByDate(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить ближайшие сеансы
+// @Summary Получить ближайшие сеансы (guest | user | admin)
 // @Description Возвращает сеансы, начинающиеся в ближайшие N часов.
 // @Tags Киносеансы
 // @Produce json
-// @Security BearerAuth
 // @Param hours query integer false "Период в часах (по умолчанию 24)"
 // @Success 200 {array} MovieShow "Данные о киносеансах"
 // @Failure 400 {object} ErrorResponse "Неверный формат даты"

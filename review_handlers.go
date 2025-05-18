@@ -136,7 +136,7 @@ func GetReviewByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать отзыв
+// @Summary Создать отзыв (user | admin)
 // @Description Создаёт новый отзыв.
 // @Tags Отзывы
 // @Accept json
@@ -173,7 +173,7 @@ func CreateReview(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить отзыв
+// @Summary Обновить отзыв (user* | admin)
 // @Description Обновляет существующий отзыв.
 // @Tags Отзывы
 // @Accept json
@@ -219,7 +219,7 @@ func UpdateReview(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить отзыв
+// @Summary Удалить отзыв (user* | admin)
 // @Description Удаляет отзыв по ID.
 // @Tags Отзывы
 // @Param id path string true "ID отзыва"
@@ -252,11 +252,10 @@ func DeleteReview(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить отзывы по ID фильма
+// @Summary Получить отзывы по ID фильма (guest | user | admin)
 // @Description Возвращает все отзывы для указанного фильма.
 // @Tags Отзывы
 // @Produce json
-// @Security BearerAuth
 // @Param movie_id path string true "ID фильма"
 // @Success 200 {array} Review "Список отзывов"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID фильма"
@@ -296,7 +295,7 @@ func GetReviewsByMovieID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить отзывы пользователя
+// @Summary Получить отзывы пользователя (user* | admin)
 // @Description Возвращает все отзывы указанного пользователя.
 // @Tags Отзывы
 // @Produce json

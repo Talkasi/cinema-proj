@@ -50,11 +50,10 @@ func validateScreenTypeDesctiption(description string) error {
 	return nil
 }
 
-// @Summary Получить все типы экранов
+// @Summary Получить все типы экранов (guest | user | admin)
 // @Description Возвращает список всех типов экранов, содержащихся в базе данных.
 // @Tags Типы экранов
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} ScreenType "Список типов экранов"
 // @Failure 404 {object} ErrorResponse "Типы экранов не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -85,11 +84,10 @@ func GetScreenTypes(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить тип экрана по ID
+// @Summary Получить тип экрана по ID (guest | user | admin)
 // @Description Возвращает тип экрана по ID.
 // @Tags Типы экранов
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID типа экрана"
 // @Success 200 {object} ScreenType "Тип экрана"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
@@ -117,7 +115,7 @@ func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать тип экрана
+// @Summary Создать тип экрана (admin)
 // @Description Создаёт новый тип экрана.
 // @Tags Типы экранов
 // @Accept json
@@ -153,7 +151,7 @@ func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить тип экрана
+// @Summary Обновить тип экрана (admin)
 // @Description Обновляет существующий тип экрана.
 // @Tags Типы экранов
 // @Accept json
@@ -198,7 +196,7 @@ func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить тип экрана
+// @Summary Удалить тип экрана (admin)
 // @Description Удаляет тип экрана по ID.
 // @Tags Типы экранов
 // @Param id path string true "ID типа экрана"
@@ -230,11 +228,10 @@ func DeleteScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Поиск типов экранов по названию
+// @Summary Поиск типов экранов по названию (guest | user | admin)
 // @Description Возвращает типы экранов, название которых содержит указанную строку.
 // @Tags Типы экранов
 // @Produce json
-// @Security BearerAuth
 // @Param query query string true "Поисковый запрос"
 // @Success 200 {array} ScreenType "Список типов экранов"
 // @Failure 400 {object} ErrorResponse "Строка поиска пуста"

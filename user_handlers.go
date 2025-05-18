@@ -92,17 +92,26 @@ func validateUserPassword(password string) error {
 	return nil
 }
 
-// @Summary Получить всех пользователей
-// @Description Возвращает список всех пользователей
+// @Summary Получить всех пользователей (admin)
+// @Description Возвращает список всех пользователей.
 // @Tags Пользователи
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} User "Список пользователей"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Пользователи не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /users [get]
 func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("Role")
+		println("Role", role, os.Getenv("CLAIM_ROLE_USER"), os.Getenv("CLAIM_ROLE_ADMIN"))
+
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
 		rows, err := db.Query(context.Background(),
 			"SELECT id, name, email, birth_date, is_blocked, is_admin FROM users")
 		if HandleDatabaseError(w, err, "пользователями") {
@@ -130,7 +139,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить пользователя по ID
+// @Summary Получить пользователя по ID (user* | admin)
 // @Description Возвращает пользователя по ID
 // @Tags Пользователи
 // @Produce json
@@ -145,6 +154,13 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (id.String() != user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 
@@ -163,7 +179,7 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить пользователя
+// @Summary Обновить пользователя (user* | admin)
 // @Description Обновляет данные пользователя
 // @Tags Пользователи
 // @Accept json
@@ -181,6 +197,13 @@ func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (id.String() != user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 
@@ -209,7 +232,7 @@ func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить пользователя
+// @Summary Удалить пользователя (admin)
 // @Description Удаляет пользователя по ID
 // @Tags Пользователи
 // @Param id path string true "ID пользователя"
@@ -242,13 +265,13 @@ func DeleteUser(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Зарегистрировать нового пользователя
-// @Description Регистрирует нового пользователя в системе
+// @Summary Зарегистрировать нового пользователя (guest | user | admin)
+// @Description Регистрирует нового пользователя в системе.
 // @Tags Пользователи
 // @Accept json
 // @Produce json
 // @Param user body UserRegister true "Данные для регистрации"
-// @Success 201 {object} CreateResponse "ID созданного пользователя"
+// @Success 201 "Пользователь успешно зарегистрирован в системе"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 409 {object} ErrorResponse "Пользователь с таким email уже существует"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -294,20 +317,19 @@ func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(id.String())
+		json.NewEncoder(w)
 	}
 }
 
-// @Summary Вход пользователя
-// @Description Аутентифицирует пользователя и возвращает токен
+// @Summary Вход пользователя (guest | user | admin)
+// @Description Аутентифицирует пользователя и возвращает JWT-токен.
 // @Tags Пользователи
 // @Accept json
 // @Produce json
 // @Param credentials body UserLogin true "Данные для входа"
-// @Success 200 {object} AuthResponse "Токен авторизации"
+// @Success 200 {object} AuthResponse "Данные авторизации"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 401 {object} ErrorResponse "Неверный email или пароль"
-// @Failure 403 {object} ErrorResponse "Пользователь заблокирован"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /user/login [post]
 func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
@@ -357,12 +379,15 @@ func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 			role = os.Getenv("CLAIM_ROLE_ADMIN")
 		}
 
-		token, err := GenerateToken(user.ID, role)
+		token, err := GenerateToken(role, user.ID)
 		if err != nil {
 			http.Error(w, "Ошибка генерации токена", http.StatusInternalServerError)
 			return
 		}
 
-		json.NewEncoder(w).Encode(map[string]string{"token": token})
+		var resp AuthResponse
+		resp.Token = token
+		resp.UserID = user.ID
+		json.NewEncoder(w).Encode(resp)
 	}
 }

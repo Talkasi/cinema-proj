@@ -184,11 +184,10 @@ func updateMovieGenres(tx pgx.Tx, ctx context.Context, movieID uuid.UUID, genreI
 	return err
 }
 
-// @Summary Получить все фильмы
+// @Summary Получить все фильмы (guest | user | admin)
 // @Description Возвращает список всех фильмов, содержащихся в базе данных.
 // @Tags Фильмы
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} Movie "Список фильмов"
 // @Failure 404 {object} ErrorResponse "Фильмы не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -232,11 +231,10 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить фильм по ID
+// @Summary Получить фильм по ID (guest | user | admin)
 // @Description Возвращает фильм по ID.
 // @Tags Фильмы
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID фильма"
 // @Success 200 {object} Movie "Фильм"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
@@ -270,7 +268,7 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать фильм
+// @Summary Создать фильм (admin)
 // @Description Создаёт новый фильм.
 // @Tags Фильмы
 // @Accept json
@@ -328,7 +326,7 @@ func CreateMovie(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить фильм
+// @Summary Обновить фильм (admin)
 // @Description Обновляет существующий фильм.
 // @Tags Фильмы
 // @Accept json
@@ -401,7 +399,7 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить фильм
+// @Summary Удалить фильм (admin)
 // @Description Удаляет фильм по ID.
 // @Tags Фильмы
 // @Param id path string true "ID фильма"
@@ -432,11 +430,10 @@ func DeleteMovie(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Поиск фильмов по названию
+// @Summary Поиск фильмов по названию (guest | user | admin)
 // @Description Возвращает фильмы, в названии которых содержится заданная строка.
 // @Tags Фильмы
 // @Produce json
-// @Security BearerAuth
 // @Param query query string true "Поисковый запрос"
 // @Success 200 {array} Movie "Найденные фильмы"
 // @Failure 400 {object} ErrorResponse "Строка поиска пуста"
@@ -486,11 +483,10 @@ func SearchMovies(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить фильмы по списку жанров
+// @Summary Получить фильмы по списку жанров (guest | user | admin)
 // @Description Возвращает фильмы, относящиеся ко всем указанным жанрам.
 // @Tags Фильмы
 // @Produce json
-// @Security BearerAuth
 // @Param genre_ids query []string true "Список ID жанров" collectionFormat(multi)
 // @Success 200 {array} Movie "Найденные фильмы"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"

@@ -63,11 +63,10 @@ func validateSeatNumber(seatNumber int) error {
 	return nil
 }
 
-// @Summary Получить все места
+// @Summary Получить все места (guest | user | admin)
 // @Description Возвращает список всех мест, содержащихся в базе данных.
 // @Tags Места
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} Seat "Список мест"
 // @Failure 404 {string} string "Места не найдены"
 // @Failure 500 {string} string "Ошибка сервера"
@@ -101,11 +100,10 @@ func GetSeats(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить место по ID
+// @Summary Получить место по ID (guest | user | admin)
 // @Description Возвращает место по ID.
 // @Tags Места
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID места"
 // @Success 200 {object} Seat "Место"
 // @Failure 400 {string} string "Неверный формат ID"
@@ -135,7 +133,7 @@ func GetSeatByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать место
+// @Summary Создать место (admin)
 // @Description Создаёт новое место.
 // @Tags Места
 // @Accept json
@@ -144,7 +142,7 @@ func GetSeatByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Param seat body SeatData true "Данные места"
 // @Success 201 {object} CreateResponse "ID созданного места"
 // @Failure 400 {string} string "В запросе предоставлены неверные данные"
-// @Failure 403 {string} string "Доступ запрещен"
+// @Failure 403 {string} string "Доступ запрещён"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats [post]
 func CreateSeat(db *pgxpool.Pool) http.HandlerFunc {
@@ -173,7 +171,7 @@ func CreateSeat(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить место
+// @Summary Обновить место (admin)
 // @Description Обновляет существующее место.
 // @Tags Места
 // @Accept json
@@ -183,7 +181,7 @@ func CreateSeat(db *pgxpool.Pool) http.HandlerFunc {
 // @Param seat body SeatData true "Обновлённые данные места"
 // @Success 200 "Данные о месте успешно обновлены"
 // @Failure 400 {string} string "В запросе предоставлены неверные данные"
-// @Failure 403 {string} string "Доступ запрещен"
+// @Failure 403 {string} string "Доступ запрещён"
 // @Failure 404 {string} string "Место не найдено"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats/{id} [put]
@@ -221,7 +219,7 @@ func UpdateSeat(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить место
+// @Summary Удалить место (admin)
 // @Description Удаляет место по ID.
 // @Tags Места
 // @Param id path string true "ID места"
@@ -254,11 +252,10 @@ func DeleteSeat(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить места по ID зала
+// @Summary Получить места по ID зала (guest | user | admin)
 // @Description Возвращает список мест в указанном зале.
 // @Tags Места
 // @Produce json
-// @Security BearerAuth
 // @Param hall_id path string true "ID зала"
 // @Success 200 {array} Seat "Список мест"
 // @Failure 400 {string} string "Неверный формат ID зала"

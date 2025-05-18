@@ -243,8 +243,11 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 
 			r.Header.Set("UserID", claims.UserID)
 			r.Header.Set("Role", claims.Role)
+			// println("claims.Role", claims.Role)
+			// println("claims.UserID", claims.UserID)
 		} else {
 			r.Header.Set("Role", os.Getenv("CLAIM_ROLE_GUEST"))
+			// println("claims.Role", os.Getenv("CLAIM_ROLE_GUEST"))
 		}
 		next.ServeHTTP(w, r)
 	}
@@ -261,6 +264,9 @@ func RoleBasedHandler(handler func(db *pgxpool.Pool) http.HandlerFunc) http.Hand
 	return func(w http.ResponseWriter, r *http.Request) {
 		role := r.Header.Get("Role")
 		user_id := r.Header.Get("UserID")
+
+		// println("RoleBasedHandler role", role)
+		// println("RoleBasedHandler user_id", user_id)
 
 		var db *pgxpool.Pool
 

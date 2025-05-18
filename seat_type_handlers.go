@@ -46,11 +46,10 @@ func validateSeatTypeDescription(desc string) error {
 	return nil
 }
 
-// @Summary Получить все типы мест
+// @Summary Получить все типы мест (guest | user | admin)
 // @Description Возвращает список всех типов мест, содержащихся в базе данных.
 // @Tags Типы мест
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} SeatType "Список типов мест"
 // @Failure 404 {object} ErrorResponse "Типы мест не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -81,11 +80,10 @@ func GetSeatTypes(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить тип места по ID
+// @Summary Получить тип места по ID (guest | user | admin)
 // @Description Возвращает тип места по ID.
 // @Tags Типы мест
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID типа места"
 // @Success 200 {object} SeatType "Тип места"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
@@ -113,7 +111,7 @@ func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Создать тип места
+// @Summary Создать тип места (admin)
 // @Description Создаёт новый тип места.
 // @Tags Типы мест
 // @Accept json
@@ -149,7 +147,7 @@ func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить тип места
+// @Summary Обновить тип места (admin)
 // @Description Обновляет существующий тип места.
 // @Tags Типы мест
 // @Accept json
@@ -193,7 +191,7 @@ func UpdateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Удалить тип места
+// @Summary Удалить тип места (admin)
 // @Description Удаляет тип места по ID.
 // @Tags Типы мест
 // @Param id path string true "ID типа места"
@@ -225,11 +223,10 @@ func DeleteSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Поиск типов места по названию
+// @Summary Поиск типов места по названию (guest | user | admin)
 // @Description Возвращает типы места, название которых содержит указанную строку.
 // @Tags Типы мест
 // @Produce json
-// @Security BearerAuth
 // @Param query query string true "Поисковый запрос"
 // @Success 200 {array} SeatType "Список типов мест"
 // @Failure 400 {object} ErrorResponse "Строка поиска пуста"
