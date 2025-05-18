@@ -6,12 +6,10 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     birth_date DATE NOT NULL,
-    is_blocked BOOLEAN DEFAULT FALSE,
     is_admin BOOLEAN DEFAULT FALSE,
     CONSTRAINT valid_name CHECK (name ~ '^[A-Za-zА-Яа-яЁё\s-]+$' AND name ~ '\S'),
     CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
-    CONSTRAINT valid_birth_date CHECK (birth_date <= CURRENT_DATE AND birth_date >= CURRENT_DATE - INTERVAL '100 years'),
-    CONSTRAINT admin_not_blocked CHECK (NOT (is_blocked AND is_admin))
+    CONSTRAINT valid_birth_date CHECK (birth_date <= CURRENT_DATE AND birth_date >= CURRENT_DATE - INTERVAL '100 years')
 );
 
 CREATE TABLE IF NOT EXISTS genres (
@@ -26,14 +24,12 @@ CREATE TABLE IF NOT EXISTS movies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(200) NOT NULL,
     duration TIME NOT NULL,
-    rating DECIMAL(4,2) DEFAULT NULL, -- null if no reviews
     description VARCHAR(1000) NOT NULL,
     age_limit INT NOT NULL DEFAULT 0,
     box_office_revenue DECIMAL(15,2) NOT NULL DEFAULT 0 CHECK (box_office_revenue >= 0),
     release_date DATE NOT NULL, -- can be IN the future
     CONSTRAINT valid_title CHECK (title ~ '\S'),
     CONSTRAINT valid_duration CHECK (duration > '00:00:00'),
-    CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 10),
     CONSTRAINT valid_description CHECK (description ~ '\S'),
     CONSTRAINT valid_age_limit CHECK (age_limit IN (0, 6, 12, 16, 18))
 );
@@ -184,54 +180,3 @@ CREATE TABLE IF NOT EXISTS reviews (
     CONSTRAINT unique_review UNIQUE (user_id, movie_id),
     CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S')
 );
-
-CREATE OR REPLACE FUNCTION update_movie_rating()
-RETURNS TRIGGER AS $$
-DECLARE
-    avg_rating DECIMAL(4,2);
-    prev_movie_avg_rating DECIMAL(4,2);
-    movie_id_val UUID;
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        movie_id_val := OLD.movie_id;
-    ELSE
-        movie_id_val := NEW.movie_id;
-    END IF;
-
-    SELECT AVG(rating) INTO avg_rating
-    FROM reviews
-    WHERE movie_id = movie_id_val;
-
-    UPDATE movies
-    SET rating = avg_rating
-    WHERE id = movie_id_val;
-
-    IF TG_OP = 'UPDATE' AND OLD.movie_id IS DISTINCT FROM NEW.movie_id THEN 
-        SELECT AVG(rating) INTO prev_movie_avg_rating
-        FROM reviews
-        WHERE movie_id = OLD.movie_id;
-
-        UPDATE movies
-        SET rating = prev_movie_avg_rating
-        WHERE id = OLD.movie_id;
-    END IF;
-
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_rating_after_insert
-AFTER INSERT ON reviews
-FOR EACH ROW
-EXECUTE FUNCTION update_movie_rating();
-
-CREATE TRIGGER update_rating_after_update
-AFTER UPDATE OF rating ON reviews
-FOR EACH ROW
-WHEN (OLD.rating IS DISTINCT FROM NEW.rating)
-EXECUTE FUNCTION update_movie_rating();
-
-CREATE TRIGGER update_rating_after_delete
-AFTER DELETE ON reviews
-FOR EACH ROW
-EXECUTE FUNCTION update_movie_rating();

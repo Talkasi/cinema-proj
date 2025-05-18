@@ -100,17 +100,16 @@ func SeedSeatTypes(db *pgxpool.Pool) error {
 func SeedMovies(db *pgxpool.Pool) error {
 	for _, m := range MoviesData {
 		_, err := db.Exec(context.Background(), `INSERT INTO movies 
-            (id, title, duration, rating, description, age_limit, box_office_revenue, release_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (id, title, duration, description, age_limit, box_office_revenue, release_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (id) DO UPDATE SET
                 title = EXCLUDED.title,
                 duration = EXCLUDED.duration,
-                rating = EXCLUDED.rating,
                 description = EXCLUDED.description,
                 age_limit = EXCLUDED.age_limit,
                 box_office_revenue = EXCLUDED.box_office_revenue,
                 release_date = EXCLUDED.release_date`,
-			m.ID, m.Title, m.Duration, m.Rating, m.Description, m.AgeLimit, m.BoxOfficeRevenue, m.ReleaseDate)
+			m.ID, m.Title, m.Duration, m.Description, m.AgeLimit, m.BoxOfficeRevenue, m.ReleaseDate)
 		if err != nil {
 			return fmt.Errorf("ошибка при вставке фильма %s: %v", m.Title, err)
 		}
@@ -134,15 +133,14 @@ func SeedMoviesGenres(db *pgxpool.Pool) error {
 func SeedUsers(db *pgxpool.Pool) error {
 	for _, u := range UsersData {
 		_, err := db.Exec(context.Background(), `INSERT INTO users 
-            (id, name, email, password_hash, birth_date, is_blocked, is_admin)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            (id, name, email, password_hash, birth_date, is_admin)
+            VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (email) DO UPDATE SET
                 name = EXCLUDED.name,
                 password_hash = EXCLUDED.password_hash,
                 birth_date = EXCLUDED.birth_date,
-                is_blocked = EXCLUDED.is_blocked,
                 is_admin = EXCLUDED.is_admin`,
-			u.ID, u.Name, u.Email, u.PasswordHash, u.BirthDate, u.IsBlocked, u.IsAdmin)
+			u.ID, u.Name, u.Email, u.PasswordHash, u.BirthDate, u.IsAdmin)
 		if err != nil {
 			return fmt.Errorf("ошибка при вставке пользователя %s: %v", u.Email, err)
 		}

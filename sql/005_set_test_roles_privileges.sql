@@ -17,7 +17,6 @@ GRANT INSERT ON users TO cinema_test_guest;
 
 GRANT cinema_test_guest TO cinema_test_user;
 GRANT UPDATE ON users TO cinema_test_user;
-GRANT UPDATE ON movies TO cinema_test_user;
 GRANT UPDATE ON tickets TO cinema_test_user;
 GRANT INSERT, UPDATE, DELETE ON reviews TO cinema_test_user;
 

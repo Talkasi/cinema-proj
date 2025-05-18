@@ -113,7 +113,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(context.Background(),
-			"SELECT id, name, email, birth_date, is_blocked, is_admin FROM users")
+			"SELECT id, name, email, birth_date, is_admin FROM users")
 		if HandleDatabaseError(w, err, "пользователями") {
 			return
 		}
@@ -123,7 +123,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 		var birthDate time.Time
 		for rows.Next() {
 			var u User
-			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsBlocked, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
+			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
 				return
 			}
 			u.BirthDate = birthDate.Format("2006-01-02")
@@ -167,8 +167,8 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 		var u User
 		var birthDate time.Time
 		err := db.QueryRow(context.Background(),
-			"SELECT id, name, email, birth_date, is_blocked, is_admin FROM users WHERE id = $1", id).
-			Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsBlocked, &u.IsAdmin)
+			"SELECT id, name, email, birth_date, is_admin FROM users WHERE id = $1", id).
+			Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsAdmin)
 		u.BirthDate = birthDate.Format("2006-01-02")
 
 		if IsError(w, err) {
@@ -354,13 +354,12 @@ func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 		var user struct {
 			ID           string
 			PasswordHash string
-			IsBlocked    bool
 			IsAdmin      bool
 		}
 
 		err := db.QueryRow(context.Background(),
-			"SELECT id, password_hash, is_blocked, is_admin FROM users WHERE email = $1", creds.Email).
-			Scan(&user.ID, &user.PasswordHash, &user.IsBlocked, &user.IsAdmin)
+			"SELECT id, password_hash, is_admin FROM users WHERE email = $1", creds.Email).
+			Scan(&user.ID, &user.PasswordHash, &user.IsAdmin)
 		if isNoRows(err) {
 			http.Error(w, "Неверный email или пароль", http.StatusUnauthorized)
 			return

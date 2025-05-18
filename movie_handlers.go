@@ -73,14 +73,6 @@ func validateMovieDuration(duration string) error {
 	return nil
 }
 
-func validateMovieRating(rating *float64) error {
-	if rating != nil && (*rating < 1 || *rating > 10) {
-		return errors.New("рейтинг должен быть в промежутке от 1 до 10")
-	}
-
-	return nil
-}
-
 func validateMovieDescription(description string) error {
 	if !regexp.MustCompile(`\S`).MatchString(description) {
 		return errors.New("описание фильма не может быть пустым")
@@ -195,7 +187,7 @@ func updateMovieGenres(tx pgx.Tx, ctx context.Context, movieID uuid.UUID, genreI
 func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query(context.Background(), `
-			SELECT id, title, duration, rating, description, age_limit, box_office_revenue, release_date
+			SELECT id, title, duration, description, age_limit, box_office_revenue, release_date
 			FROM movies`)
 		if err != nil {
 			http.Error(w, "Ошибка при получении фильмов", http.StatusInternalServerError)
@@ -206,7 +198,7 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 		var movies []Movie
 		for rows.Next() {
 			var m Movie
-			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
+			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
 				http.Error(w, fmt.Sprintf("Ошибка при сканировании фильма %v", err), http.StatusInternalServerError)
 				return
 			}
@@ -217,6 +209,15 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 				return
 			}
 			m.Genres = genres
+
+			err = db.QueryRow(context.Background(), `
+				SELECT AVG(rating)
+				FROM reviews
+				WHERE movie_id = $1`, m.ID).Scan(&m.Rating)
+			if err != nil {
+				http.Error(w, "Ошибка при получении жанров", http.StatusInternalServerError)
+				return
+			}
 
 			movies = append(movies, m)
 		}
@@ -250,10 +251,19 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 
 		var m Movie
 		err := db.QueryRow(context.Background(), `
-			SELECT id, title, duration, rating, description, age_limit, box_office_revenue, release_date
+			SELECT id, title, duration, description, age_limit, box_office_revenue, release_date
 			FROM movies WHERE id = $1`, id).
-			Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
+			Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
 		if IsError(w, err) {
+			return
+		}
+
+		err = db.QueryRow(context.Background(), `
+			SELECT AVG(rating)
+			FROM reviews
+			WHERE movie_id = $1`, m.ID).Scan(&m.Rating)
+		if err != nil {
+			http.Error(w, "Ошибка при получении жанров", http.StatusInternalServerError)
 			return
 		}
 
@@ -449,7 +459,7 @@ func SearchMovies(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(context.Background(), `
-			SELECT id, title, duration, rating, description, age_limit, box_office_revenue, release_date
+			SELECT id, title, duration, description, age_limit, box_office_revenue, release_date
 			FROM movies WHERE title ILIKE $1`, "%"+query+"%")
 		if IsError(w, err) {
 			return
@@ -459,7 +469,7 @@ func SearchMovies(db *pgxpool.Pool) http.HandlerFunc {
 		var movies []Movie
 		for rows.Next() {
 			var m Movie
-			err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
+			err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
 			if IsError(w, err) {
 				return
 			}
@@ -469,6 +479,15 @@ func SearchMovies(db *pgxpool.Pool) http.HandlerFunc {
 				return
 			}
 			m.Genres = genres
+
+			err = db.QueryRow(context.Background(), `
+				SELECT AVG(rating)
+				FROM reviews
+				WHERE movie_id = $1`, m.ID).Scan(&m.Rating)
+			if err != nil {
+				http.Error(w, "Ошибка при получении жанров", http.StatusInternalServerError)
+				return
+			}
 
 			movies = append(movies, m)
 		}
@@ -530,7 +549,7 @@ func GetMoviesByAllGenres(db *pgxpool.Pool) http.HandlerFunc {
 		var movies []Movie
 		for rows.Next() {
 			var m Movie
-			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Rating, &m.Description,
+			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description,
 				&m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
 				http.Error(w, "Ошибка при сканировании фильма", http.StatusInternalServerError)
 				return
@@ -542,6 +561,16 @@ func GetMoviesByAllGenres(db *pgxpool.Pool) http.HandlerFunc {
 				return
 			}
 			m.Genres = genres
+
+			err = db.QueryRow(context.Background(), `
+				SELECT AVG(rating)
+				FROM reviews
+				WHERE movie_id = $1`, m.ID).Scan(&m.Rating)
+			if err != nil {
+				println(err.Error())
+				http.Error(w, "Ошибка при получении жанров", http.StatusInternalServerError)
+				return
+			}
 
 			movies = append(movies, m)
 		}
