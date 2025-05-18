@@ -339,6 +339,7 @@ func TestCreateReview(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to insert into test database: %v", err)
 				}
+
 			},
 			http.StatusConflict,
 		},
@@ -428,6 +429,18 @@ func TestUpdateReview(t *testing.T) {
 			http.StatusBadRequest,
 		},
 		{
+			"Unknown UUID as Guest",
+			"",
+			"",
+			validUpdateData,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, uuid.New().String()
+			},
+			http.StatusForbidden,
+		},
+		{
 			"Unknown UUID as User",
 			os.Getenv("CLAIM_ROLE_USER"),
 			"",
@@ -437,7 +450,7 @@ func TestUpdateReview(t *testing.T) {
 				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
-			http.StatusNotFound,
+			http.StatusForbidden,
 		},
 		{
 			"Unknown UUID as Admin",
@@ -545,7 +558,7 @@ func TestUpdateReview(t *testing.T) {
 			os.Getenv("CLAIM_ROLE_USER"),
 			"",
 			ReviewData{
-				UserID:  UsersData[0].ID,
+				UserID:  UsersData[len(UsersData)-1].ID,
 				MovieID: MoviesData[1].ID,
 				Rating:  9,
 				Comment: strings.Repeat("a", 2000),
@@ -570,7 +583,12 @@ func TestUpdateReview(t *testing.T) {
 			"Success User",
 			os.Getenv("CLAIM_ROLE_USER"),
 			"",
-			validUpdateData,
+			ReviewData{
+				UserID:  UsersData[len(UsersData)-1].ID,
+				MovieID: MoviesData[1].ID,
+				Rating:  9,
+				Comment: "Updated comment",
+			},
 			setupExistingReview,
 			http.StatusOK,
 		},
@@ -662,7 +680,11 @@ func TestDeleteReview(t *testing.T) {
 			"Success as User",
 			os.Getenv("CLAIM_ROLE_USER"),
 			"",
-			setupExistingReview,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				_ = SeedAll(TestAdminDB)
+				return ts, ReviewsData[len(ReviewsData)-1].ID
+			},
 			http.StatusNoContent,
 		},
 		{

@@ -9,7 +9,6 @@ import (
 	"regexp"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -177,7 +176,7 @@ func CreateReview(db *pgxpool.Pool) http.HandlerFunc {
 			id, reviewData.UserID, reviewData.MovieID, reviewData.Rating, reviewData.Comment)
 
 		if IsError(w, err) {
-			println(err.Error())
+			// println(err.Error())
 			return
 		}
 
@@ -259,15 +258,23 @@ func DeleteReview(db *pgxpool.Pool) http.HandlerFunc {
 
 		role := r.Header.Get("Role")
 		user_id := r.Header.Get("UserID")
-		var err error
-		var res pgconn.CommandTag
-		if role == os.Getenv("CLAIM_ROLE_ADMIN") {
-			res, err = db.Exec(context.Background(),
-				"DELETE FROM reviews WHERE id = $1", id)
-		} else {
-			res, err = db.Exec(context.Background(),
-				"DELETE FROM reviews WHERE id = $1 AND user_id = $2", id, user_id)
+		var review_owner_id string
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			err := db.QueryRow(context.Background(),
+				"SELECT user_id FROM reviews WHERE id = $1", id).
+				Scan(&review_owner_id)
+			if IsError(w, err) {
+				return
+			}
+
+			if review_owner_id != user_id {
+				http.Error(w, "Доступ запрещен", http.StatusForbidden)
+				return
+			}
 		}
+
+		res, err := db.Exec(context.Background(),
+			"DELETE FROM reviews WHERE id = $1", id)
 
 		if IsError(w, err) {
 			return

@@ -61,7 +61,7 @@ type Movie struct {
 	ID               string    `json:"id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`
 	Title            string    `json:"title" example:"Властелин колец"`
 	Duration         string    `json:"duration" example:"02:58:00"`
-	Rating           float64   `json:"rating,omitempty" example:"8.8"`
+	Rating           *float64  `json:"rating,omitempty" example:"8.8"`
 	Description      string    `json:"description" example:"Эпическая история о кольце власти."`
 	AgeLimit         int       `json:"age_limit" example:"12"`
 	BoxOfficeRevenue float64   `json:"box_office_revenue" example:"300000000"`
@@ -157,7 +157,6 @@ type User struct {
 	Email        string `json:"email" example:"ivan@example.com"`
 	PasswordHash string `json:"-"`
 	BirthDate    string `json:"birth_date" example:"1990-01-01"`
-	IsBlocked    bool   `json:"is_blocked" example:"false"`
 	IsAdmin      bool   `json:"-"`
 }
 
