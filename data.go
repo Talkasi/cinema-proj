@@ -51,35 +51,30 @@ var HallsData = []Hall{
 	{
 		ID:           uuid.New().String(),
 		Name:         "Основной кинозал",
-		Capacity:     500,
 		ScreenTypeID: ScreenTypesData[0].ID,
 		Description:  ptr("Главный кинозал кинотеатра с современным оборудованием"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "Малый кинозал",
-		Capacity:     150,
 		ScreenTypeID: ScreenTypesData[3].ID,
 		Description:  ptr("Небольшой уютный кинозал для камерных просмотров"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "VIP кинозал",
-		Capacity:     50,
 		ScreenTypeID: ScreenTypesData[2].ID,
 		Description:  ptr("Премиальный кинозал с креслами-реклайнерами и сервисом"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "IMAX кинозал",
-		Capacity:     300,
 		ScreenTypeID: ScreenTypesData[4].ID,
 		Description:  ptr("Зал с технологией IMAX Laser для максимального погружения"),
 	},
 	{
 		ID:           uuid.New().String(),
 		Name:         "4DX кинозал",
-		Capacity:     200,
 		ScreenTypeID: ScreenTypesData[3].ID,
 		Description:  ptr("Зал с движущимися креслами и спецэффектами"),
 	},
@@ -291,6 +286,14 @@ var TicketsData = []Ticket{
 		Status:      "Available",
 		Price:       1000.00,
 	},
+	{
+		ID:          uuid.New().String(),
+		MovieShowID: MovieShowsData[2].ID,
+		SeatID:      SeatsData[1].ID,
+		UserID:      &UsersData[len(UsersData)-1].ID,
+		Status:      "Reserved",
+		Price:       1000.00,
+	},
 }
 
 var ReviewsData = []Review{
@@ -311,6 +314,13 @@ var ReviewsData = []Review{
 	{
 		ID:      uuid.New().String(),
 		UserID:  UsersData[0].ID,
+		MovieID: MoviesData[2].ID,
+		Rating:  7,
+		Comment: "Хороший боевик, но слишком много нелогичных моментов.",
+	},
+	{
+		ID:      uuid.New().String(),
+		UserID:  UsersData[len(UsersData)-1].ID,
 		MovieID: MoviesData[2].ID,
 		Rating:  7,
 		Comment: "Хороший боевик, но слишком много нелогичных моментов.",

@@ -105,7 +105,7 @@ func validateUserPassword(password string) error {
 func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		role := r.Header.Get("Role")
-		println("Role", role, os.Getenv("CLAIM_ROLE_USER"), os.Getenv("CLAIM_ROLE_ADMIN"))
+		// println("Role", role, os.Getenv("CLAIM_ROLE_USER"), os.Getenv("CLAIM_ROLE_ADMIN"))
 
 		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
 			http.Error(w, "Доступ запрещён", http.StatusForbidden)

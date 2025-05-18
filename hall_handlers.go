@@ -20,11 +20,6 @@ func validateAllHallData(w http.ResponseWriter, h HallData) bool {
 		return false
 	}
 
-	if err := validateHallCapacity(h.Capacity); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
 	if err := validateScreenTypeID(h.ScreenTypeID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
@@ -49,13 +44,6 @@ func validateHallName(name string) error {
 
 	if len(name) == 0 || len(name) > 100 {
 		return errors.New("название зала не может быть пустым или превышать 100 символов")
-	}
-	return nil
-}
-
-func validateHallCapacity(capacity int) error {
-	if capacity <= 0 {
-		return errors.New("вместимость зала должна быть положительным числом")
 	}
 	return nil
 }
@@ -91,7 +79,7 @@ func validateHallDescription(description *string) error {
 func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query(context.Background(),
-			"SELECT id, name, capacity, screen_type_id, description FROM halls")
+			"SELECT id, name, screen_type_id, description FROM halls")
 		if HandleDatabaseError(w, err, "залами") {
 			return
 		}
@@ -100,7 +88,7 @@ func GetHalls(db *pgxpool.Pool) http.HandlerFunc {
 		var halls []Hall
 		for rows.Next() {
 			var h Hall
-			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
+			if err := rows.Scan(&h.ID, &h.Name, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
 				return
 			}
 			halls = append(halls, h)
@@ -136,8 +124,8 @@ func GetHallByID(db *pgxpool.Pool) http.HandlerFunc {
 		var h Hall
 		h.ID = id.String()
 		err := db.QueryRow(context.Background(),
-			"SELECT name, capacity, screen_type_id, description FROM halls WHERE id = $1", id).
-			Scan(&h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description)
+			"SELECT name, screen_type_id, description FROM halls WHERE id = $1", id).
+			Scan(&h.Name, &h.ScreenTypeID, &h.Description)
 
 		if IsError(w, err) {
 			return
@@ -174,8 +162,8 @@ func CreateHall(db *pgxpool.Pool) http.HandlerFunc {
 
 		id := uuid.New()
 		_, err := db.Exec(context.Background(),
-			"INSERT INTO halls (id, name, capacity, screen_type_id, description) VALUES ($1, $2, $3, $4, $5)",
-			id, h.Name, h.Capacity, h.ScreenTypeID, h.Description)
+			"INSERT INTO halls (id, name, screen_type_id, description) VALUES ($1, $2, $3, $4)",
+			id, h.Name, h.ScreenTypeID, h.Description)
 
 		if IsError(w, err) {
 			return
@@ -219,8 +207,8 @@ func UpdateHall(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE halls SET name=$1, capacity=$2, screen_type_id=$3, description=$4 WHERE id=$5",
-			h.Name, h.Capacity, h.ScreenTypeID, h.Description, id)
+			"UPDATE halls SET name=$1, screen_type_id=$2, description=$3 WHERE id=$4",
+			h.Name, h.ScreenTypeID, h.Description, id)
 
 		if IsError(w, err) {
 			return
@@ -288,7 +276,7 @@ func GetHallsByScreenType(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(context.Background(),
-			`SELECT h.id, h.name, h.capacity, h.screen_type_id, h.description 
+			`SELECT h.id, h.name, h.screen_type_id, h.description 
              FROM halls h
              WHERE h.screen_type_id = $1`, screenTypeID)
 		if IsError(w, err) {
@@ -299,7 +287,7 @@ func GetHallsByScreenType(db *pgxpool.Pool) http.HandlerFunc {
 		var halls []Hall
 		for rows.Next() {
 			var h Hall
-			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
+			if err := rows.Scan(&h.ID, &h.Name, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
 				return
 			}
 			halls = append(halls, h)
@@ -335,7 +323,7 @@ func SearchHallsByName(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(context.Background(),
-			`SELECT id, name, capacity, screen_type_id, description 
+			`SELECT id, name, screen_type_id, description 
               FROM halls 
               WHERE name ILIKE '%' || $1 || '%'`, query)
 		if IsError(w, err) {
@@ -346,7 +334,7 @@ func SearchHallsByName(db *pgxpool.Pool) http.HandlerFunc {
 		var halls []Hall
 		for rows.Next() {
 			var h Hall
-			if err := rows.Scan(&h.ID, &h.Name, &h.Capacity, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
+			if err := rows.Scan(&h.ID, &h.Name, &h.ScreenTypeID, &h.Description); HandleDatabaseError(w, err, "залом") {
 				return
 			}
 			halls = append(halls, h)
