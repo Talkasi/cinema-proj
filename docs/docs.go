@@ -17,11 +17,6 @@ const docTemplate = `{
     "paths": {
         "/genres": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список всех жанров, хранящихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -112,11 +107,6 @@ const docTemplate = `{
         },
         "/genres/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает список жанров, имена которых содержат указанную строку (регистронезависимый поиск).",
                 "produces": [
                     "application/json"
@@ -167,11 +157,6 @@ const docTemplate = `{
         },
         "/genres/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает жанр по ID.",
                 "produces": [
                     "application/json"

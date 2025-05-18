@@ -419,8 +419,6 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Получить все жанры
       tags:
       - Жанры фильмов
@@ -523,8 +521,6 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Получить жанр по ID
       tags:
       - Жанры фильмов
@@ -601,8 +597,6 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Поиск жанров по имени
       tags:
       - Жанры фильмов

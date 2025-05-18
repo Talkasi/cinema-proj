@@ -59,7 +59,6 @@ func validateGenreDescription(description string) error {
 // @Description Возвращает список всех жанров, хранящихся в базе данных.
 // @Tags Жанры фильмов
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {array} Genre "Список жанров"
 // @Failure 404 {object} ErrorResponse "Жанры не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -94,7 +93,6 @@ func GetGenres(db *pgxpool.Pool) http.HandlerFunc {
 // @Description Возвращает жанр по ID.
 // @Tags Жанры фильмов
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID жанра"
 // @Success 200 {object} Genre "Жанр"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
@@ -243,7 +241,6 @@ func DeleteGenre(db *pgxpool.Pool) http.HandlerFunc {
 // @Description Возвращает список жанров, имена которых содержат указанную строку (регистронезависимый поиск).
 // @Tags Жанры фильмов
 // @Produce json
-// @Security BearerAuth
 // @Param query query string true "Строка для поиска"
 // @Success 200 {array} Genre "Список найденных жанров"
 // @Failure 400 {object} ErrorResponse "Строка поиска пуста"

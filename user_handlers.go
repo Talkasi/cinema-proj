@@ -357,7 +357,7 @@ func LoginUser(db *pgxpool.Pool) http.HandlerFunc {
 			role = os.Getenv("CLAIM_ROLE_ADMIN")
 		}
 
-		token, err := GenerateToken(creds.Email, role)
+		token, err := GenerateToken(user.ID, role)
 		if err != nil {
 			http.Error(w, "Ошибка генерации токена", http.StatusInternalServerError)
 			return
