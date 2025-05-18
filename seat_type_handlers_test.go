@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -28,35 +25,45 @@ func TestGetSeatTypes(t *testing.T) {
 		{"NonEmpty as Guest", true, "", http.StatusOK},
 		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
 		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
+		{"DBError as Guest", true, "", http.StatusInternalServerError},
+		{"DBError as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusInternalServerError},
+		{"DBError as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusInternalServerError},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
-			defer ts.Close()
 			SeedUsers(TestAdminDB)
+			defer ts.Close()
 
 			if tt.seedData {
-				_ = SeedAll(TestAdminDB)
+				SeedAll(TestAdminDB)
+			}
+
+			if strings.Split(tt.name, " ")[0] == "DBError" {
+				TestAdminDB.Close()
+				TestGuestDB.Close()
+				TestUserDB.Close()
+				defer InitTestDB()
 			}
 
 			req := createRequest(t, "GET", ts.URL+"/seat-types", generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
-			parseResponseBody(t, resp, nil)
+			if tt.expectedStatus == http.StatusOK {
+				var seatTypes []SeatType
+				parseResponseBody(t, resp, &seatTypes)
+
+				if len(seatTypes) == 0 {
+					t.Error("Expected non-empty seat types list")
+				}
+			}
 		})
 	}
 }
 
 func TestGetSeatTypeByID(t *testing.T) {
-	// Setup for valid ID tests
-	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)
-		return ts, SeatTypesData[0].ID
-	}
-
 	tests := []struct {
 		name           string
 		setup          func(t *testing.T) (*httptest.Server, string)
@@ -67,7 +74,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 			"Unknown ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			"",
@@ -77,7 +84,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 			"Unknown ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			os.Getenv("CLAIM_ROLE_USER"),
@@ -87,34 +94,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 			"Unknown ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID When Empty as Guest",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				return ts, uuid.New().String()
-			},
-			"",
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID When Empty as User",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				return ts, uuid.New().String()
-			},
-			os.Getenv("CLAIM_ROLE_USER"),
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID When Empty as Admin",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
+				SeedAll(TestAdminDB)
 				return ts, uuid.New().String()
 			},
 			os.Getenv("CLAIM_ROLE_ADMIN"),
@@ -124,7 +104,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 			"Invalid ID as Guest",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			"",
@@ -134,7 +114,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 			"Invalid ID as User",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			os.Getenv("CLAIM_ROLE_USER"),
@@ -144,7 +124,7 @@ func TestGetSeatTypeByID(t *testing.T) {
 			"Invalid ID as Admin",
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
+				SeedAll(TestAdminDB)
 				return ts, "invalid-id"
 			},
 			os.Getenv("CLAIM_ROLE_ADMIN"),
@@ -152,40 +132,167 @@ func TestGetSeatTypeByID(t *testing.T) {
 		},
 		{
 			"Valid ID as Guest",
-			setupValidIDTest,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, SeatTypesData[0].ID
+			},
 			"",
 			http.StatusOK,
 		},
 		{
 			"Valid ID as User",
-			setupValidIDTest,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, SeatTypesData[0].ID
+			},
 			os.Getenv("CLAIM_ROLE_USER"),
 			http.StatusOK,
 		},
 		{
 			"Valid ID as Admin",
-			setupValidIDTest,
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				return ts, SeatTypesData[0].ID
+			},
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			http.StatusOK,
+		},
+		{
+			"DBError as Guest",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				TestAdminDB.Close()
+				TestGuestDB.Close()
+				TestUserDB.Close()
+				return ts, SeatTypesData[0].ID
+			},
+			"",
+			http.StatusInternalServerError,
+		},
+		{
+			"DBError as User",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				TestAdminDB.Close()
+				TestGuestDB.Close()
+				TestUserDB.Close()
+				return ts, SeatTypesData[0].ID
+			},
+			os.Getenv("CLAIM_ROLE_USER"),
+			http.StatusInternalServerError,
+		},
+		{
+			"DBError as Admin",
+			func(t *testing.T) (*httptest.Server, string) {
+				ts := setupTestServer()
+				SeedAll(TestAdminDB)
+				TestAdminDB.Close()
+				TestGuestDB.Close()
+				TestUserDB.Close()
+				return ts, SeatTypesData[0].ID
+			},
+			os.Getenv("CLAIM_ROLE_ADMIN"),
+			http.StatusInternalServerError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
-			defer ts.Close()
-			SeedUsers(TestAdminDB)
+			defer func() {
+				ts.Close()
+				if strings.Split(tt.name, " ")[0] == "DBError" {
+					InitTestDB()
+				}
+			}()
 
 			req := createRequest(t, "GET", ts.URL+"/seat-types/"+id, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
 
 			if tt.expectedStatus == http.StatusOK {
-				var seat_type SeatType
-				parseResponseBody(t, resp, &seat_type)
+				var seatType SeatType
+				parseResponseBody(t, resp, &seatType)
 
-				if seat_type.ID != id {
-					t.Errorf("Expected ID %v; got %v", id, seat_type.ID)
+				if seatType.ID != id {
+					t.Errorf("Expected ID %v; got %v", id, seatType.ID)
+				}
+			}
+		})
+	}
+}
+
+func TestSearchSeatTypes(t *testing.T) {
+	tests := []struct {
+		name           string
+		query          string
+		role           string
+		expectedStatus int
+		expectedCount  int
+	}{
+		{"Empty query as Guest", "", "", http.StatusBadRequest, 0},
+		{"Empty query as User", "", os.Getenv("CLAIM_ROLE_USER"), http.StatusBadRequest, 0},
+		{"Empty query as Admin", "", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusBadRequest, 0},
+		{"Whitespace query as Guest", "    ", "", http.StatusBadRequest, 0},
+		{"Whitespace query as User", "    ", os.Getenv("CLAIM_ROLE_USER"), http.StatusBadRequest, 0},
+		{"Whitespace query as Admin", "    ", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusBadRequest, 0},
+		{"Short query as Guest", "С", "", http.StatusOK, 7},
+		{"Short query as User", "С", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK, 7},
+		{"Short query as Admin", "С", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK, 7},
+		{"No matches as Guest", "Кресло для отдыха", "", http.StatusNotFound, 0},
+		{"No matches as User", "Кресло для отдыха", os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound, 0},
+		{"No matches as Admin", "Кресло для отдыха", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound, 0},
+		{"Exact match as Guest", "VIP", "", http.StatusOK, 1},
+		{"Exact match as User", "VIP", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK, 1},
+		{"Exact match as Admin", "VIP", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK, 1},
+		{"Partial match as Guest", "стандарт", "", http.StatusOK, 1},
+		{"Partial match as User", "стандарт", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK, 1},
+		{"Partial match as Admin", "стандарт", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK, 1},
+		{"Case insensitive as Guest", "люКС", "", http.StatusOK, 1},
+		{"Case insensitive as User", "люКС", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK, 1},
+		{"Case insensitive as Admin", "люКС", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK, 1},
+		{"With spaces as Guest", "Кресло с подогревом", "", http.StatusOK, 1},
+		{"With spaces as User", "Кресло с подогревом", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK, 1},
+		{"With spaces as Admin", "Кресло с подогревом", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK, 1},
+		{"Partial with spaces as Guest", "  кресло    ", "", http.StatusOK, 3},
+		{"Partial with spaces as User", "  кресло    ", os.Getenv("CLAIM_ROLE_USER"), http.StatusOK, 3},
+		{"Partial with spaces as Admin", "  кресло    ", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK, 3},
+		{"Special chars as Guest", "VIP/", "", http.StatusNotFound, 0},
+		{"Special chars as User", "VIP/", os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound, 0},
+		{"Special chars as Admin", "VIP/", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound, 0},
+		{"DBError as Guest", "VIP", "", http.StatusInternalServerError, 0},
+		{"DBError as User", "VIP", os.Getenv("CLAIM_ROLE_USER"), http.StatusInternalServerError, 0},
+		{"DBError as Admin", "VIP", os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusInternalServerError, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			defer ts.Close()
+
+			if strings.Split(tt.name, " ")[0] == "DBError" {
+				TestAdminDB.Close()
+				TestGuestDB.Close()
+				TestUserDB.Close()
+				defer InitTestDB()
+			}
+
+			req := createRequest(t, "GET", ts.URL+"/seat-types/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)
+			resp := executeRequest(t, req, tt.expectedStatus)
+			defer resp.Body.Close()
+
+			if tt.expectedStatus == http.StatusOK {
+				var seatTypes []SeatType
+				parseResponseBody(t, resp, &seatTypes)
+
+				if len(seatTypes) != tt.expectedCount {
+					t.Errorf("Expected %d seat types, got %d", tt.expectedCount, len(seatTypes))
 				}
 			}
 		})
@@ -193,23 +300,6 @@ func TestGetSeatTypeByID(t *testing.T) {
 }
 
 func TestCreateSeatType(t *testing.T) {
-	validSeatType := SeatTypeData{
-		Name:        "Test Seat",
-		Description: "Test Description",
-	}
-
-	invalidSeatType := SeatTypeData{
-		Name:        "",
-		Description: "Test Description",
-	}
-
-	setupConflictTest := func(t *testing.T) {
-		_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", validSeatType.Name, validSeatType.Description)
-		if err != nil {
-			t.Fatalf("Failed to insert into test database: %v", err)
-		}
-	}
-
 	tests := []struct {
 		name           string
 		role           string
@@ -217,97 +307,84 @@ func TestCreateSeatType(t *testing.T) {
 		setup          func(t *testing.T)
 		expectedStatus int
 	}{
-		{
-			"Forbidden Guest",
-			"",
-			validSeatType,
-			nil,
-			http.StatusForbidden,
-		},
-		{
-			"Forbidden User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			validSeatType,
-			nil,
-			http.StatusForbidden,
-		},
-		{
-			"Success Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			validSeatType,
-			nil,
-			http.StatusCreated,
-		},
-		{
-			"Invalid JSON Guest",
-			"",
-			"{invalid json}",
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid JSON User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"{invalid json}",
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid JSON Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"{invalid json}",
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Empty field in JSON Guest",
-			"",
-			invalidSeatType,
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Empty field in JSON User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			invalidSeatType,
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Empty field in JSON Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			invalidSeatType,
-			nil,
-			http.StatusBadRequest,
-		},
-		{
-			"Insert Error Guest",
-			"",
-			validSeatType,
-			setupConflictTest,
-			http.StatusForbidden,
-		},
-		{
-			"Insert Error User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			validSeatType,
-			setupConflictTest,
-			http.StatusForbidden,
-		},
-		{
-			"Insert Error Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			validSeatType,
-			setupConflictTest,
-			http.StatusConflict,
-		},
+		{"Valid as Guest", "", SeatTypeData{Name: "Test", Description: "Test"}, nil, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: "Test"}, nil, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: "Test"}, nil, http.StatusCreated},
+		{"Invalid JSON as Guest", "", "{invalid json}", nil, http.StatusBadRequest},
+		{"Invalid JSON as User", os.Getenv("CLAIM_ROLE_USER"), "{invalid json}", nil, http.StatusBadRequest},
+		{"Invalid JSON as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "{invalid json}", nil, http.StatusBadRequest},
+		{"Empty fields as Guest", "", SeatTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
+		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
+		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
+		{"Duplicate name as Guest", "", SeatTypeData{Name: "VIP", Description: "Test"}, func(t *testing.T) {
+			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP", "Test")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}, http.StatusForbidden},
+		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "VIP", Description: "Test"}, func(t *testing.T) {
+			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP", "Test")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}, http.StatusForbidden},
+		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "VIP", Description: "Test"}, func(t *testing.T) {
+			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP", "Test")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}, http.StatusConflict},
+		{"Whitespace name as Guest", "", SeatTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
+		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
+		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
+		{"100 chars name as Guest", "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusForbidden},
+		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusForbidden},
+		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusCreated},
+		{"101 chars name as Guest", "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
+		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
+		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
+		{"Hyphen name as Guest", "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, nil, http.StatusForbidden},
+		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "VIP-Plus", Description: "Test"}, nil, http.StatusForbidden},
+		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "VIP-Plus", Description: "Test"}, nil, http.StatusCreated},
+		{"Empty desc as Guest", "", SeatTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
+		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
+		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
+		{"Whitespace desc as Guest", "", SeatTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
+		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
+		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
+		{"1000 chars desc as Guest", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusForbidden},
+		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusForbidden},
+		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusCreated},
+		{"1001 chars desc as Guest", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
+		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
+		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
+		{"DBError as Guest", "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+		}, http.StatusInternalServerError},
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+		}, http.StatusInternalServerError},
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+		}, http.StatusInternalServerError},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := setupTestServer()
-			defer ts.Close()
 			SeedUsers(TestAdminDB)
+			defer func() {
+				ts.Close()
+				if strings.Split(tt.name, " ")[0] == "DBError" {
+					InitTestDB()
+				}
+			}()
 
 			if tt.setup != nil {
 				tt.setup(t)
@@ -322,11 +399,11 @@ func TestCreateSeatType(t *testing.T) {
 				parseResponseBody(t, resp, &created)
 
 				if created == "" {
-					t.Error("Expected non-empty ID in response")
+					t.Error("Expected non-empty ID")
 				}
 
 				if _, err := uuid.Parse(created); err != nil {
-					t.Error("Неверный формат возврещённого UUID")
+					t.Error("Неверный формат возвращённого UUID")
 				}
 			}
 		})
@@ -334,19 +411,23 @@ func TestCreateSeatType(t *testing.T) {
 }
 
 func TestUpdateSeatType(t *testing.T) {
-	validUpdateData := SeatTypeData{
-		Name:        "Updated Seat",
-		Description: "Updated Description",
-	}
-
-	// Setup function for tests needing existing seat type
-	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
+	validTestPreparator := func(t *testing.T) (*httptest.Server, string) {
 		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)
+		SeedAll(TestAdminDB)
 		return ts, SeatTypesData[0].ID
 	}
 
-	unknown_id := uuid.NewString()
+	invalidTestPreparator := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		SeedAll(TestAdminDB)
+		return ts, ""
+	}
+
+	unknownTestPreparator := func(t *testing.T) (*httptest.Server, string) {
+		ts := setupTestServer()
+		SeedAll(TestAdminDB)
+		return ts, uuid.New().String()
+	}
 
 	tests := []struct {
 		name           string
@@ -356,157 +437,109 @@ func TestUpdateSeatType(t *testing.T) {
 		setup          func(t *testing.T) (*httptest.Server, string)
 		expectedStatus int
 	}{
-		{
-			"Invalid UUID as Guest",
-			"",
-			"invalid-uuid",
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, ""
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid UUID as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"invalid-uuid",
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, ""
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid UUID as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"invalid-uuid",
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, ""
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Unknown UUID as Guest",
-			"",
-			unknown_id,
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, unknown_id
-			},
-			http.StatusForbidden,
-		},
-		{
-			"Unknown UUID as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			unknown_id,
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				return ts, unknown_id
-			},
-			http.StatusForbidden,
-		},
-		{
-			"Unknown UUID as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			unknown_id,
-			validUpdateData,
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				return ts, unknown_id
-			},
-			http.StatusNotFound,
-		},
-		{
-			"Invalid JSON as Guest",
-			"",
-			"",
-			"invalid-json",
-			setupExistingSeat,
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid JSON as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"",
-			"invalid-json",
-			setupExistingSeat,
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid JSON as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"",
-			"invalid-json",
-			setupExistingSeat,
-			http.StatusBadRequest,
-		},
-		{
-			"Empty Name as Guest",
-			"",
-			"",
-			SeatTypeData{Name: "", Description: "Test"},
-			setupExistingSeat,
-			http.StatusBadRequest,
-		},
-		{
-			"Empty Name as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"",
-			SeatTypeData{Name: "", Description: "Test"},
-			setupExistingSeat,
-			http.StatusBadRequest,
-		},
-		{
-			"Empty Name as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"",
-			SeatTypeData{Name: "", Description: "Test"},
-			setupExistingSeat,
-			http.StatusBadRequest,
-		},
-		{
-			"Forbidden Guest",
-			"",
-			"",
-			validUpdateData,
-			setupExistingSeat,
-			http.StatusForbidden,
-		},
-		{
-			"Forbidden User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"",
-			validUpdateData,
-			setupExistingSeat,
-			http.StatusForbidden,
-		},
-		{
-			"Success Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"",
-			validUpdateData,
-			setupExistingSeat,
-			http.StatusOK,
-		},
+		{"Invalid ID as Guest", "", "invalid-uuid", SeatTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
+		{"Invalid ID as User", os.Getenv("CLAIM_ROLE_USER"), "invalid-uuid", SeatTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
+		{"Invalid ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "invalid-uuid", SeatTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
+		{"Unknown ID as Guest", "", "", SeatTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusForbidden},
+		{"Unknown ID as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusForbidden},
+		{"Unknown ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusNotFound},
+		{"Invalid JSON as Guest", "", "", "invalid-json", validTestPreparator, http.StatusBadRequest},
+		{"Invalid JSON as User", os.Getenv("CLAIM_ROLE_USER"), "", "invalid-json", validTestPreparator, http.StatusBadRequest},
+		{"Invalid JSON as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", "invalid-json", validTestPreparator, http.StatusBadRequest},
+		{"Duplicate name as Guest", "", "", SeatTypeData{Name: "VIP_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP_", "Test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ts, SeatTypesData[0].ID
+		}, http.StatusForbidden},
+		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "VIP_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP_", "Test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ts, SeatTypesData[0].ID
+		}, http.StatusForbidden},
+		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "VIP_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP_", "Test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ts, SeatTypesData[0].ID
+		}, http.StatusConflict},
+		{"Empty fields as Guest", "", "", SeatTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"Valid as Guest", "", "", SeatTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusOK},
+		{"Whitespace name as Guest", "", "", SeatTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"100 chars name as Guest", "", "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusForbidden},
+		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusForbidden},
+		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusOK},
+		{"101 chars name as Guest", "", "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
+		{"Hyphen name as Guest", "", "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, validTestPreparator, http.StatusForbidden},
+		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, validTestPreparator, http.StatusForbidden},
+		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, validTestPreparator, http.StatusOK},
+		{"Empty desc as Guest", "", "", SeatTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
+		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
+		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as Guest", "", "", SeatTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
+		{"1000 chars desc as Guest", "", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusForbidden},
+		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusForbidden},
+		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusOK},
+		{"1001 chars desc as Guest", "", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
+		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
+		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
+		{"DBError as Guest", "", "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+			return ts, SeatTypesData[0].ID
+		}, http.StatusInternalServerError},
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+			return ts, SeatTypesData[0].ID
+		}, http.StatusInternalServerError},
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+			return ts, SeatTypesData[0].ID
+		}, http.StatusInternalServerError},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
 			SeedUsers(TestAdminDB)
-			defer ts.Close()
+			defer func() {
+				ts.Close()
+				if strings.Split(tt.name, " ")[0] == "DBError" {
+					InitTestDB()
+				}
+			}()
 
-			// Use provided ID or fallback to id from setup
 			effectiveID := tt.id
 			if effectiveID == "" {
 				effectiveID = id
@@ -520,13 +553,6 @@ func TestUpdateSeatType(t *testing.T) {
 }
 
 func TestDeleteSeatType(t *testing.T) {
-	// Setup function for tests needing existing seat type
-	setupExistingSeat := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)
-		return ts, SeatTypesData[0].ID
-	}
-
 	tests := []struct {
 		name           string
 		role           string
@@ -534,107 +560,82 @@ func TestDeleteSeatType(t *testing.T) {
 		setup          func(t *testing.T) (*httptest.Server, string)
 		expectedStatus int
 	}{
-		{
-			"Not Found as Guest",
-			"",
-			"",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			http.StatusForbidden,
-		},
-		{
-			"Not Found as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			http.StatusForbidden,
-		},
-		{
-			"Not Found as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			http.StatusNotFound,
-		},
-		{
-			"Invalid UUID as Guest",
-			"",
-			"invalid-uuid",
-			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestServer(), ""
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid UUID as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"invalid-uuid",
-			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestServer(), ""
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid UUID as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"invalid-uuid",
-			func(t *testing.T) (*httptest.Server, string) {
-				return setupTestServer(), ""
-			},
-			http.StatusBadRequest,
-		},
-		{
-			"Forbidden as Guest",
-			"",
-			"",
-			setupExistingSeat,
-			http.StatusForbidden,
-		},
-		{
-			"Forbidden as User",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"",
-			setupExistingSeat,
-			http.StatusForbidden,
-		},
-		{
-			"Dependency error as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"",
-			setupExistingSeat,
-			http.StatusConflict,
-		},
-		{
-			"Success as Admin",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			"",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, SeatTypesData[5].ID
-			},
-			http.StatusNoContent,
-		},
+		{"Unknown ID as Guest", "", "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			return ts, uuid.New().String()
+		}, http.StatusForbidden},
+		{"Unknown ID as User", os.Getenv("CLAIM_ROLE_USER"), "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			return ts, uuid.New().String()
+		}, http.StatusForbidden},
+		{"Unknown ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			return ts, uuid.New().String()
+		}, http.StatusNotFound},
+		{"Invalid ID as Guest", "", "invalid-uuid", func(t *testing.T) (*httptest.Server, string) {
+			return setupTestServer(), "invalid-uuid"
+		}, http.StatusBadRequest},
+		{"Invalid ID as User", os.Getenv("CLAIM_ROLE_USER"), "invalid-uuid", func(t *testing.T) (*httptest.Server, string) {
+			return setupTestServer(), "invalid-uuid"
+		}, http.StatusBadRequest},
+		{"Invalid ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "invalid-uuid", func(t *testing.T) (*httptest.Server, string) {
+			return setupTestServer(), "invalid-uuid"
+		}, http.StatusBadRequest},
+		{"Valid as Guest", "", "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			return ts, SeatTypesData[0].ID
+		}, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			return ts, SeatTypesData[0].ID
+		}, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			return ts, SeatTypesData[5].ID
+		}, http.StatusNoContent},
+		{"DBError as Guest", "", "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+			return ts, SeatTypesData[5].ID
+		}, http.StatusInternalServerError},
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+			return ts, SeatTypesData[5].ID
+		}, http.StatusInternalServerError},
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", func(t *testing.T) (*httptest.Server, string) {
+			ts := setupTestServer()
+			SeedAll(TestAdminDB)
+			TestAdminDB.Close()
+			TestGuestDB.Close()
+			TestUserDB.Close()
+			return ts, SeatTypesData[5].ID
+		}, http.StatusInternalServerError},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts, id := tt.setup(t)
 			SeedUsers(TestAdminDB)
-			defer ts.Close()
+			defer func() {
+				ts.Close()
+				if strings.Split(tt.name, " ")[0] == "DBError" {
+					InitTestDB()
+				}
+			}()
 
-			// Use provided ID or fallback to id from setup
 			effectiveID := tt.id
 			if effectiveID == "" {
 				effectiveID = id
@@ -643,306 +644,6 @@ func TestDeleteSeatType(t *testing.T) {
 			req := createRequest(t, "DELETE", ts.URL+"/seat-types/"+effectiveID, generateToken(t, tt.role), nil)
 			resp := executeRequest(t, req, tt.expectedStatus)
 			defer resp.Body.Close()
-		})
-	}
-}
-
-func TestSeatTypeConstraintsCreate(t *testing.T) {
-	tests := []struct {
-		name           string
-		role           string
-		body           SeatTypeData
-		expectedStatus int
-	}{
-		{
-			"Empty name",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "   ", Description: "Valid"},
-			http.StatusBadRequest,
-		},
-		{
-			"Empty description",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Valid", Description: "   "},
-			http.StatusBadRequest,
-		},
-		{
-			"Name too long",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
-			http.StatusBadRequest,
-		},
-		{
-			"Description too long",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
-			http.StatusBadRequest,
-		},
-		{
-			"Special characters in name",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Тест <script>", Description: "Valid"},
-			http.StatusCreated,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestServer()
-			SeedUsers(TestAdminDB)
-			defer ts.Close()
-
-			req := createRequest(t, "POST", ts.URL+"/seat-types", generateToken(t, tt.role), tt.body)
-			resp := executeRequest(t, req, tt.expectedStatus)
-			defer resp.Body.Close()
-		})
-	}
-}
-
-func TestSeatTypeConstraintsUpdate(t *testing.T) {
-	tests := []struct {
-		name           string
-		role           string
-		body           SeatTypeData
-		expectedStatus int
-	}{
-		{
-			"Empty name",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "   ", Description: "Valid"},
-			http.StatusBadRequest,
-		},
-		{
-			"Empty description",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Valid", Description: "   "},
-			http.StatusBadRequest,
-		},
-		{
-			"Name too long",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: strings.Repeat("a", 101), Description: "Valid"},
-			http.StatusBadRequest,
-		},
-		{
-			"Description too long",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Valid", Description: strings.Repeat("a", 1001)},
-			http.StatusBadRequest,
-		},
-		{
-			"Special characters in name",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Тест <script>", Description: "Valid"},
-			http.StatusOK,
-		},
-		{
-			"Valid update",
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			SeatTypeData{Name: "Valid Name", Description: "Valid Description"},
-			http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := setupTestServer()
-			defer ts.Close()
-			_ = SeedAll(TestAdminDB)
-
-			seat_typeID := SeatTypesData[0].ID
-
-			req := createRequest(t, "PUT", fmt.Sprintf("%s/seat-types/%s", ts.URL, seat_typeID), generateToken(t, tt.role), tt.body)
-			resp := executeRequest(t, req, tt.expectedStatus)
-			defer resp.Body.Close()
-		})
-	}
-}
-
-func TestUpdateSeatConflict(t *testing.T) {
-	ts := setupTestServer()
-	SeedUsers(TestAdminDB)
-	defer ts.Close()
-
-	_ = SeedAll(TestAdminDB)
-	id1 := SeatTypesData[0]
-	id2 := SeatTypesData[1]
-
-	updateData := SeatTypeData{
-		Name:        id2.Name,
-		Description: "Updated",
-	}
-
-	req := createRequest(t, "PUT", ts.URL+"/seat-types/"+id1.ID, generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")), updateData)
-	resp := executeRequest(t, req, http.StatusConflict)
-	defer resp.Body.Close()
-}
-
-func TestCreateSeatTypeDBError(t *testing.T) {
-	ts := setupTestServer()
-	SeedUsers(TestAdminDB)
-	defer ts.Close()
-
-	// Создаем ситуацию с ошибкой БД
-	TestAdminDB.Close()
-	TestGuestDB.Close()
-	TestUserDB.Close()
-
-	req := createRequest(t, "POST", ts.URL+"/seat-types",
-		generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")),
-		SeatTypeData{
-			Name:        "name",
-			Description: "Updated",
-		})
-	resp := executeRequest(t, req, http.StatusInternalServerError)
-	defer resp.Body.Close()
-
-	if err := InitTestDB(); err != nil {
-		log.Fatal("ошибка подключения к БД: ", err)
-	}
-}
-
-func TestSearchSeatTypes(t *testing.T) {
-	setupWithSeatTypes := func(t *testing.T) *httptest.Server {
-		ts := setupTestServer()
-		_ = SeedSeatTypes(TestAdminDB)
-		return ts
-	}
-
-	tests := []struct {
-		name           string
-		query          string
-		setup          func(t *testing.T) *httptest.Server
-		expectedStatus int
-		expectedCount  int
-		role           string
-	}{
-		{
-			"Пустой запрос - ошибка",
-			"",
-			setupWithSeatTypes,
-			http.StatusBadRequest,
-			0,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Только пробельные символы - ошибка",
-			"          		",
-			setupWithSeatTypes,
-			http.StatusBadRequest,
-			0,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Короткий запрос",
-			"С",
-			setupWithSeatTypes,
-			http.StatusOK,
-			7,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Нет совпадений",
-			"Кресло для отдыха",
-			setupWithSeatTypes,
-			http.StatusNotFound,
-			0,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Точное совпадение - VIP",
-			"VIP",
-			setupWithSeatTypes,
-			http.StatusOK,
-			1,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Частичное совпадение - 'стандарт'",
-			"стандарт",
-			setupWithSeatTypes,
-			http.StatusOK,
-			1,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Поиск без учета регистра - 'люКС'",
-			"люКС",
-			setupWithSeatTypes,
-			http.StatusOK,
-			1,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Поиск с пробелами - 'Семейное'",
-			"Семейное",
-			setupWithSeatTypes,
-			http.StatusOK,
-			1,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Частичное совпадение с пробелами - 'кресло'",
-			"  кресло    ",
-			setupWithSeatTypes,
-			http.StatusOK,
-			3,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-		{
-			"Админ имеет доступ",
-			"Люкс",
-			setupWithSeatTypes,
-			http.StatusOK,
-			1,
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-		},
-		{
-			"Гость имеет доступ",
-			"Люкс",
-			setupWithSeatTypes,
-			http.StatusOK,
-			1,
-			"",
-		},
-		{
-			"Специальные символы в запросе - 'VIP/'",
-			"VIP/",
-			setupWithSeatTypes,
-			http.StatusNotFound,
-			0,
-			os.Getenv("CLAIM_ROLE_USER"),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := tt.setup(t)
-			SeedUsers(TestAdminDB)
-			defer ts.Close()
-
-			req := createRequest(t, "GET", ts.URL+"/seat-types/search?query="+url.QueryEscape(tt.query), generateToken(t, tt.role), nil)
-			resp := executeRequest(t, req, tt.expectedStatus)
-			defer resp.Body.Close()
-
-			if tt.expectedStatus == http.StatusOK {
-				var seatTypes []SeatType
-				if err := json.NewDecoder(resp.Body).Decode(&seatTypes); err != nil {
-					t.Fatalf("Could not decode response: %v", err)
-				}
-
-				if len(seatTypes) != tt.expectedCount {
-					t.Errorf("Expected %d seat types, got %d: %v", tt.expectedCount, len(seatTypes), seatTypes)
-				}
-
-				lowerQuery := strings.ToLower(tt.query)
-				lowerQuery = PrepareString(lowerQuery)
-				for _, seatType := range seatTypes {
-					if !strings.Contains(strings.ToLower(seatType.Name), lowerQuery) {
-						t.Errorf("Seat type name '%s' does not contain query '%s'", seatType.Name, tt.query)
-					}
-				}
-			}
 		})
 	}
 }

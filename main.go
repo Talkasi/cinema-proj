@@ -229,6 +229,8 @@ func validRoleClaim(db *pgxpool.Pool, userID string, claimed_is_admin bool) (boo
 
 func Midleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// println(r.Method, r.RequestURI)
+
 		tokenString := r.Header.Get("Authorization")
 		if tokenString != "" {
 			claims := &Claims{}
