@@ -45,9 +45,6 @@ definitions:
     type: object
   main.Hall:
     properties:
-      capacity:
-        example: 150
-        type: integer
       description:
         example: Комфортабельный зал с современным оборудованием
         type: string
@@ -63,9 +60,6 @@ definitions:
     type: object
   main.HallData:
     properties:
-      capacity:
-        example: 150
-        type: integer
       description:
         example: Комфортабельный зал с современным оборудованием
         type: string
@@ -332,6 +326,15 @@ definitions:
         example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
         type: string
     type: object
+  main.TicketStatusData:
+    properties:
+      reserve:
+        example: true
+        type: boolean
+      user_id:
+        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        type: string
+    type: object
   main.TicketStatusEnumType:
     enum:
     - Purchased
@@ -353,12 +356,21 @@ definitions:
       id:
         example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
         type: string
-      is_blocked:
-        example: false
+      is_admin:
+        example: true
         type: boolean
       name:
         example: Иван Иванов
         type: string
+      password_hash:
+        example: "93652657623450"
+        type: string
+    type: object
+  main.UserAdmin:
+    properties:
+      is_admin:
+        example: true
+        type: boolean
     type: object
   main.UserData:
     properties:
@@ -371,14 +383,17 @@ definitions:
       name:
         example: Иван Иванов
         type: string
+      password_hash:
+        example: "93652657623450"
+        type: string
     type: object
   main.UserLogin:
     properties:
       email:
-        example: ivan@example.com
+        example: admin@admin.com
         type: string
       password_hash:
-        example: hashed_password
+        example: $2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C
         type: string
     type: object
   main.UserRegister:
@@ -1445,7 +1460,7 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить все отзывы
+      summary: Получить все отзывы (admin)
       tags:
       - Отзывы
     post:
@@ -1480,7 +1495,7 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать отзыв (user | admin)
+      summary: Создать отзыв (user* | admin)
       tags:
       - Отзывы
   /reviews/{id}:
@@ -1543,9 +1558,7 @@ paths:
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Получить отзыв по ID
+      summary: Получить отзыв по ID (guset | user | admin)
       tags:
       - Отзывы
     put:
@@ -2214,36 +2227,6 @@ paths:
       summary: Удалить билет (admin)
       tags:
       - Билеты
-    get:
-      description: Возвращает билет по ID.
-      parameters:
-      - description: ID билета
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Билет
-          schema:
-            $ref: '#/definitions/main.Ticket'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Билет не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить билет по ID (guest | user | admin) ПОДУМАТЬ
-      tags:
-      - Билеты
     put:
       consumes:
       - application/json
@@ -2269,6 +2252,10 @@ paths:
           description: Неверный формат JSON
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "404":
           description: Билет не найден
           schema:
@@ -2279,7 +2266,45 @@ paths:
             $ref: '#/definitions/main.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить билет (user | admin)
+      summary: Обновить билет (admin)
+      tags:
+      - Билеты
+  /tickets/available-movie-show/{movie_show_id}:
+    get:
+      description: Возвращает список свободные билетов по ID сеанса, содержащихся
+        в базе данных.
+      parameters:
+      - description: ID показа фильма
+        in: path
+        name: movie_show_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Ticket'
+            type: array
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Билеты не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Получить свободные билеты для сеанса фильма по ID (guest | user | admin)
       tags:
       - Билеты
   /tickets/movie-show/{movie_show_id}:
@@ -2301,12 +2326,68 @@ paths:
             items:
               $ref: '#/definitions/main.Ticket'
             type: array
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Билеты не найдены
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
             $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все билеты для сеанса фильма по ID (guest | user | admin)
-        ПОДУМАТЬ
+      security:
+      - BearerAuth: []
+      summary: Получить все билеты для сеанса фильма по ID (admin)
+      tags:
+      - Билеты
+  /tickets/reserve/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Бронирует пользователю билет по ID.
+      parameters:
+      - description: ID билета
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные для бронирования билета
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/main.TicketStatusData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Билет успешно забронирован
+        "400":
+          description: Неверный формат JSON
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Билет не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Забронировать билет (user* | admin)
       tags:
       - Билеты
   /tickets/user/{user_id}:
@@ -2326,6 +2407,14 @@ paths:
             items:
               $ref: '#/definitions/main.Ticket'
             type: array
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
         "500":
           description: Ошибка
           schema:
@@ -2333,6 +2422,120 @@ paths:
       summary: Получить билеты пользователя (user* | admin)
       tags:
       - Билеты
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает nickname по ID пользователя.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Nickname пользователя
+          schema:
+            type: string
+        "400":
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Получить nickname по ID пользователя (guest | user | admin)
+      tags:
+      - Пользователи
+  /user/admin-status/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статус администратора для пользователя по ID.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статус администрации для пользователя
+          schema:
+            $ref: '#/definitions/main.UserAdmin'
+        "400":
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить статус администратора для пользователя (admin)
+      tags:
+      - Пользователи
+    put:
+      consumes:
+      - application/json
+      description: Изменяет статус администратора для пользователя по ID.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Статус администратора
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserAdmin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статус администрации для пользователя успешно обновлён
+        "400":
+          description: В запросе предоставлены неверные данные
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "403":
+          description: Доступ запрещён
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Изменить статус администратора для пользователя (admin)
+      tags:
+      - Пользователи
   /user/login:
     post:
       consumes:
@@ -2430,7 +2633,7 @@ paths:
       - Пользователи
   /users/{id}:
     delete:
-      description: Удаляет пользователя по ID
+      description: Удаляет пользователя по ID.
       parameters:
       - description: ID пользователя
         in: path
@@ -2462,7 +2665,7 @@ paths:
       tags:
       - Пользователи
     get:
-      description: Возвращает пользователя по ID
+      description: Возвращает пользователя по ID.
       parameters:
       - description: ID пользователя
         in: path
@@ -2496,7 +2699,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Обновляет данные пользователя
+      description: Обновляет данные пользователя.
       parameters:
       - description: ID пользователя
         in: path

@@ -40,6 +40,11 @@ func validateAllMovieData(w http.ResponseWriter, m MovieData) bool {
 		return false
 	}
 
+	if err := validateReleaseDate(m.ReleaseDate); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
 	return true
 }
 
@@ -91,10 +96,17 @@ func validateMovieAgeLimit(ageLimit int) error {
 	return nil
 }
 
-func validateMovieRevenue(revenue float64) error {
-	if revenue < 0 {
-		return errors.New("кассовые сборы не могут быть отрицательными")
+func validateReleaseDate(date string) error {
+	parsedDate, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return errors.New("неверный формат даты, используйте YYYY-MM-DD")
 	}
+
+	minReleaseDate := time.Date(1895, 03, 22, 0, 0, 0, 0, time.Now().Location())
+	if parsedDate.Before(minReleaseDate) {
+		return errors.New("дата рождения не может быть более 100 лет назад")
+	}
+
 	return nil
 }
 
@@ -196,12 +208,14 @@ func GetMovies(db *pgxpool.Pool) http.HandlerFunc {
 		defer rows.Close()
 
 		var movies []Movie
+		var releaseDate time.Time
 		for rows.Next() {
 			var m Movie
-			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
+			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &releaseDate); err != nil {
 				http.Error(w, fmt.Sprintf("Ошибка при сканировании фильма %v", err), http.StatusInternalServerError)
 				return
 			}
+			m.ReleaseDate = releaseDate.Format("2006-01-02")
 
 			genres, err := fetchGenresByMovieID(db, m.ID)
 			if err != nil {
@@ -250,13 +264,15 @@ func GetMovieByID(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var m Movie
+		var releaseDate time.Time
 		err := db.QueryRow(context.Background(), `
 			SELECT id, title, duration, description, age_limit, box_office_revenue, release_date
 			FROM movies WHERE id = $1`, id).
-			Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
+			Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &releaseDate)
 		if IsError(w, err) {
 			return
 		}
+		m.ReleaseDate = releaseDate.Format("2006-01-02")
 
 		err = db.QueryRow(context.Background(), `
 			SELECT AVG(rating)
@@ -467,12 +483,14 @@ func SearchMovies(db *pgxpool.Pool) http.HandlerFunc {
 		defer rows.Close()
 
 		var movies []Movie
+		var release_date time.Time
 		for rows.Next() {
 			var m Movie
-			err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate)
+			err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description, &m.AgeLimit, &m.BoxOfficeRevenue, &release_date)
 			if IsError(w, err) {
 				return
 			}
+			m.ReleaseDate = release_date.Format("2006-01-02")
 
 			genres, err := fetchGenresByMovieID(db, m.ID)
 			if IsError(w, err) {
@@ -547,13 +565,15 @@ func GetMoviesByAllGenres(db *pgxpool.Pool) http.HandlerFunc {
 		defer rows.Close()
 
 		var movies []Movie
+		var release_date time.Time
 		for rows.Next() {
 			var m Movie
 			if err := rows.Scan(&m.ID, &m.Title, &m.Duration, &m.Description,
-				&m.AgeLimit, &m.BoxOfficeRevenue, &m.ReleaseDate); err != nil {
+				&m.AgeLimit, &m.BoxOfficeRevenue, &release_date); err != nil {
 				http.Error(w, "Ошибка при сканировании фильма", http.StatusInternalServerError)
 				return
 			}
+			m.ReleaseDate = release_date.Format("2006-01-02")
 
 			genres, err := fetchGenresByMovieID(db, m.ID)
 			if err != nil {

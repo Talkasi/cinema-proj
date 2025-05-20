@@ -111,9 +111,11 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("PUT /seat-types/{id}", Midleware(RoleBasedHandler(UpdateSeatType)))
 	mux.HandleFunc("DELETE /seat-types/{id}", Midleware(RoleBasedHandler(DeleteSeatType)))
 
+	mux.HandleFunc("GET /tickets/available-movie-show/{movie_show_id}", Midleware(RoleBasedHandler(GetAvailableTicketsByMovieShowID)))
+	mux.HandleFunc("PUT /tickets/reserve/{id}", Midleware(RoleBasedHandler(ReserveOrReturnReservedTicket)))
 	mux.HandleFunc("GET /tickets/movie-show/{movie_show_id}", Midleware(RoleBasedHandler(GetTicketsByMovieShowID)))
 	mux.HandleFunc("GET /tickets/user/{user_id}", Midleware(RoleBasedHandler(GetTicketsByUserID)))
-	mux.HandleFunc("GET /tickets/{id}", Midleware(RoleBasedHandler(GetTicketByID)))
+	// mux.HandleFunc("GET /tickets/{id}", Midleware(RoleBasedHandler(GetTicketByID)))
 	mux.HandleFunc("POST /tickets", Midleware(RoleBasedHandler(CreateTicket)))
 	mux.HandleFunc("PUT /tickets/{id}", Midleware(RoleBasedHandler(UpdateTicket)))
 	mux.HandleFunc("DELETE /tickets/{id}", Midleware(RoleBasedHandler(DeleteTicket)))
@@ -123,6 +125,9 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("GET /users", Midleware(RoleBasedHandler(GetUsers)))
 	mux.HandleFunc("GET /users/{id}", Midleware(RoleBasedHandler(GetUserByID)))
 	mux.HandleFunc("PUT /users/{id}", Midleware(RoleBasedHandler(UpdateUser)))
+	mux.HandleFunc("GET /user/{id}", Midleware(RoleBasedHandler(GetUserNickname)))
+	mux.HandleFunc("GET /user/admin-status/{id}", Midleware(RoleBasedHandler(GetAdminStatusUser)))
+	mux.HandleFunc("PUT /user/admin-status/{id}", Midleware(RoleBasedHandler(UpdateAdminStatusUser)))
 	mux.HandleFunc("DELETE /users/{id}", Midleware(RoleBasedHandler(DeleteUser)))
 
 	return mux

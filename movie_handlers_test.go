@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -182,7 +181,7 @@ func TestCreateMovie(t *testing.T) {
 		Duration:    "01:30:00", // Пример корректной продолжительности
 		Description: "Test Description",
 		AgeLimit:    12,
-		ReleaseDate: time.Now(),
+		ReleaseDate: "2020-12-12",
 		GenreIDs:    validGenresIds,
 	}
 
@@ -238,77 +237,77 @@ func TestCreateMovie(t *testing.T) {
 		{
 			"Empty title",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid duration",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "00:00:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "00:00:00", Description: "Valid", AgeLimit: 12, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Empty description",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "", AgeLimit: 12, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Invalid age limit",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 10, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 10, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Valid age limit (0)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 0, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 0, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (6)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 6, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 6, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (12)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (16)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Valid age limit (18)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 18, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 18, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
 		{
 			"Invalid age limit (19)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 19, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 19, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusBadRequest,
 		},
 		{
 			"Valid box office revenue (positive)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: time.Now(), GenreIDs: validGenresIds},
+			MovieData{Title: "Valid", Duration: "01:30:00", Description: "Valid", AgeLimit: 12, ReleaseDate: "2020-12-12", GenreIDs: validGenresIds},
 			nil,
 			http.StatusCreated,
 		},
@@ -387,7 +386,7 @@ func TestUpdateMovie(t *testing.T) {
 		Duration:    "01:30:00",
 		Description: "Updated Description",
 		AgeLimit:    16,
-		ReleaseDate: time.Now(),
+		ReleaseDate: "2020-12-12",
 		GenreIDs:    []string{},
 	}
 
@@ -475,7 +474,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Empty title as Guest",
 			"",
 			"",
-			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
+			MovieData{Title: "", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: "2020-12-12"},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -483,7 +482,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Invalid duration as Admin",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
-			MovieData{Title: "Valid Title", Duration: "invalid-duration", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "invalid-duration", Description: "Valid", AgeLimit: 16, ReleaseDate: "2020-12-12"},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -491,7 +490,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Invalid age limit as Admin",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 99, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 99, ReleaseDate: "2020-12-12"},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -507,7 +506,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Title with only spaces",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
-			MovieData{Title: "   ", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
+			MovieData{Title: "   ", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: "2020-12-12"},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -515,7 +514,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Description too long (1001 chars)",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: strings.Repeat("a", 1001), AgeLimit: 16, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: strings.Repeat("a", 1001), AgeLimit: 16, ReleaseDate: "2020-12-12"},
 			setupExistingMovieWithGenresID,
 			http.StatusBadRequest,
 		},
@@ -523,7 +522,7 @@ func TestUpdateMovie(t *testing.T) {
 			"Valid update with future release date",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
 			"",
-			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: time.Now()},
+			MovieData{Title: "Valid Title", Duration: "01:30:00", Description: "Valid", AgeLimit: 16, ReleaseDate: "2020-12-12"},
 			setupExistingMovieWithGenresID,
 			http.StatusOK,
 		},
@@ -704,7 +703,7 @@ func TestCreateMovieDBError(t *testing.T) {
 		Description: "Updated Description",
 		AgeLimit:    16,
 
-		ReleaseDate: time.Now(), // Завтра
+		ReleaseDate: "2020-12-12", // Завтра
 		GenreIDs:    []string{"genre1", "genre2"},
 	}
 

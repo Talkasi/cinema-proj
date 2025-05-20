@@ -70,7 +70,7 @@ func validateReviewComment(comment string) error {
 	return nil
 }
 
-// @Summary Получить все отзывы
+// @Summary Получить все отзывы (admin)
 // @Description Возвращает список всех отзывов, хранящихся в базе данных.
 // @Tags Отзывы
 // @Produce json
@@ -86,6 +86,12 @@ func GetReviews(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 		defer rows.Close()
+
+		role := r.Header.Get("Role")
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
 
 		var reviews []Review
 		for rows.Next() {
@@ -105,11 +111,10 @@ func GetReviews(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить отзыв по ID
+// @Summary Получить отзыв по ID (guset | user | admin)
 // @Description Возвращает отзыв по ID.
 // @Tags Отзывы
 // @Produce json
-// @Security BearerAuth
 // @Param id path string true "ID отзыва"
 // @Success 200 {object} Review "Отзыв"
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"

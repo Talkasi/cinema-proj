@@ -113,7 +113,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		rows, err := db.Query(context.Background(),
-			"SELECT id, name, email, birth_date, is_admin FROM users")
+			"SELECT id, name, email, birth_date, password_hash, is_admin FROM users")
 		if HandleDatabaseError(w, err, "пользователями") {
 			return
 		}
@@ -123,7 +123,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 		var birthDate time.Time
 		for rows.Next() {
 			var u User
-			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
+			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.PasswordHash, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
 				return
 			}
 			u.BirthDate = birthDate.Format("2006-01-02")
@@ -140,7 +140,7 @@ func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Получить пользователя по ID (user* | admin)
-// @Description Возвращает пользователя по ID
+// @Description Возвращает пользователя по ID.
 // @Tags Пользователи
 // @Produce json
 // @Security BearerAuth
@@ -167,8 +167,8 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 		var u User
 		var birthDate time.Time
 		err := db.QueryRow(context.Background(),
-			"SELECT id, name, email, birth_date, is_admin FROM users WHERE id = $1", id).
-			Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.IsAdmin)
+			"SELECT id, name, email, birth_date, password_hash FROM users WHERE id = $1", id).
+			Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.PasswordHash)
 		u.BirthDate = birthDate.Format("2006-01-02")
 
 		if IsError(w, err) {
@@ -180,7 +180,7 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Обновить пользователя (user* | admin)
-// @Description Обновляет данные пользователя
+// @Description Обновляет данные пользователя.
 // @Tags Пользователи
 // @Accept json
 // @Produce json
@@ -217,8 +217,8 @@ func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE users SET name=$1, email=$2, birth_date=$3 WHERE id=$4",
-			u.Name, u.Email, u.BirthDate, id)
+			"UPDATE users SET name=$1, email=$2, birth_date=$3, password_hash=$4 WHERE id=$5",
+			u.Name, u.Email, u.BirthDate, u.PasswordHash, id)
 
 		if IsError(w, err) {
 			return
@@ -232,8 +232,130 @@ func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
+// @Summary Получить nickname по ID пользователя (guest | user | admin)
+// @Description Возвращает nickname по ID пользователя.
+// @Tags Пользователи
+// @Accept json
+// @Produce json
+// @Param id path string true "ID пользователя"
+// @Success 200 {string} Nickname "Nickname пользователя"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 404 {object} ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /user/{id} [get]
+func GetUserNickname(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
+			return
+		}
+
+		var Nickname string
+		err := db.QueryRow(context.Background(),
+			"SELECT name FROM users WHERE id = $1", id).
+			Scan(&Nickname)
+
+		if IsError(w, err) {
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(Nickname)
+	}
+}
+
+// @Summary Изменить статус администратора для пользователя (admin)
+// @Description Изменяет статус администратора для пользователя по ID.
+// @Tags Пользователи
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID пользователя"
+// @Param user body UserAdmin true "Статус администратора"
+// @Success 200 "Статус администрации для пользователя успешно обновлён"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /user/admin-status/{id} [put]
+func UpdateAdminStatusUser(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
+			return
+		}
+
+		var u UserAdmin
+		if !DecodeJSONBody(w, r, &u) {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		user_id := r.Header.Get("UserID")
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") || (role == os.Getenv("CLAIM_ROLE_ADMIN") && id.String() == user_id) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
+		res, err := db.Exec(context.Background(),
+			"UPDATE users SET is_admin=$1 WHERE id=$2",
+			u.IsAdmin, id)
+
+		if IsError(w, err) {
+			return
+		}
+
+		if !CheckRowsAffected(w, res.RowsAffected()) {
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// @Summary Получить статус администратора для пользователя (admin)
+// @Description Возвращает статус администратора для пользователя по ID.
+// @Tags Пользователи
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID пользователя"
+// @Success 200 {object} UserAdmin "Статус администрации для пользователя"
+// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// @Router /user/admin-status/{id} [get]
+func GetAdminStatusUser(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
+		var u UserAdmin
+
+		err := db.QueryRow(context.Background(),
+			"SELECT is_admin FROM users WHERE id = $1", id).
+			Scan(&u.IsAdmin)
+
+		if IsError(w, err) {
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(u)
+	}
+}
+
 // @Summary Удалить пользователя (admin)
-// @Description Удаляет пользователя по ID
+// @Description Удаляет пользователя по ID.
 // @Tags Пользователи
 // @Param id path string true "ID пользователя"
 // @Security BearerAuth
@@ -247,6 +369,12 @@ func DeleteUser(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
+			return
+		}
+
+		user_id := r.Header.Get("UserID")
+		if id.String() == user_id {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 

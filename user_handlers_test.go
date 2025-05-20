@@ -440,7 +440,7 @@ func TestDeleteUser(t *testing.T) {
 			func(t *testing.T) (*httptest.Server, string) {
 				ts := setupTestServer()
 				_ = SeedAll(TestAdminDB)
-				return ts, UsersData[len(UsersData)-2].ID
+				return ts, UsersData[len(UsersData)-3].ID
 			},
 			http.StatusNoContent,
 		},
