@@ -1594,7 +1594,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить все отзывы",
+                "summary": "Получить все отзывы (admin)",
                 "responses": {
                     "200": {
                         "description": "Список отзывов",
@@ -1635,7 +1635,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Создать отзыв (user | admin)",
+                "summary": "Создать отзыв (user* | admin)",
                 "parameters": [
                     {
                         "description": "Данные отзыва",
@@ -1677,11 +1677,6 @@ const docTemplate = `{
         },
         "/reviews/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает отзыв по ID.",
                 "produces": [
                     "application/json"
@@ -1689,7 +1684,7 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить отзыв по ID",
+                "summary": "Получить отзыв по ID (guset | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2755,16 +2750,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/tickets/movie-show/{movie_show_id}": {
+        "/tickets/available-movie-show/{movie_show_id}": {
             "get": {
-                "description": "Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.",
+                "description": "Возвращает список свободные билетов по ID сеанса, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить все билеты для сеанса фильма по ID (guest | user | admin) ПОДУМАТЬ",
+                "summary": "Получить свободные билеты для сеанса фильма по ID (guest | user | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2784,8 +2779,154 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Билеты не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/movie-show/{movie_show_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Билеты"
+                ],
+                "summary": "Получить все билеты для сеанса фильма по ID (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID показа фильма",
+                        "name": "movie_show_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Ticket"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Билеты не найдены",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/reserve/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Бронирует пользователю билет по ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Билеты"
+                ],
+                "summary": "Забронировать билет (user* | admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID билета",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные для бронирования билета",
+                        "name": "ticket",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.TicketStatusData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Билет успешно забронирован"
+                    },
+                    "400": {
+                        "description": "Неверный формат JSON",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Билет не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2821,6 +2962,18 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Ошибка",
                         "schema": {
@@ -2831,51 +2984,6 @@ const docTemplate = `{
             }
         },
         "/tickets/{id}": {
-            "get": {
-                "description": "Возвращает билет по ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Билеты"
-                ],
-                "summary": "Получить билет по ID (guest | user | admin) ПОДУМАТЬ",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID билета",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Билет",
-                        "schema": {
-                            "$ref": "#/definitions/main.Ticket"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Билет не найден",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "put": {
                 "security": [
                     {
@@ -2892,7 +3000,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Обновить билет (user | admin)",
+                "summary": "Обновить билет (admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -2917,6 +3025,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Неверный формат JSON",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2973,6 +3087,132 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Билет не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/admin-status/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает статус администратора для пользователя по ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Получить статус администратора для пользователя (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Статус администрации для пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/main.UserAdmin"
+                        }
+                    },
+                    "400": {
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Изменяет статус администратора для пользователя по ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Изменить статус администратора для пользователя (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Статус администратора",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.UserAdmin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Статус администрации для пользователя успешно обновлён"
+                    },
+                    "400": {
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3087,6 +3327,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/{id}": {
+            "get": {
+                "description": "Возвращает nickname по ID пользователя.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Получить nickname по ID пользователя (guest | user | admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Nickname пользователя",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "В запросе предоставлены неверные данные",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -3140,7 +3430,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает пользователя по ID",
+                "description": "Возвращает пользователя по ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -3190,7 +3480,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет данные пользователя",
+                "description": "Обновляет данные пользователя.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3255,7 +3545,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет пользователя по ID",
+                "description": "Удаляет пользователя по ID.",
                 "tags": [
                     "Пользователи"
                 ],
@@ -3421,10 +3711,6 @@ const docTemplate = `{
         "main.Hall": {
             "type": "object",
             "properties": {
-                "capacity": {
-                    "type": "integer",
-                    "example": 150
-                },
                 "description": {
                     "type": "string",
                     "example": "Комфортабельный зал с современным оборудованием"
@@ -3446,10 +3732,6 @@ const docTemplate = `{
         "main.HallData": {
             "type": "object",
             "properties": {
-                "capacity": {
-                    "type": "integer",
-                    "example": 150
-                },
                 "description": {
                     "type": "string",
                     "example": "Комфортабельный зал с современным оборудованием"
@@ -3829,6 +4111,19 @@ const docTemplate = `{
                 }
             }
         },
+        "main.TicketStatusData": {
+            "type": "object",
+            "properties": {
+                "reserve": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+                }
+            }
+        },
         "main.TicketStatusEnumType": {
             "type": "string",
             "enum": [
@@ -3857,13 +4152,26 @@ const docTemplate = `{
                     "type": "string",
                     "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
                 },
-                "is_blocked": {
+                "is_admin": {
                     "type": "boolean",
-                    "example": false
+                    "example": true
                 },
                 "name": {
                     "type": "string",
                     "example": "Иван Иванов"
+                },
+                "password_hash": {
+                    "type": "string",
+                    "example": "93652657623450"
+                }
+            }
+        },
+        "main.UserAdmin": {
+            "type": "object",
+            "properties": {
+                "is_admin": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -3881,6 +4189,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Иван Иванов"
+                },
+                "password_hash": {
+                    "type": "string",
+                    "example": "93652657623450"
                 }
             }
         },
@@ -3889,11 +4201,11 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "ivan@example.com"
+                    "example": "admin@admin.com"
                 },
                 "password_hash": {
                     "type": "string",
-                    "example": "hashed_password"
+                    "example": "$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C"
                 }
             }
         },

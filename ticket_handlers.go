@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -41,18 +42,28 @@ func validateTicketStatus(status TicketStatusEnumType) error {
 	return nil
 }
 
-// @Summary Получить все билеты для сеанса фильма по ID (guest | user | admin) ПОДУМАТЬ
+// @Summary Получить все билеты для сеанса фильма по ID (admin)
 // @Description Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.
 // @Tags Билеты
 // @Produce json
+// @Security BearerAuth
 // @Param movie_show_id path string true "ID показа фильма"
 // @Success 200 {array} Ticket
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Билеты не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /tickets/movie-show/{movie_show_id} [get]
 func GetTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		movieShowID, ok := ParseUUIDFromPath(w, r.PathValue("movie_show_id"))
 		if !ok {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 
@@ -82,32 +93,76 @@ func GetTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Получить билет по ID (guest | user | admin) ПОДУМАТЬ
-// @Description Возвращает билет по ID.
+// @Summary Получить свободные билеты для сеанса фильма по ID (guest | user | admin)
+// @Description Возвращает список свободные билетов по ID сеанса, содержащихся в базе данных.
 // @Tags Билеты
 // @Produce json
-// @Param id path string true "ID билета"
-// @Success 200 {object} Ticket "Билет"
+// @Param movie_show_id path string true "ID показа фильма"
+// @Success 200 {array} Ticket
 // @Failure 400 {object} ErrorResponse "Неверный формат ID"
-// @Failure 404 {object} ErrorResponse "Билет не найден"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Билеты не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
-// @Router /tickets/{id} [get]
-func GetTicketByID(db *pgxpool.Pool) http.HandlerFunc {
+// @Router /tickets/available-movie-show/{movie_show_id} [get]
+func GetAvailableTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		movieShowID, ok := ParseUUIDFromPath(w, r.PathValue("movie_show_id"))
 		if !ok {
 			return
 		}
-		var t Ticket
-		err := db.QueryRow(context.Background(), "SELECT id, movie_show_id, seat_id, ticket_status, price, user_id FROM tickets WHERE id = $1", id).
-			Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.Status, &t.Price, &t.UserID)
 
-		if IsError(w, err) {
+		rows, err := db.Query(context.Background(), `
+			SELECT t.id, t.movie_show_id, t.seat_id, t.price
+			FROM tickets t
+			WHERE t.movie_show_id = $1 AND t.ticket_status = 'Available'`, movieShowID)
+		if HandleDatabaseError(w, err, "билетами") {
 			return
 		}
-		json.NewEncoder(w).Encode(t)
+		defer rows.Close()
+
+		var tickets []Ticket
+		for rows.Next() {
+			var t Ticket
+			if err := rows.Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.Price); HandleDatabaseError(w, err, "билетом") {
+				return
+			}
+			tickets = append(tickets, t)
+		}
+
+		if len(tickets) == 0 {
+			http.Error(w, "Билеты не найдены", http.StatusNotFound)
+		}
+
+		json.NewEncoder(w).Encode(tickets)
 	}
 }
+
+// // @Summary Получить билет по ID (guest | user | admin) ПОДУМАТЬ
+// // @Description Возвращает билет по ID.
+// // @Tags Билеты
+// // @Produce json
+// // @Param id path string true "ID билета"
+// // @Success 200 {object} Ticket "Билет"
+// // @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// // @Failure 404 {object} ErrorResponse "Билет не найден"
+// // @Failure 500 {object} ErrorResponse "Ошибка сервера"
+// // @Router /tickets/{id} [get]
+// func GetTicketByID(db *pgxpool.Pool) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+// 		if !ok {
+// 			return
+// 		}
+// 		var t Ticket
+// 		err := db.QueryRow(context.Background(), "SELECT id, movie_show_id, seat_id, ticket_status, price, user_id FROM tickets WHERE id = $1", id).
+// 			Scan(&t.ID, &t.MovieShowID, &t.SeatID, &t.Status, &t.Price, &t.UserID)
+
+// 		if IsError(w, err) {
+// 			return
+// 		}
+// 		json.NewEncoder(w).Encode(t)
+// 	}
+// }
 
 // @Summary Создать билет (admin)
 // @Description Создаёт новый билет.
@@ -144,7 +199,7 @@ func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Обновить билет (user | admin)
+// @Summary Обновить билет (admin)
 // @Description Обновляет существующий билет.
 // @Tags Билеты
 // @Accept json
@@ -153,14 +208,21 @@ func CreateTicket(db *pgxpool.Pool) http.HandlerFunc {
 // @Param id path string true "ID билета"
 // @Param ticket body TicketData true "Обновлённые данные билета"
 // @Success 200 "Данные о билете успешно обновлены"
-// @Failure 404 {object} ErrorResponse "Билет не найден"
 // @Failure 400 {object} ErrorResponse "Неверный формат JSON"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 404 {object} ErrorResponse "Билет не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка"
 // @Router /tickets/{id} [put]
 func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
 		if !ok {
+			return
+		}
+
+		role := r.Header.Get("Role")
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
 			return
 		}
 
@@ -175,6 +237,71 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 
 		res, err := db.Exec(context.Background(), "UPDATE tickets SET movie_show_id=$1, seat_id=$2, ticket_status=$3, price=$4, user_id=$5 WHERE id=$6",
 			t.MovieShowID, t.SeatID, t.Status, t.Price, t.UserID, id)
+		if IsError(w, err) {
+			return
+		}
+
+		if !CheckRowsAffected(w, res.RowsAffected()) {
+			return
+		}
+		json.NewEncoder(w)
+	}
+}
+
+// @Summary Забронировать билет (user* | admin)
+// @Description Бронирует пользователю билет по ID.
+// @Tags Билеты
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID билета"
+// @Param ticket body TicketStatusData true "Данные для бронирования билета"
+// @Success 200 "Билет успешно забронирован"
+// @Failure 400 {object} ErrorResponse "Неверный формат JSON"
+// @Failure 404 {object} ErrorResponse "Билет не найден"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
+// @Failure 500 {object} ErrorResponse "Ошибка"
+// @Router /tickets/reserve/{id} [put]
+func ReserveOrReturnReservedTicket(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
+		if !ok {
+			return
+		}
+
+		var t TicketStatusData
+		if !DecodeJSONBody(w, r, &t) {
+			return
+		}
+
+		if _, err := uuid.Parse(t.UserID); err != nil {
+			http.Error(w, "Неверный формат ID пользователя", http.StatusBadRequest)
+			return
+		}
+
+		var prev_ticket_status string
+		err := db.QueryRow(context.Background(), "SELECT ticket_status FROM tickets WHERE id = $1", id).
+			Scan(&prev_ticket_status)
+		if err != nil {
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+
+		role := r.Header.Get("Role")
+		token_user_id := r.Header.Get("UserID")
+		if (role != os.Getenv("CLAIM_ROLE_ADMIN")) && (token_user_id != t.UserID || prev_ticket_status == string(Purchased)) {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
+		var res pgconn.CommandTag
+		if t.Reserve {
+			res, err = db.Exec(context.Background(), "UPDATE tickets SET ticket_status=$1, user_id=$2 WHERE id=$3",
+				Reserved, t.UserID, id)
+		} else {
+			res, err = db.Exec(context.Background(), "UPDATE tickets SET ticket_status=$1, user_id=$2 WHERE id=$3",
+				Available, nil, id)
+		}
 		if IsError(w, err) {
 			return
 		}
@@ -219,8 +346,11 @@ func DeleteTicket(db *pgxpool.Pool) http.HandlerFunc {
 // @Summary Получить билеты пользователя (user* | admin)
 // @Tags Билеты
 // @Produce json
+// @Security BearerAuth
 // @Param user_id path string true "ID пользователя"
 // @Success 200 {array} Ticket
+// @Failure 400 {object} ErrorResponse "Неверный формат ID"
+// @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка"
 // @Router /tickets/user/{user_id} [get]
 func GetTicketsByUserID(db *pgxpool.Pool) http.HandlerFunc {

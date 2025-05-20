@@ -88,7 +88,7 @@ var MoviesData = []Movie{
 		Description:      "Фантастический эпос о путешествии группы исследователей, которые используют недавно обнаруженный червоточину, чтобы обойти ограничения космических путешествий человека и покорить огромные расстояния на межзвёздном корабле.",
 		AgeLimit:         12,
 		BoxOfficeRevenue: 701.7,
-		ReleaseDate:      MustParseTime("2014-11-06"),
+		ReleaseDate:      "2014-11-06",
 	},
 	{
 		ID:               uuid.New().String(),
@@ -97,7 +97,7 @@ var MoviesData = []Movie{
 		Description:      "Криминальный триллер о технологии проникновения в сны и краже идей из подсознания.",
 		AgeLimit:         12,
 		BoxOfficeRevenue: 836.8,
-		ReleaseDate:      MustParseTime("2010-07-16"),
+		ReleaseDate:      "2010-07-16",
 	},
 	{
 		ID:               uuid.New().String(),
@@ -106,7 +106,7 @@ var MoviesData = []Movie{
 		Description:      "Шпионский боевик о секретной технологии инверсии времени, которая может предотвратить Третью мировую войну.",
 		AgeLimit:         16,
 		BoxOfficeRevenue: 363.7,
-		ReleaseDate:      MustParseTime("2020-08-26"),
+		ReleaseDate:      "2020-08-26",
 	},
 	{
 		ID:               uuid.New().String(),
@@ -115,7 +115,7 @@ var MoviesData = []Movie{
 		Description:      "Бэтмен, Джокер и Харви Дент вступают в смертельную схватку за душу Готэма.",
 		AgeLimit:         16,
 		BoxOfficeRevenue: 1004.6,
-		ReleaseDate:      MustParseTime("2008-07-18"),
+		ReleaseDate:      "2008-07-18",
 	},
 	{
 		ID:               uuid.New().String(),
@@ -124,7 +124,7 @@ var MoviesData = []Movie{
 		Description:      "История дружбы афроамериканского пианиста и его итальянского водителя во время турне по югу США в 1960-х.",
 		AgeLimit:         12,
 		BoxOfficeRevenue: 321.7,
-		ReleaseDate:      MustParseTime("2018-11-21"),
+		ReleaseDate:      "2018-11-21",
 	},
 	{
 		ID:               uuid.New().String(),
@@ -133,7 +133,7 @@ var MoviesData = []Movie{
 		Description:      "История дружбы",
 		AgeLimit:         12,
 		BoxOfficeRevenue: 321.7,
-		ReleaseDate:      MustParseTime("2018-11-21"),
+		ReleaseDate:      "2018-11-21",
 	},
 }
 

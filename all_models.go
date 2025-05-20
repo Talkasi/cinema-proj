@@ -49,24 +49,24 @@ type GenreData struct {
 }
 
 type MovieData struct {
-	Title       string    `json:"title" example:"Властелин колец"`
-	Duration    string    `json:"duration" example:"02:58:00"`
-	Description string    `json:"description" example:"Эпическая история о кольце власти."`
-	AgeLimit    int       `json:"age_limit" example:"12"`
-	ReleaseDate time.Time `json:"release_date" example:"2001-12-19"`
-	GenreIDs    []string  `json:"genre_ids" example:"[\"f297eeaf-e784-43bf-a068-eef84f75baa4\", \"c5c8e037-a073-4105-9941-21e1cb4e79dd\"]"`
+	Title       string   `json:"title" example:"Властелин колец"`
+	Duration    string   `json:"duration" example:"02:58:00"`
+	Description string   `json:"description" example:"Эпическая история о кольце власти."`
+	AgeLimit    int      `json:"age_limit" example:"12"`
+	ReleaseDate string   `json:"release_date" example:"2001-12-19"`
+	GenreIDs    []string `json:"genre_ids" example:"[\"f297eeaf-e784-43bf-a068-eef84f75baa4\", \"c5c8e037-a073-4105-9941-21e1cb4e79dd\"]"`
 }
 
 type Movie struct {
-	ID               string    `json:"id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`
-	Title            string    `json:"title" example:"Властелин колец"`
-	Duration         string    `json:"duration" example:"02:58:00"`
-	Rating           *float64  `json:"rating,omitempty" example:"8.8"`
-	Description      string    `json:"description" example:"Эпическая история о кольце власти."`
-	AgeLimit         int       `json:"age_limit" example:"12"`
-	BoxOfficeRevenue float64   `json:"box_office_revenue" example:"300000000"`
-	ReleaseDate      time.Time `json:"release_date" example:"2001-12-19"`
-	Genres           []Genre   `json:"genres"`
+	ID               string   `json:"id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`
+	Title            string   `json:"title" example:"Властелин колец"`
+	Duration         string   `json:"duration" example:"02:58:00"`
+	Rating           *float64 `json:"rating,omitempty" example:"8.8"`
+	Description      string   `json:"description" example:"Эпическая история о кольце власти."`
+	AgeLimit         int      `json:"age_limit" example:"12"`
+	BoxOfficeRevenue float64  `json:"box_office_revenue" example:"300000000"`
+	ReleaseDate      string   `json:"release_date" example:"2001-12-19"`
+	Genres           []Genre  `json:"genres"`
 }
 
 type Hall struct {
@@ -125,6 +125,11 @@ type TicketData struct {
 	Price       float64              `json:"price" example:"800"`
 }
 
+type TicketStatusData struct {
+	UserID  string `json:"user_id,omitempty" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
+	Reserve bool   `json:"reserve" example:"true"`
+}
+
 type Seat struct {
 	ID         string `json:"id" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
 	HallID     string `json:"hall_id" example:"de01f085-dffa-4347-88da-168560207511"`
@@ -155,20 +160,25 @@ type User struct {
 	ID           string `json:"id" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
 	Name         string `json:"name" example:"Иван Иванов"`
 	Email        string `json:"email" example:"ivan@example.com"`
-	PasswordHash string `json:"-"`
+	PasswordHash string `json:"password_hash" example:"93652657623450"`
 	BirthDate    string `json:"birth_date" example:"1990-01-01"`
-	IsAdmin      bool   `json:"-"`
+	IsAdmin      bool   `json:"is_admin,omitempty" example:"true"`
 }
 
 type UserData struct {
-	Name      string `json:"name" example:"Иван Иванов"`
-	Email     string `json:"email" example:"ivan@example.com"`
-	BirthDate string `json:"birth_date" example:"1990-01-01"`
+	Name         string `json:"name" example:"Иван Иванов"`
+	Email        string `json:"email" example:"ivan@example.com"`
+	PasswordHash string `json:"password_hash" example:"93652657623450"`
+	BirthDate    string `json:"birth_date" example:"1990-01-01"`
 }
 
 type UserLogin struct {
-	Email        string `json:"email" example:"ivan@example.com"`
-	PasswordHash string `json:"password_hash" example:"hashed_password"`
+	Email        string `json:"email" example:"admin@admin.com"`
+	PasswordHash string `json:"password_hash" example:"$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C"`
+}
+
+type UserAdmin struct {
+	IsAdmin bool `json:"is_admin" example:"true"`
 }
 
 type UserRegister struct {
