@@ -11,6 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func validateAllSeatTypeAdmin(w http.ResponseWriter, s SeatTypeAdmin) bool {
+	s.Name = PrepareString(s.Name)
+	s.Description = PrepareString(s.Description)
+
+	if err := validateSeatTypeName(s.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+	if err := validateSeatTypeDescription(s.Description); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if s.PriceModifier <= 0 {
+		http.Error(w, "Наценка должна быть положительной", http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
 func validateAllSeatTypeData(w http.ResponseWriter, s SeatTypeData) bool {
 	s.Name = PrepareString(s.Name)
 	s.Description = PrepareString(s.Description)
@@ -117,7 +138,7 @@ func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param seat_type body SeatTypeData true "Данные типа места"
+// @Param seat_type body SeatTypeAdmin true "Данные типа места"
 // @Success 201 {object} CreateResponse "ID созданного типа места"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -125,18 +146,18 @@ func GetSeatTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Router /seat-types [post]
 func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var s SeatTypeData
+		var s SeatTypeAdmin
 		if !DecodeJSONBody(w, r, &s) {
 			return
 		}
-		if !validateAllSeatTypeData(w, s) {
+		if !validateAllSeatTypeAdmin(w, s) {
 			return
 		}
 
 		id := uuid.New()
 		_, err := db.Exec(context.Background(),
-			"INSERT INTO seat_types (id, name, description) VALUES ($1, $2, $3)",
-			id, s.Name, s.Description)
+			"INSERT INTO seat_types (id, name, description, price_modifier) VALUES ($1, $2, $3, $4)",
+			id, s.Name, s.Description, s.PriceModifier)
 
 		if IsError(w, err) {
 			return
@@ -154,7 +175,7 @@ func CreateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID типа места"
-// @Param seat_type body SeatTypeData true "Обновлённые данные типа места"
+// @Param seat_type body SeatTypeAdmin true "Обновлённые данные типа места"
 // @Success 200 "Данные о типе места успешно обновлены"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -168,17 +189,17 @@ func UpdateSeatType(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var s SeatTypeData
+		var s SeatTypeAdmin
 		if !DecodeJSONBody(w, r, &s) {
 			return
 		}
-		if !validateAllSeatTypeData(w, s) {
+		if !validateAllSeatTypeAdmin(w, s) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE seat_types SET name=$1, description=$2 WHERE id=$3",
-			s.Name, s.Description, id)
+			"UPDATE seat_types SET name=$1, description=$2, price_modifier=$3 WHERE id=$4",
+			s.Name, s.Description, s.PriceModifier, id)
 
 		if IsError(w, err) {
 			return

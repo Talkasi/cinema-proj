@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     birth_date DATE NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
-    CONSTRAINT valid_name CHECK (name ~ '^[A-Za-zА-Яа-яЁё\s-]+$' AND name ~ '\S'),
+    CONSTRAINT valid_name CHECK (name ~ '\S'),
     CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
     CONSTRAINT valid_birth_date CHECK (birth_date <= CURRENT_DATE AND birth_date >= CURRENT_DATE - INTERVAL '100 years')
 );
@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS screen_types (
     CONSTRAINT valid_name CHECK (name ~ '\S'),
     CONSTRAINT valid_description CHECK (description ~ '\S')
 );
+
+ALTER TABLE screen_types ADD COLUMN price_modifier DECIMAL(3,2) 
+DEFAULT 1.0 CHECK (price_modifier > 0);
 
 CREATE TABLE IF NOT EXISTS halls (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -117,6 +120,9 @@ CREATE TABLE IF NOT EXISTS seat_types (
     CONSTRAINT valid_description CHECK (description ~ '\S')
 );
 
+ALTER TABLE seat_types ADD COLUMN price_modifier DECIMAL(3,2) 
+DEFAULT 1.0 CHECK (price_modifier > 0);
+
 CREATE TABLE IF NOT EXISTS seats (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     hall_id UUID REFERENCES halls(id),
@@ -180,3 +186,44 @@ CREATE TABLE IF NOT EXISTS reviews (
     CONSTRAINT unique_review UNIQUE (user_id, movie_id),
     CONSTRAINT valid_review_comment CHECK (review_comment IS NULL OR review_comment ~ '\S')
 );
+
+CREATE OR REPLACE FUNCTION create_movie_show_with_tickets(
+    p_movie_id UUID,
+    p_hall_id UUID,
+    p_start_time TIMESTAMP,
+    p_language language_enum,
+    p_base_price DECIMAL(10,2))
+RETURNS UUID AS $$
+DECLARE
+    v_show_id UUID;
+    v_screen_modifier DECIMAL(5,2);
+    v_seat RECORD;
+    v_price DECIMAL(10,2);
+BEGIN
+    INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language)
+    VALUES (uuid_generate_v4(), p_movie_id, p_hall_id, p_start_time, p_language)
+    RETURNING id INTO v_show_id;
+
+    SELECT st.price_modifier INTO v_screen_modifier
+    FROM screen_types st
+    JOIN halls h ON st.id = h.screen_type_id
+    WHERE h.id = p_hall_id;
+
+    FOR v_seat IN (
+        SELECT s.id, st.price_modifier as seat_modifier
+        FROM seats s
+        JOIN seat_types st ON s.seat_type_id = st.id
+        WHERE s.hall_id = p_hall_id
+    ) LOOP
+        v_price := ROUND(p_base_price * v_screen_modifier * v_seat.seat_modifier, 2);
+        
+        INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status, price)
+        VALUES (uuid_generate_v4(), v_show_id, v_seat.id, 'Available', v_price);
+    END LOOP;
+
+    RETURN v_show_id;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Ошибка при создании сеанса: %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;

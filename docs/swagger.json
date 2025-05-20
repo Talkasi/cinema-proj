@@ -775,7 +775,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый киносеанс.",
+                "description": "Создаёт новый киносеанс (а также билеты на него)",
                 "consumes": [
                     "application/json"
                 ],
@@ -793,7 +793,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowData"
+                            "$ref": "#/definitions/main.MovieShowAdmin"
                         }
                     }
                 ],
@@ -806,18 +806,6 @@
                     },
                     "400": {
                         "description": "Неверные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при создании киносеанса",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1007,7 +995,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowData"
+                            "$ref": "#/definitions/main.MovieShowAdmin"
                         }
                     }
                 ],
@@ -1887,7 +1875,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenTypeData"
+                            "$ref": "#/definitions/main.ScreenTypeAdmin"
                         }
                     }
                 ],
@@ -2046,7 +2034,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenTypeData"
+                            "$ref": "#/definitions/main.ScreenTypeAdmin"
                         }
                     }
                 ],
@@ -2189,7 +2177,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatTypeData"
+                            "$ref": "#/definitions/main.SeatTypeAdmin"
                         }
                     }
                 ],
@@ -2348,7 +2336,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatTypeData"
+                            "$ref": "#/definitions/main.SeatTypeAdmin"
                         }
                     }
                 ],
@@ -2435,6 +2423,11 @@
         },
         "/seats": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает список всех мест, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -2442,7 +2435,7 @@
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить все места (guest | user | admin)",
+                "summary": "Получить все места (admin)",
                 "responses": {
                     "200": {
                         "description": "Список мест",
@@ -2451,6 +2444,12 @@
                             "items": {
                                 "$ref": "#/definitions/main.Seat"
                             }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -2928,6 +2927,11 @@
         },
         "/tickets/user/{user_id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -3864,9 +3868,13 @@
                 }
             }
         },
-        "main.MovieShowData": {
+        "main.MovieShowAdmin": {
             "type": "object",
             "properties": {
+                "base_price": {
+                    "type": "number",
+                    "example": 300
+                },
                 "hall_id": {
                     "type": "string",
                     "example": "de01f085-dffa-4347-88da-168560207511"
@@ -3952,7 +3960,7 @@
                 }
             }
         },
-        "main.ScreenTypeData": {
+        "main.ScreenTypeAdmin": {
             "type": "object",
             "properties": {
                 "description": {
@@ -3962,6 +3970,10 @@
                 "name": {
                     "type": "string",
                     "example": "IMAX"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "example": 1
                 }
             }
         },
@@ -4028,7 +4040,7 @@
                 }
             }
         },
-        "main.SeatTypeData": {
+        "main.SeatTypeAdmin": {
             "type": "object",
             "properties": {
                 "description": {
@@ -4038,6 +4050,10 @@
                 "name": {
                     "type": "string",
                     "example": "Премиум"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "example": 1
                 }
             }
         },

@@ -115,6 +115,8 @@ func TestMain(m *testing.M) {
 		log.Fatal("ошибка подключения к БД: ", err)
 	}
 
+	// time_all()
+
 	code := m.Run()
 
 	TestAdminDB.Close()
