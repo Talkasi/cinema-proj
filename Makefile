@@ -23,6 +23,7 @@ db-init: db-clean
 	@$(PSQL_CONN) -q -f sql/001_create_app_roles.sql
 	@$(PSQL_CONN) -q -f sql/002_create_main.sql
 	@$(PSQL_CONN) -q -f sql/004_set_app_roles_privileges.sql
+	@$(PSQL_CONN) -q -f sql/006_seed_main.sql
 	@echo "Основная БД готова!"
 
 # Очистка основной БД

@@ -161,8 +161,11 @@ definitions:
         example: "2023-10-01T14:30:00Z"
         type: string
     type: object
-  main.MovieShowData:
+  main.MovieShowAdmin:
     properties:
+      base_price:
+        example: 300
+        type: number
       hall_id:
         example: de01f085-dffa-4347-88da-168560207511
         type: string
@@ -222,7 +225,7 @@ definitions:
         example: IMAX
         type: string
     type: object
-  main.ScreenTypeData:
+  main.ScreenTypeAdmin:
     properties:
       description:
         example: Экран с технологией IMAX для максимального погружения
@@ -230,6 +233,9 @@ definitions:
       name:
         example: IMAX
         type: string
+      price_modifier:
+        example: 1
+        type: number
     type: object
   main.Seat:
     properties:
@@ -276,7 +282,7 @@ definitions:
         example: Премиум
         type: string
     type: object
-  main.SeatTypeData:
+  main.SeatTypeAdmin:
     properties:
       description:
         example: Комфортабельные места с дополнительным пространством и удобствами
@@ -284,6 +290,9 @@ definitions:
       name:
         example: Премиум
         type: string
+      price_modifier:
+        example: 1
+        type: number
     type: object
   main.Ticket:
     properties:
@@ -918,14 +927,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создаёт новый киносеанс.
+      description: Создаёт новый киносеанс (а также билеты на него)
       parameters:
       - description: Данные киносеанса
         in: body
         name: movie_show
         required: true
         schema:
-          $ref: '#/definitions/main.MovieShowData'
+          $ref: '#/definitions/main.MovieShowAdmin'
       produces:
       - application/json
       responses:
@@ -935,14 +944,6 @@ paths:
             $ref: '#/definitions/main.CreateResponse'
         "400":
           description: Неверные данные
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при создании киносеанса
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "500":
@@ -1036,7 +1037,7 @@ paths:
         name: movie_show
         required: true
         schema:
-          $ref: '#/definitions/main.MovieShowData'
+          $ref: '#/definitions/main.MovieShowAdmin'
       produces:
       - application/json
       responses:
@@ -1636,7 +1637,7 @@ paths:
         name: screen_type
         required: true
         schema:
-          $ref: '#/definitions/main.ScreenTypeData'
+          $ref: '#/definitions/main.ScreenTypeAdmin'
       produces:
       - application/json
       responses:
@@ -1739,7 +1740,7 @@ paths:
         name: screen_type
         required: true
         schema:
-          $ref: '#/definitions/main.ScreenTypeData'
+          $ref: '#/definitions/main.ScreenTypeAdmin'
       produces:
       - application/json
       responses:
@@ -1832,7 +1833,7 @@ paths:
         name: seat_type
         required: true
         schema:
-          $ref: '#/definitions/main.SeatTypeData'
+          $ref: '#/definitions/main.SeatTypeAdmin'
       produces:
       - application/json
       responses:
@@ -1935,7 +1936,7 @@ paths:
         name: seat_type
         required: true
         schema:
-          $ref: '#/definitions/main.SeatTypeData'
+          $ref: '#/definitions/main.SeatTypeAdmin'
       produces:
       - application/json
       responses:
@@ -2007,6 +2008,10 @@ paths:
             items:
               $ref: '#/definitions/main.Seat'
             type: array
+        "403":
+          description: Доступ запрещён
+          schema:
+            type: string
         "404":
           description: Места не найдены
           schema:
@@ -2015,7 +2020,9 @@ paths:
           description: Ошибка сервера
           schema:
             type: string
-      summary: Получить все места (guest | user | admin)
+      security:
+      - BearerAuth: []
+      summary: Получить все места (admin)
       tags:
       - Места
     post:
@@ -2419,6 +2426,8 @@ paths:
           description: Ошибка
           schema:
             $ref: '#/definitions/main.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Получить билеты пользователя (user* | admin)
       tags:
       - Билеты

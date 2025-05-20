@@ -37,7 +37,7 @@ func validateAllUserData(w http.ResponseWriter, u UserData) bool {
 }
 
 func validateUserName(name string) error {
-	validNameRegex := regexp.MustCompile(`^[A-Za-zА-Яа-яЁё\s-]+$`)
+	validNameRegex := regexp.MustCompile(`\S`)
 	if !validNameRegex.MatchString(name) {
 		return errors.New("имя пользователя может содержать только буквы, пробелы и дефисы")
 	}

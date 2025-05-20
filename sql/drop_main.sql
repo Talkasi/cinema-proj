@@ -5,6 +5,7 @@ DROP TRIGGER IF EXISTS check_movie_show_conflict_before_insert_or_update ON movi
 -- Удаляем функции
 DROP FUNCTION IF EXISTS update_box_office_revenue();
 DROP FUNCTION IF EXISTS check_movie_show_conflict();
+DROP FUNCTION IF EXISTS create_movie_show_with_tickets;
 
 -- Удаляем таблицы
 DROP TABLE IF EXISTS tickets CASCADE;

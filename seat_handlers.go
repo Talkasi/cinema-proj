@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -63,16 +64,24 @@ func validateSeatNumber(seatNumber int) error {
 	return nil
 }
 
-// @Summary Получить все места (guest | user | admin)
+// @Summary Получить все места (admin)
 // @Description Возвращает список всех мест, содержащихся в базе данных.
 // @Tags Места
 // @Produce json
+// @Security BearerAuth
 // @Success 200 {array} Seat "Список мест"
+// @Failure 403 {string} string "Доступ запрещён"
 // @Failure 404 {string} string "Места не найдены"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats [get]
 func GetSeats(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("Role")
+		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return
+		}
+
 		rows, err := db.Query(context.Background(), `
 			SELECT id, hall_id, seat_type_id, row_number, seat_number 
 			FROM seats`)

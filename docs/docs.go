@@ -783,7 +783,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый киносеанс.",
+                "description": "Создаёт новый киносеанс (а также билеты на него)",
                 "consumes": [
                     "application/json"
                 ],
@@ -801,7 +801,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowData"
+                            "$ref": "#/definitions/main.MovieShowAdmin"
                         }
                     }
                 ],
@@ -814,18 +814,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Неверные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при создании киносеанса",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1015,7 +1003,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowData"
+                            "$ref": "#/definitions/main.MovieShowAdmin"
                         }
                     }
                 ],
@@ -1895,7 +1883,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenTypeData"
+                            "$ref": "#/definitions/main.ScreenTypeAdmin"
                         }
                     }
                 ],
@@ -2054,7 +2042,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenTypeData"
+                            "$ref": "#/definitions/main.ScreenTypeAdmin"
                         }
                     }
                 ],
@@ -2197,7 +2185,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatTypeData"
+                            "$ref": "#/definitions/main.SeatTypeAdmin"
                         }
                     }
                 ],
@@ -2356,7 +2344,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatTypeData"
+                            "$ref": "#/definitions/main.SeatTypeAdmin"
                         }
                     }
                 ],
@@ -2443,6 +2431,11 @@ const docTemplate = `{
         },
         "/seats": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает список всех мест, содержащихся в базе данных.",
                 "produces": [
                     "application/json"
@@ -2450,7 +2443,7 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить все места (guest | user | admin)",
+                "summary": "Получить все места (admin)",
                 "responses": {
                     "200": {
                         "description": "Список мест",
@@ -2459,6 +2452,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/main.Seat"
                             }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещён",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -2936,6 +2935,11 @@ const docTemplate = `{
         },
         "/tickets/user/{user_id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -3872,9 +3876,13 @@ const docTemplate = `{
                 }
             }
         },
-        "main.MovieShowData": {
+        "main.MovieShowAdmin": {
             "type": "object",
             "properties": {
+                "base_price": {
+                    "type": "number",
+                    "example": 300
+                },
                 "hall_id": {
                     "type": "string",
                     "example": "de01f085-dffa-4347-88da-168560207511"
@@ -3960,7 +3968,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.ScreenTypeData": {
+        "main.ScreenTypeAdmin": {
             "type": "object",
             "properties": {
                 "description": {
@@ -3970,6 +3978,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "IMAX"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "example": 1
                 }
             }
         },
@@ -4036,7 +4048,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SeatTypeData": {
+        "main.SeatTypeAdmin": {
             "type": "object",
             "properties": {
                 "description": {
@@ -4046,6 +4058,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Премиум"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "example": 1
                 }
             }
         },
