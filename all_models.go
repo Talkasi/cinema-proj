@@ -93,12 +93,26 @@ type ScreenTypeData struct {
 	Description string `json:"description" example:"Экран с технологией IMAX для максимального погружения"`
 }
 
+type ScreenTypeAdmin struct {
+	Name          string  `json:"name" example:"IMAX"`
+	Description   string  `json:"description" example:"Экран с технологией IMAX для максимального погружения"`
+	PriceModifier float64 `json:"price_modifier" example:"1"`
+}
+
 type MovieShow struct {
 	ID        string           `json:"id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`
 	MovieID   string           `json:"movie_id" example:"1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"`
 	HallID    string           `json:"hall_id" example:"de01f085-dffa-4347-88da-168560207511"`
 	StartTime time.Time        `json:"start_time" example:"2023-10-01T14:30:00Z"`
 	Language  LanguageEnumType `json:"language" example:"Русский"`
+}
+
+type MovieShowAdmin struct {
+	MovieID   string           `json:"movie_id" example:"1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"`
+	HallID    string           `json:"hall_id" example:"de01f085-dffa-4347-88da-168560207511"`
+	StartTime time.Time        `json:"start_time" example:"2023-10-01T14:30:00Z"`
+	Language  LanguageEnumType `json:"language" example:"Русский"`
+	BasePrice float64          `json:"base_price" example:"300"`
 }
 
 type MovieShowData struct {
@@ -154,6 +168,12 @@ type SeatType struct {
 type SeatTypeData struct {
 	Name        string `json:"name" example:"Премиум"`
 	Description string `json:"description" example:"Комфортабельные места с дополнительным пространством и удобствами"`
+}
+
+type SeatTypeAdmin struct {
+	Name          string  `json:"name" example:"Премиум"`
+	Description   string  `json:"description" example:"Комфортабельные места с дополнительным пространством и удобствами"`
+	PriceModifier float64 `json:"price_modifier" example:"1"`
 }
 
 type User struct {

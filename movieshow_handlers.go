@@ -12,6 +12,36 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func validateMovieShowAdmin(w http.ResponseWriter, ms MovieShowAdmin) bool {
+	if _, err := uuid.Parse(ms.MovieID); err != nil {
+		http.Error(w, "Неверный формат ID фильма", http.StatusBadRequest)
+		return false
+	}
+
+	if _, err := uuid.Parse(ms.HallID); err != nil {
+		http.Error(w, "Неверный формат ID зала", http.StatusBadRequest)
+		return false
+	}
+
+	startDate := time.Date(1895, 3, 22, 0, 0, 0, 0, time.UTC)
+	if ms.StartTime.Before(startDate) {
+		http.Error(w, "Время начала киносеанса должно быть позже 22 марта 1895 года (первый в мире киносеанс)", http.StatusBadRequest)
+		return false
+	}
+
+	if !ms.Language.IsValid() {
+		http.Error(w, "Неизвестный язык киносеанса", http.StatusBadRequest)
+		return false
+	}
+
+	if ms.BasePrice <= 0 {
+		http.Error(w, "Начальная цена должна быть положительной", http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
 func validateMovieShowData(w http.ResponseWriter, ms MovieShowData) bool {
 	if _, err := uuid.Parse(ms.MovieID); err != nil {
 		http.Error(w, "Неверный формат ID фильма", http.StatusBadRequest)
@@ -104,40 +134,35 @@ func GetMovieShowByID(db *pgxpool.Pool) http.HandlerFunc {
 }
 
 // @Summary Создать киносеанс (admin)
-// @Description Создаёт новый киносеанс.
+// @Description Создаёт новый киносеанс (а также билеты на него)
 // @Tags Киносеансы
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param movie_show body MovieShowData true "Данные киносеанса"
+// @Param movie_show body MovieShowAdmin true "Данные киносеанса"
 // @Success 201 {object} CreateResponse "ID созданного киносеанса"
 // @Failure 400 {object} ErrorResponse "Неверные данные"
-// @Failure 403 {object} ErrorResponse "Доступ запрещён"
-// @Failure 409 {object} ErrorResponse "Конфликт при создании киносеанса"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /movie-shows [post]
 func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var ms MovieShowData
-		if !DecodeJSONBody(w, r, &ms) {
-			return
-		}
-		id := uuid.New().String()
-
-		if !validateMovieShowData(w, ms) {
+		var ms MovieShowAdmin
+		if !DecodeJSONBody(w, r, &ms) || !validateMovieShowAdmin(w, ms) {
 			return
 		}
 
-		_, err := db.Exec(context.Background(),
-			"INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language) VALUES ($1, $2, $3, $4, $5)",
-			id, ms.MovieID, ms.HallID, ms.StartTime, ms.Language)
+		var showID string
+		err := db.QueryRow(context.Background(),
+			`SELECT create_movie_show_with_tickets($1, $2, $3, $4, $5)`,
+			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, ms.BasePrice,
+		).Scan(&showID)
 
 		if IsError(w, err) {
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(id)
+		json.NewEncoder(w).Encode(showID)
 	}
 }
 
@@ -148,7 +173,7 @@ func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID киносеанса"
-// @Param movie_show body MovieShowData true "Новые данные киносеанса"
+// @Param movie_show body MovieShowAdmin true "Новые данные киносеанса"
 // @Success 200 "Данные киносеанса обновлены"
 // @Failure 400 {object} ErrorResponse "Неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -163,18 +188,18 @@ func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var ms MovieShowData
+		var ms MovieShowAdmin
 		if !DecodeJSONBody(w, r, &ms) {
 			return
 		}
 
-		if !validateMovieShowData(w, ms) {
+		if !validateMovieShowAdmin(w, ms) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4 WHERE id=$5",
-			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, id)
+			"UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4, base_price=$5 WHERE id=$6",
+			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, ms.BasePrice, id)
 
 		if IsError(w, err) {
 			return

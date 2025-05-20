@@ -11,6 +11,28 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+func validateAllScreenTypeAdmin(w http.ResponseWriter, e ScreenTypeAdmin) bool {
+	e.Name = PrepareString(e.Name)
+	e.Description = PrepareString(e.Description)
+
+	if err := validateScreenTypeName(e.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if err := validateScreenTypeDesctiption(e.Description); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	if e.PriceModifier <= 0 {
+		http.Error(w, "Наценка должна быть положительной", http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
 func validateAllScreenTypeData(w http.ResponseWriter, e ScreenTypeData) bool {
 	e.Name = PrepareString(e.Name)
 	e.Description = PrepareString(e.Description)
@@ -121,7 +143,7 @@ func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param screen_type body ScreenTypeData true "Данные типа экрана"
+// @Param screen_type body ScreenTypeAdmin true "Данные типа экрана"
 // @Success 201 {object} CreateResponse "ID созданного типа экрана"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -129,18 +151,18 @@ func GetScreenTypeByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Router /screen-types [post]
 func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var e ScreenTypeData
+		var e ScreenTypeAdmin
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !validateAllScreenTypeData(w, e) {
+		if !validateAllScreenTypeAdmin(w, e) {
 			return
 		}
 
 		id := uuid.New()
 		_, err := db.Exec(context.Background(),
-			"INSERT INTO screen_types (id, name, description) VALUES ($1, $2, $3)",
-			id, e.Name, e.Description)
+			"INSERT INTO screen_types (id, name, description, price_modifier) VALUES ($1, $2, $3, $4)",
+			id, e.Name, e.Description, e.PriceModifier)
 
 		if IsError(w, err) {
 			return
@@ -158,7 +180,7 @@ func CreateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID типа экрана"
-// @Param screen_type body ScreenTypeData true "Обновлённые данные типа экрана"
+// @Param screen_type body ScreenTypeAdmin true "Обновлённые данные типа экрана"
 // @Success 200 "Данные о типе экрана успешно обновлены"
 // @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -172,17 +194,17 @@ func UpdateScreenType(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var e ScreenTypeData
+		var e ScreenTypeAdmin
 		if !DecodeJSONBody(w, r, &e) {
 			return
 		}
-		if !validateAllScreenTypeData(w, e) {
+		if !validateAllScreenTypeAdmin(w, e) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE screen_types SET name=$1, description=$2 WHERE id=$3",
-			e.Name, e.Description, id)
+			"UPDATE screen_types SET name=$1, description=$2, price_modifier=$3 WHERE id=$4",
+			e.Name, e.Description, e.PriceModifier, id)
 
 		if IsError(w, err) {
 			return

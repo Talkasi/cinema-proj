@@ -37,10 +37,6 @@ func main() {
 	defer UserDB.Close()
 	defer GuestDB.Close()
 
-	if err := SeedAll(AdminDB); err != nil {
-		log.Fatal("ошибка вставки данных: ", err)
-	}
-
 	log.Println("Сервер запущен на http://localhost:8080")
 	http.ListenAndServe(":8080", NewRouter())
 }
