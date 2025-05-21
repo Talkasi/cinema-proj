@@ -307,68 +307,68 @@ func TestCreateSeatType(t *testing.T) {
 		setup          func(t *testing.T)
 		expectedStatus int
 	}{
-		{"Valid as Guest", "", SeatTypeData{Name: "Test", Description: "Test"}, nil, http.StatusForbidden},
-		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: "Test"}, nil, http.StatusForbidden},
-		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: "Test"}, nil, http.StatusCreated},
+		{"Valid as Guest", "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, nil, http.StatusCreated},
 		{"Invalid JSON as Guest", "", "{invalid json}", nil, http.StatusBadRequest},
 		{"Invalid JSON as User", os.Getenv("CLAIM_ROLE_USER"), "{invalid json}", nil, http.StatusBadRequest},
 		{"Invalid JSON as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "{invalid json}", nil, http.StatusBadRequest},
-		{"Empty fields as Guest", "", SeatTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Duplicate name as Guest", "", SeatTypeData{Name: "VIP", Description: "Test"}, func(t *testing.T) {
+		{"Empty fields as Guest", "", SeatTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Duplicate name as Guest", "", SeatTypeAdmin{Name: "VIP", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP", "Test")
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, http.StatusForbidden},
-		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "VIP", Description: "Test"}, func(t *testing.T) {
+		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "VIP", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP", "Test")
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, http.StatusForbidden},
-		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "VIP", Description: "Test"}, func(t *testing.T) {
+		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "VIP", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP", "Test")
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, http.StatusConflict},
-		{"Whitespace name as Guest", "", SeatTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
-		{"100 chars name as Guest", "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusForbidden},
-		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusForbidden},
-		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusCreated},
-		{"101 chars name as Guest", "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
-		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
-		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
-		{"Hyphen name as Guest", "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, nil, http.StatusForbidden},
-		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "VIP-Plus", Description: "Test"}, nil, http.StatusForbidden},
-		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "VIP-Plus", Description: "Test"}, nil, http.StatusCreated},
-		{"Empty desc as Guest", "", SeatTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
-		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
-		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
-		{"Whitespace desc as Guest", "", SeatTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
-		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
-		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
-		{"1000 chars desc as Guest", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusForbidden},
-		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusForbidden},
-		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusCreated},
-		{"1001 chars desc as Guest", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
-		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
-		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
-		{"DBError as Guest", "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+		{"Whitespace name as Guest", "", SeatTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"100 chars name as Guest", "", SeatTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, nil, http.StatusCreated},
+		{"101 chars name as Guest", "", SeatTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Hyphen name as Guest", "", SeatTypeAdmin{Name: "VIP-Plus", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "VIP-Plus", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "VIP-Plus", Description: "Test", PriceModifier: 1}, nil, http.StatusCreated},
+		{"Empty desc as Guest", "", SeatTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace desc as Guest", "", SeatTypeAdmin{Name: "Test", Description: "       ", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "Test", Description: "       ", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "Test", Description: "       ", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"1000 chars desc as Guest", "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, nil, http.StatusForbidden},
+		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, nil, http.StatusForbidden},
+		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, nil, http.StatusCreated},
+		{"1001 chars desc as Guest", "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"DBError as Guest", "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			TestAdminDB.Close()
 			TestGuestDB.Close()
 			TestUserDB.Close()
 		}, http.StatusInternalServerError},
-		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			TestAdminDB.Close()
 			TestGuestDB.Close()
 			TestUserDB.Close()
 		}, http.StatusInternalServerError},
-		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			TestAdminDB.Close()
 			TestGuestDB.Close()
 			TestUserDB.Close()
@@ -437,16 +437,16 @@ func TestUpdateSeatType(t *testing.T) {
 		setup          func(t *testing.T) (*httptest.Server, string)
 		expectedStatus int
 	}{
-		{"Invalid ID as Guest", "", "invalid-uuid", SeatTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
-		{"Invalid ID as User", os.Getenv("CLAIM_ROLE_USER"), "invalid-uuid", SeatTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
-		{"Invalid ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "invalid-uuid", SeatTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
-		{"Unknown ID as Guest", "", "", SeatTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusForbidden},
-		{"Unknown ID as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusForbidden},
-		{"Unknown ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusNotFound},
+		{"Invalid ID as Guest", "", "invalid-uuid", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, invalidTestPreparator, http.StatusBadRequest},
+		{"Invalid ID as User", os.Getenv("CLAIM_ROLE_USER"), "invalid-uuid", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, invalidTestPreparator, http.StatusBadRequest},
+		{"Invalid ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "invalid-uuid", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, invalidTestPreparator, http.StatusBadRequest},
+		{"Unknown ID as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, unknownTestPreparator, http.StatusForbidden},
+		{"Unknown ID as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, unknownTestPreparator, http.StatusForbidden},
+		{"Unknown ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, unknownTestPreparator, http.StatusNotFound},
 		{"Invalid JSON as Guest", "", "", "invalid-json", validTestPreparator, http.StatusBadRequest},
 		{"Invalid JSON as User", os.Getenv("CLAIM_ROLE_USER"), "", "invalid-json", validTestPreparator, http.StatusBadRequest},
 		{"Invalid JSON as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", "invalid-json", validTestPreparator, http.StatusBadRequest},
-		{"Duplicate name as Guest", "", "", SeatTypeData{Name: "VIP_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Duplicate name as Guest", "", "", SeatTypeAdmin{Name: "VIP_", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP_", "Test")
@@ -455,7 +455,7 @@ func TestUpdateSeatType(t *testing.T) {
 			}
 			return ts, SeatTypesData[0].ID
 		}, http.StatusForbidden},
-		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "VIP_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "VIP_", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP_", "Test")
@@ -464,7 +464,7 @@ func TestUpdateSeatType(t *testing.T) {
 			}
 			return ts, SeatTypesData[0].ID
 		}, http.StatusForbidden},
-		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "VIP_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "VIP_", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO seat_types (name, description) VALUES ($1, $2)", "VIP_", "Test")
@@ -473,37 +473,37 @@ func TestUpdateSeatType(t *testing.T) {
 			}
 			return ts, SeatTypesData[0].ID
 		}, http.StatusConflict},
-		{"Empty fields as Guest", "", "", SeatTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Valid as Guest", "", "", SeatTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusOK},
-		{"Whitespace name as Guest", "", "", SeatTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"100 chars name as Guest", "", "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusOK},
-		{"101 chars name as Guest", "", "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Hyphen name as Guest", "", "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "VIP-Plus", Description: "Test"}, validTestPreparator, http.StatusOK},
-		{"Empty desc as Guest", "", "", SeatTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
-		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
-		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace desc as Guest", "", "", SeatTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
-		{"1000 chars desc as Guest", "", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusForbidden},
-		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusForbidden},
-		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusOK},
-		{"1001 chars desc as Guest", "", "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
-		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
-		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
-		{"DBError as Guest", "", "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Empty fields as Guest", "", "", SeatTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Valid as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"Whitespace name as Guest", "", "", SeatTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"100 chars name as Guest", "", "", SeatTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"101 chars name as Guest", "", "", SeatTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Hyphen name as Guest", "", "", SeatTypeAdmin{Name: "VIP-Plus", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "VIP-Plus", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "VIP-Plus", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"Empty desc as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: "       ", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: "       ", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: "       ", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"1000 chars desc as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"1001 chars desc as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"DBError as Guest", "", "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			TestAdminDB.Close()
@@ -511,7 +511,7 @@ func TestUpdateSeatType(t *testing.T) {
 			TestUserDB.Close()
 			return ts, SeatTypesData[0].ID
 		}, http.StatusInternalServerError},
-		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			TestAdminDB.Close()
@@ -519,7 +519,7 @@ func TestUpdateSeatType(t *testing.T) {
 			TestUserDB.Close()
 			return ts, SeatTypesData[0].ID
 		}, http.StatusInternalServerError},
-		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", SeatTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			TestAdminDB.Close()

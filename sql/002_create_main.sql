@@ -53,7 +53,6 @@ CREATE TABLE IF NOT EXISTS halls (
     CONSTRAINT valid_name CHECK (
         name ~ '^[a-zA-Zа-яА-Я0-9\s\.\-_#№]+$' AND
         name ~ '\S' AND
-        length(name) > 0 AND
         length(name) <= 100
     ),
     CONSTRAINT valid_description CHECK (description IS NULL OR description ~ '\S')
@@ -107,9 +106,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER check_movie_show_conflict_before_insert_or_update
-BEFORE INSERT OR UPDATE ON movie_shows
+CREATE TRIGGER check_movie_show_on_insert
+BEFORE INSERT ON movie_shows
 FOR EACH ROW
+EXECUTE FUNCTION check_movie_show_conflict();
+
+CREATE TRIGGER check_movie_show_on_update
+BEFORE UPDATE ON movie_shows
+FOR EACH ROW
+WHEN (OLD.start_time IS DISTINCT FROM NEW.start_time)
 EXECUTE FUNCTION check_movie_show_conflict();
 
 CREATE TABLE IF NOT EXISTS seat_types (
@@ -175,6 +180,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_movie_revenue_when_ticket_status_changed
 BEFORE UPDATE ON tickets
 FOR EACH ROW
+WHEN (OLD.ticket_status IS DISTINCT FROM NEW.ticket_status)
 EXECUTE FUNCTION update_box_office_revenue();
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -227,3 +233,35 @@ EXCEPTION
         RAISE EXCEPTION 'Ошибка при создании сеанса: %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE update_movie(
+    p_movie_id UUID,
+    p_title VARCHAR(200),
+    p_duration TIME,
+    p_description VARCHAR(1000),
+    p_age_limit INT,
+    p_release_date DATE,
+    p_genre_ids UUID[]
+) LANGUAGE plpgsql AS $$
+BEGIN
+    -- Обновляем основные данные фильма
+    UPDATE movies 
+    SET 
+        title = p_title,
+        duration = p_duration,
+        description = p_description,
+        age_limit = p_age_limit,
+        release_date = p_release_date
+    WHERE id = p_movie_id;
+    
+    -- Обновляем жанры
+    DELETE FROM movies_genres 
+    WHERE movie_id = p_movie_id 
+    AND genre_id NOT IN (SELECT unnest(p_genre_ids));
+    
+    INSERT INTO movies_genres (movie_id, genre_id)
+    SELECT p_movie_id, genre_id
+    FROM unnest(p_genre_ids) AS genre_id
+    ON CONFLICT (movie_id, genre_id) DO NOTHING;
+END;
+$$;

@@ -1003,7 +1003,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowAdmin"
+                            "$ref": "#/definitions/main.MovieShowData"
                         }
                     }
                 ],
@@ -2873,7 +2873,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Бронирует пользователю билет по ID.",
+                "description": "Бронирует или возвращает билет по ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2883,7 +2883,7 @@ const docTemplate = `{
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Забронировать билет (user* | admin)",
+                "summary": "Изменить статус бронирования билета билет (user* | admin)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3883,6 +3883,31 @@ const docTemplate = `{
                     "type": "number",
                     "example": 300
                 },
+                "hall_id": {
+                    "type": "string",
+                    "example": "de01f085-dffa-4347-88da-168560207511"
+                },
+                "language": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/main.LanguageEnumType"
+                        }
+                    ],
+                    "example": "Русский"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2023-10-01T14:30:00Z"
+                }
+            }
+        },
+        "main.MovieShowData": {
+            "type": "object",
+            "properties": {
                 "hall_id": {
                     "type": "string",
                     "example": "de01f085-dffa-4347-88da-168560207511"

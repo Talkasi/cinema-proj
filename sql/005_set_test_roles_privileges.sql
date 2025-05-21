@@ -23,3 +23,7 @@ GRANT INSERT, UPDATE, DELETE ON reviews TO cinema_test_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cinema_test_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cinema_test_admin;
 GRANT CREATE, USAGE ON SCHEMA public TO cinema_test_admin;
+
+GRANT ALL PRIVILEGES ON TABLE users TO cinema_test_admin;
+ALTER TABLE movie_shows OWNER TO cinema_test_admin;
+ALTER TABLE users OWNER TO cinema_test_admin;

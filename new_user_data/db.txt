@@ -1,0 +1,6 @@
+--- FAIL: Benchmark_db_i
+    user_handlers_test.go:1197: Failed to create index: ERROR: must be owner of table users (SQLSTATE 42501)
+FAIL
+exit status 1
+FAIL	cw	0.024s
+FAIL

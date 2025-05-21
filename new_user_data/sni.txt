@@ -1,0 +1,46 @@
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+Benchmark_s_ni/1_workers-6         	   12829	     97353 ns/op	   28626 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12319	     96027 ns/op	   28616 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12654	     94356 ns/op	   28621 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12836	     94745 ns/op	   28625 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12558	     96374 ns/op	   28608 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   13012	     93970 ns/op	   28666 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   13124	     93679 ns/op	   28619 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12670	     93308 ns/op	   28624 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12808	     93612 ns/op	   28613 B/op	     264 allocs/op
+Benchmark_s_ni/1_workers-6         	   12829	     93829 ns/op	   28612 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   14988	     79350 ns/op	   28640 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   14313	     78485 ns/op	   28618 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15247	     79027 ns/op	   28667 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15327	     78203 ns/op	   28627 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15229	     78799 ns/op	   28619 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15249	     79304 ns/op	   28620 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15333	     79261 ns/op	   28627 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15150	     78879 ns/op	   28649 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   14941	     79278 ns/op	   28622 B/op	     264 allocs/op
+Benchmark_s_ni/2_workers-6         	   15240	     78496 ns/op	   28614 B/op	     264 allocs/op
+Benchmark_s_ni/4_workers-6         	   15244	     78644 ns/op	   28627 B/op	     264 allocs/op
+Benchmark_s_ni/4_workers-6         	   15176	     80290 ns/op	   28640 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   14941	     79645 ns/op	   28633 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   15260	     79837 ns/op	   28628 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   14980	     80944 ns/op	   28681 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   14998	     80166 ns/op	   28627 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   15080	     79470 ns/op	   28619 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   14896	     79404 ns/op	   28620 B/op	     263 allocs/op
+Benchmark_s_ni/4_workers-6         	   14829	     79053 ns/op	   28618 B/op	     264 allocs/op
+Benchmark_s_ni/4_workers-6         	   15104	     79525 ns/op	   28634 B/op	     263 allocs/op
+Benchmark_s_ni/6_workers-6         	   15049	     79769 ns/op	   28672 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   14922	     79936 ns/op	   28682 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   14889	     80558 ns/op	   28673 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   15028	     80435 ns/op	   28689 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   14964	     78631 ns/op	   28677 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   15314	     79127 ns/op	   28669 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   15087	     80111 ns/op	   28695 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   15094	     78931 ns/op	   28677 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   15146	     79537 ns/op	   28689 B/op	     264 allocs/op
+Benchmark_s_ni/6_workers-6         	   15252	     79482 ns/op	   28681 B/op	     264 allocs/op
+PASS
+ok  	cw	99.918s

@@ -1,0 +1,28 @@
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+BenchmarkDBWithConcurrencyNEWServer/10_workers-12         	   27805	     48222 ns/op	   21063 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/10_workers-12         	   23976	     48282 ns/op	   21108 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/200_workers-12        	   18169	     63279 ns/op	   23426 B/op	     236 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/200_workers-12        	   20725	     54117 ns/op	   23183 B/op	     234 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/400_workers-12        	   18397	     69080 ns/op	   25320 B/op	     242 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/400_workers-12        	   17276	     65125 ns/op	   25401 B/op	     242 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/600_workers-12        	   10000	    113905 ns/op	   35266 B/op	     268 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/600_workers-12        	   18590	     92561 ns/op	   29189 B/op	     253 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/800_workers-12        	   10000	    121296 ns/op	   33494 B/op	     265 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/800_workers-12        	    9721	    150694 ns/op	   35475 B/op	     273 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1000_workers-12       	    8215	    145524 ns/op	   35565 B/op	     273 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1000_workers-12       	    9627	    157998 ns/op	   35834 B/op	     275 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1200_workers-12       	    7568	    180716 ns/op	   35882 B/op	     274 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1200_workers-12       	    7672	    171184 ns/op	   38268 B/op	     284 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1400_workers-12       	    5936	    185894 ns/op	   34572 B/op	     277 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1400_workers-12       	    6848	    159977 ns/op	   33918 B/op	     271 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1600_workers-12       	    5298	    233484 ns/op	   35985 B/op	     283 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1600_workers-12       	   12949	    119407 ns/op	   30158 B/op	     264 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1800_workers-12       	    4660	    231366 ns/op	   36846 B/op	     289 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/1800_workers-12       	    5937	    173895 ns/op	   40691 B/op	     292 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/2000_workers-12       	   15048	    190957 ns/op	   37972 B/op	     279 allocs/op
+BenchmarkDBWithConcurrencyNEWServer/2000_workers-12       	   15697	    146903 ns/op	   34367 B/op	     274 allocs/op
+PASS
+ok  	cw	56.633s

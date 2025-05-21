@@ -165,11 +165,11 @@ func TestGetTicketsByMovieShowID(t *testing.T) {
 		role           string
 		expectedStatus int
 	}{
-		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Guest", false, "", http.StatusForbidden},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
 		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
-		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Guest", true, "", http.StatusForbidden},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
 		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 
@@ -195,89 +195,6 @@ func TestGetTicketsByMovieShowID(t *testing.T) {
 
 				if len(tickets) == 0 {
 					t.Error("Expected at least one ticket, got none")
-				}
-			}
-		})
-	}
-}
-
-func TestGetTicketByID(t *testing.T) {
-	setupValidIDTest := func(t *testing.T) (*httptest.Server, string) {
-		ts := setupTestServer()
-		_ = SeedAll(TestAdminDB)
-		return ts, TicketsData[0].ID
-	}
-
-	tests := []struct {
-		name           string
-		setup          func(t *testing.T) (*httptest.Server, string)
-		role           string
-		expectedStatus int
-	}{
-		{
-			"Unknown ID as Guest",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			"",
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID as User",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			os.Getenv("CLAIM_ROLE_USER"),
-			http.StatusNotFound,
-		},
-		{
-			"Unknown ID as Admin",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, uuid.New().String()
-			},
-			os.Getenv("CLAIM_ROLE_ADMIN"),
-			http.StatusNotFound,
-		},
-		{
-			"Invalid ID as Guest",
-			func(t *testing.T) (*httptest.Server, string) {
-				ts := setupTestServer()
-				_ = SeedAll(TestAdminDB)
-				return ts, "invalid-id"
-			},
-			"",
-			http.StatusBadRequest,
-		},
-		{
-			"Valid ID as Guest",
-			setupValidIDTest,
-			"",
-			http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts, id := tt.setup(t)
-			defer ts.Close()
-			SeedUsers(TestAdminDB)
-
-			req := createRequest(t, "GET", ts.URL+"/tickets/"+id, generateToken(t, tt.role), nil)
-			resp := executeRequest(t, req, tt.expectedStatus)
-			defer resp.Body.Close()
-
-			if tt.expectedStatus == http.StatusOK {
-				var ticket Ticket
-				parseResponseBody(t, resp, &ticket)
-
-				if ticket.ID != id {
-					t.Errorf("Expected ID %v; got %v", id, ticket.ID)
 				}
 			}
 		})
@@ -521,7 +438,7 @@ func TestTicketDBError(t *testing.T) {
 	})
 
 	t.Run("Get ticket DB error", func(t *testing.T) {
-		req := createRequest(t, "GET", ts.URL+"/tickets/"+uuid.New().String(),
+		req := createRequest(t, "GET", ts.URL+"/tickets/movie-show/"+uuid.New().String(),
 			generateToken(t, os.Getenv("CLAIM_ROLE_ADMIN")), nil)
 		resp := executeRequest(t, req, http.StatusInternalServerError)
 		defer resp.Body.Close()

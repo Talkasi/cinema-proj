@@ -1,0 +1,17 @@
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+BenchmarkDBWithConcurrencyNEWServerIND/10_workers-12         	   26986	     39643 ns/op	   21389 B/op	     229 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/200_workers-12        	   22738	     44149 ns/op	   22382 B/op	     233 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/400_workers-12        	   21699	     58747 ns/op	   24770 B/op	     240 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/600_workers-12        	   10000	    102701 ns/op	   35552 B/op	     268 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/800_workers-12        	   10000	    124808 ns/op	   36147 B/op	     273 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1000_workers-12       	   10000	    129626 ns/op	   35738 B/op	     274 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1200_workers-12       	   10000	    128064 ns/op	   35258 B/op	     272 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1400_workers-12       	    9104	    154651 ns/op	   36936 B/op	     279 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1600_workers-12       	   19664	    235696 ns/op	   38581 B/op	     282 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1800_workers-12       	   13710	    113049 ns/op	   36165 B/op	     276 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/2000_workers-12       	   21517	    154742 ns/op	   32295 B/op	     264 allocs/op
+PASS
+ok  	cw	42.127s

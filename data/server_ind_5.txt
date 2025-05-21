@@ -1,0 +1,61 @@
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+BenchmarkDBWithConcurrencyNEWServerIND/10_workers-12         	   29067	     43315 ns/op	   21119 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/10_workers-12         	   26035	     46009 ns/op	   21115 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/10_workers-12         	   25712	     45871 ns/op	   21090 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/10_workers-12         	   25948	     45756 ns/op	   21183 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/10_workers-12         	   25593	     45245 ns/op	   21130 B/op	     228 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/200_workers-12        	   23389	     50621 ns/op	   22763 B/op	     234 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/200_workers-12        	   22249	     50803 ns/op	   22867 B/op	     234 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/200_workers-12        	   22459	     52236 ns/op	   22552 B/op	     233 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/200_workers-12        	   22293	     50713 ns/op	   22849 B/op	     234 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/200_workers-12        	   22052	     50335 ns/op	   22501 B/op	     234 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/400_workers-12        	   18982	     61804 ns/op	   25129 B/op	     242 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/400_workers-12        	   17618	     65336 ns/op	   26116 B/op	     243 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/400_workers-12        	   17322	     62914 ns/op	   26478 B/op	     244 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/400_workers-12        	   17046	     62051 ns/op	   25907 B/op	     243 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/400_workers-12        	   17558	     63566 ns/op	   25865 B/op	     244 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/600_workers-12        	   10000	    105740 ns/op	   35283 B/op	     268 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/600_workers-12        	   10000	    125270 ns/op	   35159 B/op	     268 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/600_workers-12        	   10000	    113254 ns/op	   27603 B/op	     243 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/600_workers-12        	   10000	    103613 ns/op	   35670 B/op	     269 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/600_workers-12        	   10000	    127665 ns/op	   35101 B/op	     269 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/800_workers-12        	   10000	    130123 ns/op	   32520 B/op	     265 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/800_workers-12        	   10000	    153132 ns/op	   39334 B/op	     280 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/800_workers-12        	   16032	    108318 ns/op	   33181 B/op	     266 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/800_workers-12        	   10000	    126278 ns/op	   34658 B/op	     263 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/800_workers-12        	   10000	    131383 ns/op	   33279 B/op	     268 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1000_workers-12       	    9968	    129996 ns/op	   34145 B/op	     269 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1000_workers-12       	    5020	    205152 ns/op	   35603 B/op	     280 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1000_workers-12       	   10000	    130992 ns/op	   33100 B/op	     268 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1000_workers-12       	   10000	    135535 ns/op	   35607 B/op	     275 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1000_workers-12       	    6282	    172330 ns/op	   35908 B/op	     279 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1200_workers-12       	    9484	    139255 ns/op	   31336 B/op	     261 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1200_workers-12       	    9183	    157772 ns/op	   39285 B/op	     284 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1200_workers-12       	    8601	    145755 ns/op	   35680 B/op	     272 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1200_workers-12       	    9362	    149979 ns/op	   34437 B/op	     270 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1200_workers-12       	    8558	    152868 ns/op	   35198 B/op	     276 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1400_workers-12       	   17055	    194664 ns/op	   37523 B/op	     278 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1400_workers-12       	   17427	    163036 ns/op	   36259 B/op	     276 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1400_workers-12       	   16527	    155059 ns/op	   36259 B/op	     275 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1400_workers-12       	   16712	    159125 ns/op	   36309 B/op	     276 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1400_workers-12       	   16363	    160971 ns/op	   35056 B/op	     274 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1600_workers-12       	   12468	    128615 ns/op	   36218 B/op	     276 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1600_workers-12       	    7866	    136450 ns/op	   38947 B/op	     282 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1600_workers-12       	    8414	    123828 ns/op	   35230 B/op	     271 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1600_workers-12       	    7831	    132618 ns/op	   35021 B/op	     275 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1600_workers-12       	   13092	    167620 ns/op	   37290 B/op	     279 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1800_workers-12       	   14982	    116837 ns/op	   34905 B/op	     274 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1800_workers-12       	   16789	    155856 ns/op	   36035 B/op	     277 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1800_workers-12       	   17047	    160950 ns/op	   36106 B/op	     277 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1800_workers-12       	   16699	    161732 ns/op	   36481 B/op	     277 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/1800_workers-12       	   15829	    132330 ns/op	   33098 B/op	     269 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/2000_workers-12       	   14216	    117709 ns/op	   36929 B/op	     278 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/2000_workers-12       	   17950	    258603 ns/op	   38078 B/op	     282 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/2000_workers-12       	   11882	     88418 ns/op	   31209 B/op	     265 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/2000_workers-12       	   15542	    151186 ns/op	   36844 B/op	     278 allocs/op
+BenchmarkDBWithConcurrencyNEWServerIND/2000_workers-12       	   16723	    161465 ns/op	   37066 B/op	     278 allocs/op
+PASS
+ok  	cw	142.353s

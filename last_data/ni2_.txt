@@ -1,0 +1,194 @@
+1000000
+2025/05/27 14:00:41 Inserted 0 of 1000000 records
+2025/05/27 14:00:43 Inserted 100000 of 1000000 records
+2025/05/27 14:00:45 Inserted 200000 of 1000000 records
+2025/05/27 14:00:47 Inserted 300000 of 1000000 records
+2025/05/27 14:00:49 Inserted 400000 of 1000000 records
+2025/05/27 14:00:51 Inserted 500000 of 1000000 records
+2025/05/27 14:00:53 Inserted 600000 of 1000000 records
+2025/05/27 14:00:55 Inserted 700000 of 1000000 records
+2025/05/27 14:00:57 Inserted 800000 of 1000000 records
+2025/05/27 14:00:59 Inserted 900000 of 1000000 records
+DONE
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+Benchmark_movie_i/1_workers-12         	      36	  29474411 ns/op	       312.5 avg_latency_ms	        33.93 queries_per_sec	     522 B/op	      12 allocs/op
+Benchmark_movie_i/1_workers-12         	      33	  35058319 ns/op	       376.0 avg_latency_ms	        28.52 queries_per_sec	     592 B/op	      13 allocs/op
+Benchmark_movie_i/1_workers-12         	      37	  38074202 ns/op	       403.9 avg_latency_ms	        26.26 queries_per_sec	     703 B/op	      13 allocs/op
+Benchmark_movie_i/1_workers-12         	      32	  32565181 ns/op	       326.8 avg_latency_ms	        30.71 queries_per_sec	     554 B/op	      12 allocs/op
+Benchmark_movie_i/1_workers-12         	      43	  38876191 ns/op	       430.1 avg_latency_ms	        25.72 queries_per_sec	     535 B/op	      12 allocs/op
+Benchmark_movie_i/1_workers-12         	      31	  34361853 ns/op	       362.6 avg_latency_ms	        29.10 queries_per_sec	     617 B/op	      13 allocs/op
+Benchmark_movie_i/1_workers-12         	      30	  34816795 ns/op	       376.9 avg_latency_ms	        28.72 queries_per_sec	     516 B/op	      12 allocs/op
+Benchmark_movie_i/1_workers-12         	      40	  35262949 ns/op	       371.6 avg_latency_ms	        28.36 queries_per_sec	     645 B/op	      13 allocs/op
+Benchmark_movie_i/2_workers-12         	      37	  32120614 ns/op	       595.8 avg_latency_ms	        31.13 queries_per_sec	     670 B/op	      15 allocs/op
+Benchmark_movie_i/2_workers-12         	      36	  34841996 ns/op	       632.7 avg_latency_ms	        28.70 queries_per_sec	     786 B/op	      15 allocs/op
+Benchmark_movie_i/2_workers-12         	      39	  36335535 ns/op	       666.8 avg_latency_ms	        27.52 queries_per_sec	     915 B/op	      16 allocs/op
+Benchmark_movie_i/2_workers-12         	      36	  34319174 ns/op	       624.4 avg_latency_ms	        29.14 queries_per_sec	    1234 B/op	      15 allocs/op
+Benchmark_movie_i/2_workers-12         	      39	  37652210 ns/op	       703.2 avg_latency_ms	        26.56 queries_per_sec	     859 B/op	      15 allocs/op
+Benchmark_movie_i/2_workers-12         	      38	  35457504 ns/op	       660.7 avg_latency_ms	        28.20 queries_per_sec	     663 B/op	      15 allocs/op
+Benchmark_movie_i/2_workers-12         	      32	  35234978 ns/op	       609.0 avg_latency_ms	        28.38 queries_per_sec	     848 B/op	      15 allocs/op
+Benchmark_movie_i/2_workers-12         	      37	  31543553 ns/op	       574.4 avg_latency_ms	        31.70 queries_per_sec	     655 B/op	      15 allocs/op
+Benchmark_movie_i/3_workers-12         	      31	  35169545 ns/op	       711.2 avg_latency_ms	        28.43 queries_per_sec	    1172 B/op	      18 allocs/op
+Benchmark_movie_i/3_workers-12         	      32	  36824511 ns/op	       742.9 avg_latency_ms	        27.16 queries_per_sec	     895 B/op	      16 allocs/op
+Benchmark_movie_i/3_workers-12         	      32	  39101907 ns/op	       785.1 avg_latency_ms	        25.57 queries_per_sec	     703 B/op	      16 allocs/op
+Benchmark_movie_i/3_workers-12         	      36	  36392289 ns/op	       812.4 avg_latency_ms	        27.48 queries_per_sec	     792 B/op	      16 allocs/op
+Benchmark_movie_i/3_workers-12         	      33	  35014871 ns/op	       669.4 avg_latency_ms	        28.56 queries_per_sec	     696 B/op	      16 allocs/op
+Benchmark_movie_i/3_workers-12         	      33	  33586240 ns/op	       668.7 avg_latency_ms	        29.77 queries_per_sec	     758 B/op	      16 allocs/op
+Benchmark_movie_i/3_workers-12         	      31	  37399058 ns/op	       764.6 avg_latency_ms	        26.74 queries_per_sec	    1345 B/op	      17 allocs/op
+Benchmark_movie_i/3_workers-12         	      32	  35137467 ns/op	       724.4 avg_latency_ms	        28.46 queries_per_sec	     715 B/op	      16 allocs/op
+Benchmark_movie_i/4_workers-12         	      32	  34898266 ns/op	       700.0 avg_latency_ms	        28.65 queries_per_sec	     900 B/op	      17 allocs/op
+Benchmark_movie_i/4_workers-12         	      34	  33975885 ns/op	       723.3 avg_latency_ms	        29.43 queries_per_sec	     717 B/op	      16 allocs/op
+Benchmark_movie_i/4_workers-12         	      33	  35776478 ns/op	       727.6 avg_latency_ms	        27.95 queries_per_sec	     734 B/op	      17 allocs/op
+Benchmark_movie_i/4_workers-12         	      37	  36930200 ns/op	       831.7 avg_latency_ms	        27.08 queries_per_sec	     712 B/op	      16 allocs/op
+Benchmark_movie_i/4_workers-12         	      33	  33702074 ns/op	       695.5 avg_latency_ms	        29.67 queries_per_sec	     721 B/op	      17 allocs/op
+Benchmark_movie_i/4_workers-12         	      31	  35348361 ns/op	       663.9 avg_latency_ms	        28.29 queries_per_sec	     720 B/op	      17 allocs/op
+Benchmark_movie_i/4_workers-12         	      33	  33487017 ns/op	       729.3 avg_latency_ms	        29.86 queries_per_sec	     719 B/op	      17 allocs/op
+Benchmark_movie_i/4_workers-12         	      36	  32977244 ns/op	       724.7 avg_latency_ms	        30.32 queries_per_sec	     714 B/op	      16 allocs/op
+Benchmark_movie_i/5_workers-12         	      36	  32207325 ns/op	       706.2 avg_latency_ms	        31.05 queries_per_sec	     759 B/op	      17 allocs/op
+Benchmark_movie_i/5_workers-12         	      37	  35211061 ns/op	       822.9 avg_latency_ms	        28.40 queries_per_sec	     756 B/op	      17 allocs/op
+Benchmark_movie_i/5_workers-12         	      34	  36235297 ns/op	       759.0 avg_latency_ms	        27.60 queries_per_sec	     754 B/op	      17 allocs/op
+Benchmark_movie_i/5_workers-12         	      31	  37491107 ns/op	       756.9 avg_latency_ms	        26.67 queries_per_sec	     766 B/op	      18 allocs/op
+Benchmark_movie_i/5_workers-12         	      31	  35434717 ns/op	       689.1 avg_latency_ms	        28.22 queries_per_sec	     937 B/op	      18 allocs/op
+Benchmark_movie_i/5_workers-12         	      36	  36688120 ns/op	       828.2 avg_latency_ms	        27.26 queries_per_sec	    1599 B/op	      17 allocs/op
+Benchmark_movie_i/5_workers-12         	      36	  35399471 ns/op	       785.2 avg_latency_ms	        28.25 queries_per_sec	    1399 B/op	      17 allocs/op
+Benchmark_movie_i/5_workers-12         	      32	  37264326 ns/op	       775.4 avg_latency_ms	        26.84 queries_per_sec	     763 B/op	      17 allocs/op
+Benchmark_movie_i/6_workers-12         	      34	  35186758 ns/op	       705.4 avg_latency_ms	        28.42 queries_per_sec	     782 B/op	      18 allocs/op
+Benchmark_movie_i/6_workers-12         	      34	  33912071 ns/op	       720.3 avg_latency_ms	        29.49 queries_per_sec	     782 B/op	      18 allocs/op
+Benchmark_movie_i/6_workers-12         	      34	  32578382 ns/op	       688.5 avg_latency_ms	        30.70 queries_per_sec	     796 B/op	      18 allocs/op
+Benchmark_movie_i/6_workers-12         	      38	  34454702 ns/op	       805.4 avg_latency_ms	        29.02 queries_per_sec	     774 B/op	      18 allocs/op
+Benchmark_movie_i/6_workers-12         	      33	  33594005 ns/op	       704.2 avg_latency_ms	        29.77 queries_per_sec	     832 B/op	      19 allocs/op
+Benchmark_movie_i/6_workers-12         	      30	  34541144 ns/op	       646.3 avg_latency_ms	        28.95 queries_per_sec	     795 B/op	      18 allocs/op
+Benchmark_movie_i/6_workers-12         	      39	  35553605 ns/op	       843.5 avg_latency_ms	        28.13 queries_per_sec	     783 B/op	      18 allocs/op
+Benchmark_movie_i/6_workers-12         	      32	  34110751 ns/op	       692.2 avg_latency_ms	        29.32 queries_per_sec	     787 B/op	      18 allocs/op
+Benchmark_movie_i/7_workers-12         	      32	  35613694 ns/op	       720.6 avg_latency_ms	        28.08 queries_per_sec	     832 B/op	      19 allocs/op
+Benchmark_movie_i/7_workers-12         	      28	  36792583 ns/op	       675.7 avg_latency_ms	        27.18 queries_per_sec	     844 B/op	      20 allocs/op
+Benchmark_movie_i/7_workers-12         	      34	  31422133 ns/op	       679.9 avg_latency_ms	        31.82 queries_per_sec	     802 B/op	      19 allocs/op
+Benchmark_movie_i/7_workers-12         	      37	  38939336 ns/op	       928.2 avg_latency_ms	        25.68 queries_per_sec	     785 B/op	      18 allocs/op
+Benchmark_movie_i/7_workers-12         	      38	  35915396 ns/op	       883.6 avg_latency_ms	        27.84 queries_per_sec	     804 B/op	      18 allocs/op
+Benchmark_movie_i/7_workers-12         	      38	  35917644 ns/op	       839.7 avg_latency_ms	        27.84 queries_per_sec	     797 B/op	      18 allocs/op
+Benchmark_movie_i/7_workers-12         	      27	  37162702 ns/op	       689.7 avg_latency_ms	        26.91 queries_per_sec	     847 B/op	      20 allocs/op
+Benchmark_movie_i/7_workers-12         	      32	  36072197 ns/op	       732.8 avg_latency_ms	        27.72 queries_per_sec	     814 B/op	      19 allocs/op
+Benchmark_movie_i/8_workers-12         	      33	  32733721 ns/op	       691.4 avg_latency_ms	        30.55 queries_per_sec	     838 B/op	      19 allocs/op
+Benchmark_movie_i/8_workers-12         	      33	  34190340 ns/op	       696.4 avg_latency_ms	        29.25 queries_per_sec	     832 B/op	      19 allocs/op
+Benchmark_movie_i/8_workers-12         	      33	  37194517 ns/op	       700.3 avg_latency_ms	        26.89 queries_per_sec	     861 B/op	      20 allocs/op
+Benchmark_movie_i/8_workers-12         	      38	  33125528 ns/op	       744.0 avg_latency_ms	        30.19 queries_per_sec	    1024 B/op	      19 allocs/op
+Benchmark_movie_i/8_workers-12         	      36	  33299710 ns/op	       692.0 avg_latency_ms	        30.03 queries_per_sec	     983 B/op	      19 allocs/op
+Benchmark_movie_i/8_workers-12         	      38	  36630715 ns/op	       816.0 avg_latency_ms	        27.30 queries_per_sec	    1653 B/op	      19 allocs/op
+Benchmark_movie_i/8_workers-12         	      30	  35331216 ns/op	       655.2 avg_latency_ms	        28.30 queries_per_sec	    1125 B/op	      20 allocs/op
+Benchmark_movie_i/8_workers-12         	      33	  34755051 ns/op	       697.9 avg_latency_ms	        28.77 queries_per_sec	     856 B/op	      20 allocs/op
+Benchmark_movie_i/9_workers-12         	      32	  35829546 ns/op	       748.5 avg_latency_ms	        27.91 queries_per_sec	     883 B/op	      20 allocs/op
+Benchmark_movie_i/9_workers-12         	      27	  38544265 ns/op	       676.9 avg_latency_ms	        25.94 queries_per_sec	     925 B/op	      22 allocs/op
+Benchmark_movie_i/9_workers-12         	      33	  33137600 ns/op	       715.7 avg_latency_ms	        30.18 queries_per_sec	     879 B/op	      20 allocs/op
+Benchmark_movie_i/9_workers-12         	      31	  33955701 ns/op	       679.9 avg_latency_ms	        29.45 queries_per_sec	     875 B/op	      21 allocs/op
+Benchmark_movie_i/9_workers-12         	      34	  33792040 ns/op	       737.2 avg_latency_ms	        29.59 queries_per_sec	     856 B/op	      20 allocs/op
+Benchmark_movie_i/9_workers-12         	      37	  38414598 ns/op	       871.3 avg_latency_ms	        26.03 queries_per_sec	     857 B/op	      20 allocs/op
+Benchmark_movie_i/9_workers-12         	      37	  33433553 ns/op	       752.9 avg_latency_ms	        29.91 queries_per_sec	     860 B/op	      20 allocs/op
+Benchmark_movie_i/9_workers-12         	      28	  38405911 ns/op	       718.5 avg_latency_ms	        26.04 queries_per_sec	    1065 B/op	      22 allocs/op
+Benchmark_movie_i/10_workers-12        	      28	  36375098 ns/op	       639.7 avg_latency_ms	        27.49 queries_per_sec	     977 B/op	      23 allocs/op
+Benchmark_movie_i/10_workers-12        	      38	  38557917 ns/op	       881.8 avg_latency_ms	        25.94 queries_per_sec	     885 B/op	      20 allocs/op
+Benchmark_movie_i/10_workers-12        	      30	  33509780 ns/op	       617.0 avg_latency_ms	        29.84 queries_per_sec	     923 B/op	      22 allocs/op
+Benchmark_movie_i/10_workers-12        	      37	  33976612 ns/op	       769.8 avg_latency_ms	        29.43 queries_per_sec	     907 B/op	      21 allocs/op
+Benchmark_movie_i/10_workers-12        	      34	  32307777 ns/op	       701.2 avg_latency_ms	        30.95 queries_per_sec	     904 B/op	      21 allocs/op
+Benchmark_movie_i/10_workers-12        	      31	  37489014 ns/op	       733.3 avg_latency_ms	        26.67 queries_per_sec	     918 B/op	      21 allocs/op
+Benchmark_movie_i/10_workers-12        	      33	  32128119 ns/op	       658.4 avg_latency_ms	        31.13 queries_per_sec	     891 B/op	      21 allocs/op
+Benchmark_movie_i/10_workers-12        	      30	  36228267 ns/op	       672.1 avg_latency_ms	        27.60 queries_per_sec	     924 B/op	      22 allocs/op
+Benchmark_movie_i/11_workers-12        	      34	  33061381 ns/op	       695.4 avg_latency_ms	        30.25 queries_per_sec	     935 B/op	      22 allocs/op
+Benchmark_movie_i/11_workers-12        	      37	  33666969 ns/op	       748.2 avg_latency_ms	        29.70 queries_per_sec	     925 B/op	      21 allocs/op
+Benchmark_movie_i/11_workers-12        	      30	  37199947 ns/op	       680.8 avg_latency_ms	        26.88 queries_per_sec	     969 B/op	      23 allocs/op
+Benchmark_movie_i/11_workers-12        	      34	  35870038 ns/op	       797.4 avg_latency_ms	        27.88 queries_per_sec	     917 B/op	      21 allocs/op
+Benchmark_movie_i/11_workers-12        	      31	  33462773 ns/op	       672.8 avg_latency_ms	        29.88 queries_per_sec	    1193 B/op	      22 allocs/op
+Benchmark_movie_i/11_workers-12        	      31	  36946769 ns/op	       691.4 avg_latency_ms	        27.07 queries_per_sec	    1200 B/op	      22 allocs/op
+Benchmark_movie_i/11_workers-12        	      37	  34861470 ns/op	       843.2 avg_latency_ms	        28.69 queries_per_sec	     896 B/op	      21 allocs/op
+Benchmark_movie_i/11_workers-12        	      33	  30523098 ns/op	       584.8 avg_latency_ms	        32.76 queries_per_sec	    1106 B/op	      22 allocs/op
+Benchmark_movie_i/12_workers-12        	      30	  33872742 ns/op	       625.0 avg_latency_ms	        29.52 queries_per_sec	     988 B/op	      23 allocs/op
+Benchmark_movie_i/12_workers-12        	      40	  36091213 ns/op	       884.1 avg_latency_ms	        27.71 queries_per_sec	     910 B/op	      21 allocs/op
+Benchmark_movie_i/12_workers-12        	      37	  33088204 ns/op	       764.5 avg_latency_ms	        30.22 queries_per_sec	    1132 B/op	      22 allocs/op
+Benchmark_movie_i/12_workers-12        	      33	  36177861 ns/op	       794.2 avg_latency_ms	        27.64 queries_per_sec	    1653 B/op	      23 allocs/op
+Benchmark_movie_i/12_workers-12        	      38	  34793964 ns/op	       791.6 avg_latency_ms	        28.74 queries_per_sec	    1514 B/op	      21 allocs/op
+Benchmark_movie_i/12_workers-12        	      32	  38353836 ns/op	       788.2 avg_latency_ms	        26.07 queries_per_sec	    1123 B/op	      23 allocs/op
+Benchmark_movie_i/12_workers-12        	      36	  32286098 ns/op	       718.4 avg_latency_ms	        30.97 queries_per_sec	     935 B/op	      22 allocs/op
+Benchmark_movie_i/12_workers-12        	      37	  34669721 ns/op	       810.7 avg_latency_ms	        28.84 queries_per_sec	     928 B/op	      22 allocs/op
+Benchmark_movie_i/10000_workers-12     	      33	  39639212 ns/op	       832.2 avg_latency_ms	        25.23 queries_per_sec	  291509 B/op	    7286 allocs/op
+Benchmark_movie_i/10000_workers-12     	      32	  37643814 ns/op	       758.0 avg_latency_ms	        26.56 queries_per_sec	  300598 B/op	    7514 allocs/op
+Benchmark_movie_i/10000_workers-12     	      31	  34065875 ns/op	       687.7 avg_latency_ms	        29.35 queries_per_sec	  313199 B/op	    7762 allocs/op
+Benchmark_movie_i/10000_workers-12     	      31	  35028692 ns/op	       705.5 avg_latency_ms	        28.55 queries_per_sec	  310289 B/op	    7756 allocs/op
+Benchmark_movie_i/10000_workers-12     	      32	  34815355 ns/op	       730.5 avg_latency_ms	        28.72 queries_per_sec	  300671 B/op	    7515 allocs/op
+Benchmark_movie_i/10000_workers-12     	      31	  36943953 ns/op	       676.9 avg_latency_ms	        27.07 queries_per_sec	  310286 B/op	    7756 allocs/op
+Benchmark_movie_i/10000_workers-12     	      31	  34601474 ns/op	       680.5 avg_latency_ms	        28.90 queries_per_sec	  310286 B/op	    7756 allocs/op
+Benchmark_movie_i/10000_workers-12     	      33	  33715801 ns/op	       718.7 avg_latency_ms	        29.66 queries_per_sec	  291529 B/op	    7287 allocs/op
+Benchmark_movie_i/20000_workers-12     	      28	  40334190 ns/op	       748.0 avg_latency_ms	        24.79 queries_per_sec	  686321 B/op	   17156 allocs/op
+Benchmark_movie_i/20000_workers-12     	      28	  40116325 ns/op	       775.2 avg_latency_ms	        24.93 queries_per_sec	  686311 B/op	   17156 allocs/op
+Benchmark_movie_i/20000_workers-12     	      30	  38170597 ns/op	       754.8 avg_latency_ms	        26.20 queries_per_sec	  640617 B/op	   16014 allocs/op
+Benchmark_movie_i/20000_workers-12     	      31	  36800034 ns/op	       773.5 avg_latency_ms	        27.17 queries_per_sec	  619957 B/op	   15497 allocs/op
+Benchmark_movie_i/20000_workers-12     	      30	  35470287 ns/op	       664.5 avg_latency_ms	        28.19 queries_per_sec	  640594 B/op	   16014 allocs/op
+Benchmark_movie_i/20000_workers-12     	      32	  36744063 ns/op	       762.2 avg_latency_ms	        27.22 queries_per_sec	  600610 B/op	   15014 allocs/op
+Benchmark_movie_i/20000_workers-12     	      28	  36592719 ns/op	       690.7 avg_latency_ms	        27.33 queries_per_sec	  686308 B/op	   17156 allocs/op
+Benchmark_movie_i/20000_workers-12     	      28	  38064723 ns/op	       688.2 avg_latency_ms	        26.27 queries_per_sec	  686311 B/op	   17156 allocs/op
+Benchmark_movie_i/30000_workers-12     	      26	  42273744 ns/op	       794.2 avg_latency_ms	        23.66 queries_per_sec	 1108288 B/op	   27706 allocs/op
+Benchmark_movie_i/30000_workers-12     	      26	  38931504 ns/op	       700.8 avg_latency_ms	        25.69 queries_per_sec	 1108488 B/op	   27706 allocs/op
+Benchmark_movie_i/30000_workers-12     	      32	  34499397 ns/op	       765.2 avg_latency_ms	        28.99 queries_per_sec	  900607 B/op	   22514 allocs/op
+Benchmark_movie_i/30000_workers-12     	      27	  38788265 ns/op	       718.1 avg_latency_ms	        25.78 queries_per_sec	 1067819 B/op	   26680 allocs/op
+Benchmark_movie_i/30000_workers-12     	      28	  35938342 ns/op	       666.2 avg_latency_ms	        27.83 queries_per_sec	 1029432 B/op	   25728 allocs/op
+Benchmark_movie_i/30000_workers-12     	      27	  39305436 ns/op	       731.3 avg_latency_ms	        25.44 queries_per_sec	 1067247 B/op	   26680 allocs/op
+Benchmark_movie_i/30000_workers-12     	      26	  38526775 ns/op	       679.1 avg_latency_ms	        25.96 queries_per_sec	 1108565 B/op	   27706 allocs/op
+Benchmark_movie_i/30000_workers-12     	      26	  39584576 ns/op	       720.3 avg_latency_ms	        25.26 queries_per_sec	 1108572 B/op	   27706 allocs/op
+Benchmark_movie_i/40000_workers-12     	      30	  37975329 ns/op	       791.5 avg_latency_ms	        26.33 queries_per_sec	 1280600 B/op	   32014 allocs/op
+Benchmark_movie_i/40000_workers-12     	      26	  42965860 ns/op	       774.1 avg_latency_ms	        23.27 queries_per_sec	 1477710 B/op	   36937 allocs/op
+Benchmark_movie_i/40000_workers-12     	      25	  41957701 ns/op	       727.0 avg_latency_ms	        23.83 queries_per_sec	 1536578 B/op	   38413 allocs/op
+Benchmark_movie_i/40000_workers-12     	      27	  39114182 ns/op	       706.5 avg_latency_ms	        25.57 queries_per_sec	 1422869 B/op	   35570 allocs/op
+Benchmark_movie_i/40000_workers-12     	      25	  41615215 ns/op	       734.2 avg_latency_ms	        24.03 queries_per_sec	 1536589 B/op	   38413 allocs/op
+Benchmark_movie_i/40000_workers-12     	      27	  42055127 ns/op	       798.2 avg_latency_ms	        23.78 queries_per_sec	 1423018 B/op	   35569 allocs/op
+Benchmark_movie_i/40000_workers-12     	      26	  40913546 ns/op	       756.5 avg_latency_ms	        24.44 queries_per_sec	 1477500 B/op	   36936 allocs/op
+Benchmark_movie_i/40000_workers-12     	      26	  40634240 ns/op	       751.2 avg_latency_ms	        24.61 queries_per_sec	 1477512 B/op	   36936 allocs/op
+Benchmark_movie_i/50000_workers-12     	      24	  49059900 ns/op	       841.8 avg_latency_ms	        20.38 queries_per_sec	 2000575 B/op	   50013 allocs/op
+Benchmark_movie_i/50000_workers-12     	      26	  43790678 ns/op	       783.0 avg_latency_ms	        22.84 queries_per_sec	 1846750 B/op	   46167 allocs/op
+Benchmark_movie_i/50000_workers-12     	      21	  49285285 ns/op	       757.4 avg_latency_ms	        20.29 queries_per_sec	 2286287 B/op	   57156 allocs/op
+Benchmark_movie_i/50000_workers-12     	      25	  46797547 ns/op	       807.6 avg_latency_ms	        21.37 queries_per_sec	 1920586 B/op	   48013 allocs/op
+Benchmark_movie_i/50000_workers-12     	      24	  44679674 ns/op	       708.1 avg_latency_ms	        22.38 queries_per_sec	 2001077 B/op	   50014 allocs/op
+Benchmark_movie_i/50000_workers-12     	      27	  43987726 ns/op	       772.8 avg_latency_ms	        22.73 queries_per_sec	 1778379 B/op	   44458 allocs/op
+Benchmark_movie_i/50000_workers-12     	      26	  41552243 ns/op	       730.9 avg_latency_ms	        24.07 queries_per_sec	 1846739 B/op	   46167 allocs/op
+Benchmark_movie_i/50000_workers-12     	      25	  43501278 ns/op	       784.5 avg_latency_ms	        22.99 queries_per_sec	 1920576 B/op	   48013 allocs/op
+Benchmark_movie_i/60000_workers-12     	      25	  45584885 ns/op	       790.4 avg_latency_ms	        21.94 queries_per_sec	 2304578 B/op	   57613 allocs/op
+Benchmark_movie_i/60000_workers-12     	      25	  49296435 ns/op	       850.0 avg_latency_ms	        20.29 queries_per_sec	 2305060 B/op	   57614 allocs/op
+Benchmark_movie_i/60000_workers-12     	      25	  43899931 ns/op	       784.4 avg_latency_ms	        22.78 queries_per_sec	 2304935 B/op	   57614 allocs/op
+Benchmark_movie_i/60000_workers-12     	      24	  42521964 ns/op	       670.6 avg_latency_ms	        23.52 queries_per_sec	 2401006 B/op	   60014 allocs/op
+Benchmark_movie_i/60000_workers-12     	      25	  45642392 ns/op	       765.4 avg_latency_ms	        21.91 queries_per_sec	 2304590 B/op	   57613 allocs/op
+Benchmark_movie_i/60000_workers-12     	      25	  43085453 ns/op	       790.4 avg_latency_ms	        23.21 queries_per_sec	 2304889 B/op	   57613 allocs/op
+Benchmark_movie_i/60000_workers-12     	      24	  47096556 ns/op	       783.9 avg_latency_ms	        21.23 queries_per_sec	 2663382 B/op	   60535 allocs/op
+Benchmark_movie_i/60000_workers-12     	      24	  47283766 ns/op	       767.6 avg_latency_ms	        21.15 queries_per_sec	 2400575 B/op	   60013 allocs/op
+Benchmark_movie_i/70000_workers-12     	      21	  49462385 ns/op	       716.2 avg_latency_ms	        20.22 queries_per_sec	 3200568 B/op	   80013 allocs/op
+Benchmark_movie_i/70000_workers-12     	      26	  43603596 ns/op	       776.1 avg_latency_ms	        22.93 queries_per_sec	 2585514 B/op	   64629 allocs/op
+Benchmark_movie_i/70000_workers-12     	      25	  44694478 ns/op	       733.1 avg_latency_ms	        22.37 queries_per_sec	 2688997 B/op	   67214 allocs/op
+Benchmark_movie_i/70000_workers-12     	      26	  42874128 ns/op	       716.5 avg_latency_ms	        23.32 queries_per_sec	 2585196 B/op	   64629 allocs/op
+Benchmark_movie_i/70000_workers-12     	      26	  42404385 ns/op	       726.7 avg_latency_ms	        23.58 queries_per_sec	 2585193 B/op	   64629 allocs/op
+Benchmark_movie_i/70000_workers-12     	      26	  41637305 ns/op	       720.8 avg_latency_ms	        24.02 queries_per_sec	 2585594 B/op	   64629 allocs/op
+Benchmark_movie_i/70000_workers-12     	      31	  40569589 ns/op	       796.0 avg_latency_ms	        24.65 queries_per_sec	 2168341 B/op	   54207 allocs/op
+Benchmark_movie_i/70000_workers-12     	      26	  40045254 ns/op	       664.1 avg_latency_ms	        24.97 queries_per_sec	 2585219 B/op	   64629 allocs/op
+Benchmark_movie_i/80000_workers-12     	      19	  53158233 ns/op	       588.3 avg_latency_ms	        18.81 queries_per_sec	 4042659 B/op	  101066 allocs/op
+Benchmark_movie_i/80000_workers-12     	      21	  48461959 ns/op	       596.5 avg_latency_ms	        20.63 queries_per_sec	 3657706 B/op	   91442 allocs/op
+Benchmark_movie_i/80000_workers-12     	      21	  51263332 ns/op	       672.6 avg_latency_ms	        19.51 queries_per_sec	 3658185 B/op	   91442 allocs/op
+Benchmark_movie_i/80000_workers-12     	      21	  47756570 ns/op	       634.4 avg_latency_ms	        20.94 queries_per_sec	 3657702 B/op	   91442 allocs/op
+Benchmark_movie_i/80000_workers-12     	      25	  44275661 ns/op	       687.7 avg_latency_ms	        22.59 queries_per_sec	 3072590 B/op	   76813 allocs/op
+Benchmark_movie_i/80000_workers-12     	      22	  46895916 ns/op	       570.8 avg_latency_ms	        21.32 queries_per_sec	 3492170 B/op	   87286 allocs/op
+Benchmark_movie_i/80000_workers-12     	      21	  51316112 ns/op	       702.2 avg_latency_ms	        19.49 queries_per_sec	 3657711 B/op	   91442 allocs/op
+Benchmark_movie_i/80000_workers-12     	      21	  48402697 ns/op	       616.3 avg_latency_ms	        20.66 queries_per_sec	 3658067 B/op	   91442 allocs/op
+Benchmark_movie_i/90000_workers-12     	      19	  59166425 ns/op	       665.7 avg_latency_ms	        16.90 queries_per_sec	 4547927 B/op	  113697 allocs/op
+Benchmark_movie_i/90000_workers-12     	      19	  55211591 ns/op	       544.6 avg_latency_ms	        18.11 queries_per_sec	 4547927 B/op	  113697 allocs/op
+Benchmark_movie_i/90000_workers-12     	      16	  64013257 ns/op	       567.1 avg_latency_ms	        15.62 queries_per_sec	 5400541 B/op	  135013 allocs/op
+Benchmark_movie_i/90000_workers-12     	      19	  55471990 ns/op	       549.9 avg_latency_ms	        18.03 queries_per_sec	 4675654 B/op	  113729 allocs/op
+Benchmark_movie_i/90000_workers-12     	      15	  67481472 ns/op	       548.4 avg_latency_ms	        14.82 queries_per_sec	 5760520 B/op	  144012 allocs/op
+Benchmark_movie_i/90000_workers-12     	      19	  53616143 ns/op	       498.6 avg_latency_ms	        18.65 queries_per_sec	 4547922 B/op	  113697 allocs/op
+Benchmark_movie_i/90000_workers-12     	      19	  54823453 ns/op	       556.5 avg_latency_ms	        18.24 queries_per_sec	 4547917 B/op	  113697 allocs/op
+Benchmark_movie_i/90000_workers-12     	      18	  57615233 ns/op	       503.9 avg_latency_ms	        17.36 queries_per_sec	 4800543 B/op	  120013 allocs/op
+Benchmark_movie_i/100000_workers-12    	      10	 100088526 ns/op	       391.8 avg_latency_ms	         9.991 queries_per_sec	 9600488 B/op	  240012 allocs/op
+Benchmark_movie_i/100000_workers-12    	      14	  76756312 ns/op	       436.5 avg_latency_ms	        13.03 queries_per_sec	 6857660 B/op	  171441 allocs/op
+Benchmark_movie_i/100000_workers-12    	      14	  76903164 ns/op	       480.0 avg_latency_ms	        13.00 queries_per_sec	 6857667 B/op	  171441 allocs/op
+Benchmark_movie_i/100000_workers-12    	      14	  72450014 ns/op	       363.8 avg_latency_ms	        13.80 queries_per_sec	 6857653 B/op	  171441 allocs/op
+Benchmark_movie_i/100000_workers-12    	      14	  76287309 ns/op	       528.5 avg_latency_ms	        13.11 queries_per_sec	 6857674 B/op	  171441 allocs/op
+Benchmark_movie_i/100000_workers-12    	      14	  73848178 ns/op	       428.9 avg_latency_ms	        13.54 queries_per_sec	 6857667 B/op	  171441 allocs/op
+Benchmark_movie_i/100000_workers-12    	      12	  85219795 ns/op	       464.8 avg_latency_ms	        11.73 queries_per_sec	 8000494 B/op	  200012 allocs/op
+Benchmark_movie_i/100000_workers-12    	      12	  84089427 ns/op	       518.5 avg_latency_ms	        11.89 queries_per_sec	 8001142 B/op	  200012 allocs/op
+PASS
+ok  	cw	627.684s
