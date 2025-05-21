@@ -19,11 +19,11 @@ func TestGetSeats(t *testing.T) {
 		role           string
 		expectedStatus int
 	}{
-		{"Empty as Guest", false, "", http.StatusNotFound},
-		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusNotFound},
+		{"Empty as Guest", false, "", http.StatusForbidden},
+		{"Empty as User", false, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
 		{"Empty as Admin", false, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusNotFound},
-		{"NonEmpty as Guest", true, "", http.StatusOK},
-		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusOK},
+		{"NonEmpty as Guest", true, "", http.StatusForbidden},
+		{"NonEmpty as User", true, os.Getenv("CLAIM_ROLE_USER"), http.StatusForbidden},
 		{"NonEmpty as Admin", true, os.Getenv("CLAIM_ROLE_ADMIN"), http.StatusOK},
 	}
 

@@ -1,0 +1,98 @@
+1000000
+2025/05/27 12:05:15 Inserted 0 of 1000000 records
+2025/05/27 12:05:17 Inserted 100000 of 1000000 records
+2025/05/27 12:05:19 Inserted 200000 of 1000000 records
+2025/05/27 12:05:21 Inserted 300000 of 1000000 records
+2025/05/27 12:05:23 Inserted 400000 of 1000000 records
+2025/05/27 12:05:25 Inserted 500000 of 1000000 records
+2025/05/27 12:05:27 Inserted 600000 of 1000000 records
+2025/05/27 12:05:29 Inserted 700000 of 1000000 records
+2025/05/27 12:05:31 Inserted 800000 of 1000000 records
+2025/05/27 12:05:33 Inserted 900000 of 1000000 records
+DONE
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      37	  32732011 ns/op	  281250 B/op	    6544 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      39	  32808401 ns/op	  246901 B/op	    6168 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      32	  35911492 ns/op	  300603 B/op	    7514 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      33	  35644886 ns/op	  305243 B/op	    7317 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      33	  31801703 ns/op	  291531 B/op	    7287 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      36	  29927451 ns/op	  267265 B/op	    6680 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      33	  33291612 ns/op	  291511 B/op	    7286 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/10000_workers-12         	      37	  31016039 ns/op	  260079 B/op	    6500 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      30	  34219614 ns/op	  640609 B/op	   16014 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      36	  37032944 ns/op	  533953 B/op	   13347 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      37	  30718712 ns/op	  520221 B/op	   12987 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      38	  29202164 ns/op	  507734 B/op	   12648 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      36	  32650604 ns/op	  535006 B/op	   13347 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      34	  32320022 ns/op	  565324 B/op	   14131 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      33	  33389322 ns/op	  582417 B/op	   14559 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/20000_workers-12         	      37	  27344396 ns/op	  544974 B/op	   13041 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      39	  31855348 ns/op	  739121 B/op	   18476 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      38	  31870339 ns/op	  758979 B/op	   18966 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      40	  29670096 ns/op	  720633 B/op	   18014 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      32	  31621766 ns/op	  900606 B/op	   22514 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      34	  34164227 ns/op	  847674 B/op	   21190 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      34	  29500223 ns/op	  847656 B/op	   21190 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      39	  32720070 ns/op	  739089 B/op	   18475 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/30000_workers-12         	      36	  30304684 ns/op	  800888 B/op	   20014 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      37	  29804986 ns/op	 1039061 B/op	   25960 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      34	  33691684 ns/op	 1130348 B/op	   28250 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      38	  31720491 ns/op	 1011423 B/op	   25277 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      34	  34638009 ns/op	 1130041 B/op	   28249 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      36	  32838476 ns/op	 1067608 B/op	   26681 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      34	  31549004 ns/op	 1130361 B/op	   28249 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      36	  30945602 ns/op	 1067821 B/op	   26681 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/40000_workers-12         	      34	  34591104 ns/op	 1130238 B/op	   28249 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      34	  37509041 ns/op	 1412845 B/op	   35308 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      32	  37812225 ns/op	 1501572 B/op	   37517 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      27	  40205537 ns/op	 1778357 B/op	   44458 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      26	  38598095 ns/op	 1846783 B/op	   46168 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      27	  39449351 ns/op	 1779027 B/op	   44460 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      26	  41801319 ns/op	 1847290 B/op	   46168 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      30	  42292053 ns/op	 1601022 B/op	   40018 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/50000_workers-12         	      26	  43044709 ns/op	 1846741 B/op	   46167 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      27	  39281912 ns/op	 2134041 B/op	   53348 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      27	  42852342 ns/op	 2134005 B/op	   53348 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      27	  41830266 ns/op	 2134609 B/op	   53350 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      26	  38486695 ns/op	 2216370 B/op	   55398 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      27	  38723566 ns/op	 2133945 B/op	   53347 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      30	  39098366 ns/op	 1921037 B/op	   48014 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      26	  38973659 ns/op	 2217968 B/op	   55411 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/60000_workers-12         	      27	  37341334 ns/op	 2133927 B/op	   53347 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      26	  43955385 ns/op	 2585192 B/op	   64629 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      24	  42518254 ns/op	 2800594 B/op	   70013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      20	  50718933 ns/op	 3360577 B/op	   84013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      21	  48417358 ns/op	 3200942 B/op	   80013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      24	  43169087 ns/op	 2800889 B/op	   70013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      18	  57907109 ns/op	 3785626 B/op	   93359 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      26	  48914279 ns/op	 2587116 B/op	   64635 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/70000_workers-12         	      24	  44833179 ns/op	 2801704 B/op	   70014 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      18	  56311262 ns/op	 4267352 B/op	  106680 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      21	  52781356 ns/op	 3657700 B/op	   91442 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      18	  59530512 ns/op	 4267219 B/op	  106680 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      21	  49667789 ns/op	 3657723 B/op	   91442 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      18	  58546973 ns/op	 4267219 B/op	  106680 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      22	  49638811 ns/op	 3492028 B/op	   87286 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      16	  63132199 ns/op	 4800533 B/op	  120013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/80000_workers-12         	      14	  72653759 ns/op	 5486962 B/op	  137156 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      18	  59215833 ns/op	 4800563 B/op	  120013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      18	  60106417 ns/op	 4800541 B/op	  120013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      19	  55594201 ns/op	 4547921 B/op	  113697 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      15	  70671864 ns/op	 5761202 B/op	  144013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      14	  71594578 ns/op	 6171944 B/op	  154298 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      14	  72095785 ns/op	 6171972 B/op	  154298 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      18	  60220906 ns/op	 4800552 B/op	  120013 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/90000_workers-12         	      15	  67014862 ns/op	 5760518 B/op	  144012 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      14	  73555352 ns/op	 6858042 B/op	  171441 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      12	  86075313 ns/op	 8000484 B/op	  200012 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      12	  84167855 ns/op	 8000508 B/op	  200012 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      14	  78114085 ns/op	 6858234 B/op	  171441 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      14	  73359856 ns/op	 6858097 B/op	  171445 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      12	  85411290 ns/op	 8000492 B/op	  200012 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      14	  72152920 ns/op	 6857679 B/op	  171441 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/100000_workers-12        	      12	  84011882 ns/op	 8000492 B/op	  200012 allocs/op
+PASS
+ok  	cw	411.848s

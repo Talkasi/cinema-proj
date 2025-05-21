@@ -307,68 +307,68 @@ func TestCreateScreenType(t *testing.T) {
 		setup          func(t *testing.T)
 		expectedStatus int
 	}{
-		{"Valid as Guest", "", ScreenTypeData{Name: "Test", Description: "Test"}, nil, http.StatusForbidden},
-		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "Test", Description: "Test"}, nil, http.StatusForbidden},
-		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "Test", Description: "Test"}, nil, http.StatusCreated},
+		{"Valid as Guest", "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, nil, http.StatusCreated},
 		{"Invalid JSON as Guest", "", "{invalid json}", nil, http.StatusBadRequest},
 		{"Invalid JSON as User", os.Getenv("CLAIM_ROLE_USER"), "{invalid json}", nil, http.StatusBadRequest},
 		{"Invalid JSON as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "{invalid json}", nil, http.StatusBadRequest},
-		{"Empty fields as Guest", "", ScreenTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Duplicate name as Guest", "", ScreenTypeData{Name: "LED", Description: "Test"}, func(t *testing.T) {
+		{"Empty fields as Guest", "", ScreenTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Duplicate name as Guest", "", ScreenTypeAdmin{Name: "LED", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", "LED", "Test")
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, http.StatusForbidden},
-		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "LED", Description: "Test"}, func(t *testing.T) {
+		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "LED", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", "LED", "Test")
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, http.StatusForbidden},
-		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "LED", Description: "Test"}, func(t *testing.T) {
+		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "LED", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", "LED", "Test")
 			if err != nil {
 				t.Fatal(err)
 			}
 		}, http.StatusConflict},
-		{"Whitespace name as Guest", "", ScreenTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
-		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "   ", Description: "Test"}, nil, http.StatusBadRequest},
-		{"100 chars name as Guest", "", ScreenTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusForbidden},
-		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusForbidden},
-		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, nil, http.StatusCreated},
-		{"101 chars name as Guest", "", ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
-		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
-		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, nil, http.StatusBadRequest},
-		{"Hyphen name as Guest", "", ScreenTypeData{Name: "IMAX-3D", Description: "Test"}, nil, http.StatusForbidden},
-		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "IMAX-3D", Description: "Test"}, nil, http.StatusForbidden},
-		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "IMAX-3D", Description: "Test"}, nil, http.StatusCreated},
-		{"Empty desc as Guest", "", ScreenTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
-		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
-		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "Test", Description: ""}, nil, http.StatusBadRequest},
-		{"Whitespace desc as Guest", "", ScreenTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
-		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
-		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "Test", Description: "   "}, nil, http.StatusBadRequest},
-		{"1000 chars desc as Guest", "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusForbidden},
-		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusForbidden},
-		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, nil, http.StatusCreated},
-		{"1001 chars desc as Guest", "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
-		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
-		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, nil, http.StatusBadRequest},
-		{"DBError as Guest", "", ScreenTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+		{"Whitespace name as Guest", "", ScreenTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"100 chars name as Guest", "", ScreenTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, nil, http.StatusCreated},
+		{"101 chars name as Guest", "", ScreenTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Hyphen name as Guest", "", ScreenTypeAdmin{Name: "IMAX-3D", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "IMAX-3D", Description: "Test", PriceModifier: 1}, nil, http.StatusForbidden},
+		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "IMAX-3D", Description: "Test", PriceModifier: 1}, nil, http.StatusCreated},
+		{"Empty desc as Guest", "", ScreenTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace desc as Guest", "", ScreenTypeAdmin{Name: "Test", Description: "   ", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "Test", Description: "   ", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "Test", Description: "   ", PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"1000 chars desc as Guest", "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, nil, http.StatusForbidden},
+		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, nil, http.StatusForbidden},
+		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, nil, http.StatusCreated},
+		{"1001 chars desc as Guest", "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, nil, http.StatusBadRequest},
+		{"DBError as Guest", "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			TestAdminDB.Close()
 			TestGuestDB.Close()
 			TestUserDB.Close()
 		}, http.StatusInternalServerError},
-		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			TestAdminDB.Close()
 			TestGuestDB.Close()
 			TestUserDB.Close()
 		}, http.StatusInternalServerError},
-		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) {
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) {
 			TestAdminDB.Close()
 			TestGuestDB.Close()
 			TestUserDB.Close()
@@ -433,16 +433,16 @@ func TestUpdateScreenType(t *testing.T) {
 		setup          func(t *testing.T) (*httptest.Server, string)
 		expectedStatus int
 	}{
-		{"Invalid ID as Guest", "", "invalid-uuid", ScreenTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
-		{"Invalid ID as User", os.Getenv("CLAIM_ROLE_USER"), "invalid-uuid", ScreenTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
-		{"Invalid ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "invalid-uuid", ScreenTypeData{Name: "Test", Description: "Test"}, invalidTestPreparator, http.StatusBadRequest},
-		{"Unknown ID as Guest", "", "", ScreenTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusForbidden},
-		{"Unknown ID as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusForbidden},
-		{"Unknown ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: "Test"}, unknownTestPreparator, http.StatusNotFound},
+		{"Invalid ID as Guest", "", "invalid-uuid", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, invalidTestPreparator, http.StatusBadRequest},
+		{"Invalid ID as User", os.Getenv("CLAIM_ROLE_USER"), "invalid-uuid", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, invalidTestPreparator, http.StatusBadRequest},
+		{"Invalid ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "invalid-uuid", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, invalidTestPreparator, http.StatusBadRequest},
+		{"Unknown ID as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, unknownTestPreparator, http.StatusForbidden},
+		{"Unknown ID as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, unknownTestPreparator, http.StatusForbidden},
+		{"Unknown ID as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, unknownTestPreparator, http.StatusNotFound},
 		{"Invalid JSON as Guest", "", "", "invalid-json", validTestPreparator, http.StatusBadRequest},
 		{"Invalid JSON as User", os.Getenv("CLAIM_ROLE_USER"), "", "invalid-json", validTestPreparator, http.StatusBadRequest},
 		{"Invalid JSON as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", "invalid-json", validTestPreparator, http.StatusBadRequest},
-		{"Duplicate name as Guest", "", "", ScreenTypeData{Name: "LED_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Duplicate name as Guest", "", "", ScreenTypeAdmin{Name: "LED_", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", "LED_", "Test")
@@ -451,7 +451,7 @@ func TestUpdateScreenType(t *testing.T) {
 			}
 			return ts, ScreenTypesData[0].ID
 		}, http.StatusForbidden},
-		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "LED_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Duplicate name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "LED_", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", "LED_", "Test")
@@ -460,7 +460,7 @@ func TestUpdateScreenType(t *testing.T) {
 			}
 			return ts, ScreenTypesData[0].ID
 		}, http.StatusForbidden},
-		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "LED_", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Duplicate name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "LED_", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			_, err := TestAdminDB.Exec(context.Background(), "INSERT INTO screen_types (name, description) VALUES ($1, $2)", "LED_", "Test")
@@ -469,37 +469,37 @@ func TestUpdateScreenType(t *testing.T) {
 			}
 			return ts, ScreenTypesData[0].ID
 		}, http.StatusConflict},
-		{"Empty fields as Guest", "", "", ScreenTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Valid as Guest", "", "", ScreenTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: "Test"}, validTestPreparator, http.StatusOK},
-		{"Whitespace name as Guest", "", "", ScreenTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "   ", Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"100 chars name as Guest", "", "", ScreenTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: strings.Repeat("a", 100), Description: "Test"}, validTestPreparator, http.StatusOK},
-		{"101 chars name as Guest", "", "", ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: strings.Repeat("a", 101), Description: "Test"}, validTestPreparator, http.StatusBadRequest},
-		{"Hyphen name as Guest", "", "", ScreenTypeData{Name: "IMAX-3D", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "IMAX-3D", Description: "Test"}, validTestPreparator, http.StatusForbidden},
-		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "IMAX-3D", Description: "Test"}, validTestPreparator, http.StatusOK},
-		{"Empty desc as Guest", "", "", ScreenTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
-		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
-		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: ""}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace desc as Guest", "", "", ScreenTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
-		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: "   "}, validTestPreparator, http.StatusBadRequest},
-		{"1000 chars desc as Guest", "", "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusForbidden},
-		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusForbidden},
-		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1000)}, validTestPreparator, http.StatusOK},
-		{"1001 chars desc as Guest", "", "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
-		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
-		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: strings.Repeat("a", 1001)}, validTestPreparator, http.StatusBadRequest},
-		{"DBError as Guest", "", "", ScreenTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"Empty fields as Guest", "", "", ScreenTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty fields as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty fields as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Valid as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Valid as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Valid as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"Whitespace name as Guest", "", "", ScreenTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "   ", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"100 chars name as Guest", "", "", ScreenTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"100 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"100 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: strings.Repeat("a", 100), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"101 chars name as Guest", "", "", ScreenTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"101 chars name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"101 chars name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: strings.Repeat("a", 101), Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Hyphen name as Guest", "", "", ScreenTypeAdmin{Name: "IMAX-3D", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Hyphen name as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "IMAX-3D", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"Hyphen name as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "IMAX-3D", Description: "Test", PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"Empty desc as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Empty desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: "", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: "   ", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: "   ", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"Whitespace desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: "   ", PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"1000 chars desc as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"1000 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, validTestPreparator, http.StatusForbidden},
+		{"1000 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1000), PriceModifier: 1}, validTestPreparator, http.StatusOK},
+		{"1001 chars desc as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"1001 chars desc as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"1001 chars desc as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: strings.Repeat("a", 1001), PriceModifier: 1}, validTestPreparator, http.StatusBadRequest},
+		{"DBError as Guest", "", "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			TestAdminDB.Close()
@@ -507,7 +507,7 @@ func TestUpdateScreenType(t *testing.T) {
 			TestUserDB.Close()
 			return ts, ScreenTypesData[0].ID
 		}, http.StatusInternalServerError},
-		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"DBError as User", os.Getenv("CLAIM_ROLE_USER"), "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			TestAdminDB.Close()
@@ -515,7 +515,7 @@ func TestUpdateScreenType(t *testing.T) {
 			TestUserDB.Close()
 			return ts, ScreenTypesData[0].ID
 		}, http.StatusInternalServerError},
-		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeData{Name: "Test", Description: "Test"}, func(t *testing.T) (*httptest.Server, string) {
+		{"DBError as Admin", os.Getenv("CLAIM_ROLE_ADMIN"), "", ScreenTypeAdmin{Name: "Test", Description: "Test", PriceModifier: 1}, func(t *testing.T) (*httptest.Server, string) {
 			ts := setupTestServer()
 			SeedAll(TestAdminDB)
 			TestAdminDB.Close()

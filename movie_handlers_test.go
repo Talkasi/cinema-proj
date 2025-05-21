@@ -428,7 +428,7 @@ func TestUpdateMovie(t *testing.T) {
 			"",
 			validUpdateData,
 			setupUnknownID,
-			http.StatusForbidden,
+			http.StatusNotFound,
 		},
 		{
 			"Unknown UUID as User",
@@ -436,7 +436,7 @@ func TestUpdateMovie(t *testing.T) {
 			"",
 			validUpdateData,
 			setupUnknownID,
-			http.StatusForbidden,
+			http.StatusNotFound,
 		},
 		{
 			"Unknown UUID as Admin",

@@ -4,15 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestGetMovieShows(t *testing.T) {
@@ -140,18 +145,20 @@ func TestGetMovieShowByID(t *testing.T) {
 }
 
 func TestCreateMovieShow(t *testing.T) {
-	validMovieShow := MovieShowData{
+	validMovieShow := MovieShowAdmin{
 		MovieID:   MoviesData[0].ID,
 		HallID:    HallsData[1].ID,
 		StartTime: time.Now().Add(124 * time.Hour),
 		Language:  Russian,
+		BasePrice: 300,
 	}
 
-	invalidMovieShow := MovieShowData{
+	invalidMovieShow := MovieShowAdmin{
 		MovieID:   "invalid",
 		HallID:    "invalid",
 		StartTime: time.Date(1890, 1, 1, 0, 0, 0, 0, time.UTC),
 		Language:  "INVALID",
+		BasePrice: 300,
 	}
 
 	setupConflictTest := func(t *testing.T) {
@@ -243,11 +250,12 @@ func TestCreateMovieShow(t *testing.T) {
 		{
 			"Invalid movie ID",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieShowData{
+			MovieShowAdmin{
 				MovieID:   "invalid",
 				HallID:    HallsData[0].ID,
 				StartTime: time.Now().Add(24 * time.Hour),
 				Language:  Russian,
+				BasePrice: 300,
 			},
 			func(t *testing.T) {
 				SeedAll(TestAdminDB)
@@ -257,11 +265,12 @@ func TestCreateMovieShow(t *testing.T) {
 		{
 			"Invalid hall ID",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieShowData{
+			MovieShowAdmin{
 				MovieID:   MoviesData[0].ID,
 				HallID:    "invalid",
 				StartTime: time.Now().Add(24 * time.Hour),
 				Language:  Russian,
+				BasePrice: 300,
 			},
 			nil,
 			http.StatusBadRequest,
@@ -269,11 +278,12 @@ func TestCreateMovieShow(t *testing.T) {
 		{
 			"Start time in past",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieShowData{
+			MovieShowAdmin{
 				MovieID:   MoviesData[0].ID,
 				HallID:    HallsData[0].ID,
 				StartTime: time.Now().Add(-24 * time.Hour),
 				Language:  Russian,
+				BasePrice: 300,
 			},
 			nil,
 			http.StatusCreated,
@@ -281,11 +291,12 @@ func TestCreateMovieShow(t *testing.T) {
 		{
 			"Invalid language",
 			os.Getenv("CLAIM_ROLE_ADMIN"),
-			MovieShowData{
+			MovieShowAdmin{
 				MovieID:   MoviesData[0].ID,
 				HallID:    HallsData[0].ID,
 				StartTime: time.Now().Add(24 * time.Hour),
 				Language:  "INVALID",
+				BasePrice: 300,
 			},
 			nil,
 			http.StatusBadRequest,
@@ -938,4 +949,580 @@ func TestGetUpcomingShows(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setupTestDBmovie(b *testing.B, withIndex bool, n int) *pgxpool.Pool {
+	db, err := pgxpool.New(context.Background(), fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
+	if err != nil {
+		b.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	_, err = db.Exec(context.Background(), "DROP INDEX IF EXISTS idx_movie_time;")
+	if err != nil {
+		b.Error(err)
+	}
+
+	if withIndex {
+		_, err = db.Exec(context.Background(), "CREATE INDEX IF NOT EXISTS idx_movie_time ON movie_shows(start_time)")
+		if err != nil {
+			b.Fatalf("Failed to create index: %v", err)
+		}
+	}
+
+	_, err = db.Exec(context.Background(), "TRUNCATE TABLE movie_shows CASCADE")
+	if err != nil {
+		b.Fatalf("Failed to truncate table: %v", err)
+	}
+
+	SeedAll(db)
+	generateMovieShows(db, n)
+
+	return db
+}
+
+func BenchmarkDBWithConcurrencyNEWServerINDmovie(b *testing.B) {
+	db := setupTestDBmovie(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+		{"10000_workers", 10000},
+		{"30000_workers", 30000},
+		{"50000_workers", 50000},
+		{"70000_workers", 70000},
+		{"100000_workers", 100000},
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					req, err := http.NewRequest(
+						"GET",
+						ts.URL+"/movie-shows/upcoming",
+						http.NoBody,
+					)
+					if err != nil {
+						b.Error("Create request error:", err)
+						continue
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						b.Error("Request failed:", err)
+						continue
+					}
+
+					io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						b.Errorf("Unexpected status: %d", resp.StatusCode)
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkDBWithConcurrencyNEWServerNINDmovie(b *testing.B) {
+	db := setupTestDBmovie(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					req, err := http.NewRequest(
+						"GET",
+						ts.URL+"/movie-shows/upcoming",
+						http.NoBody,
+					)
+					if err != nil {
+						b.Error("Create request error:", err)
+						continue
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						b.Error("Request failed:", err)
+						continue
+					}
+
+					// io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						b.Errorf("Unexpected status: %d", resp.StatusCode)
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkDBWithConcurrencyNEW_nind_movie(b *testing.B) {
+	db := setupTestDBmovie(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				hours := rand.Intn(24 * 4)
+				now := time.Now()
+				endTime := now.Add(time.Duration(hours) * time.Hour)
+
+				for pb.Next() {
+					rows, err := db.Query(context.Background(), `
+						SELECT id, movie_id, hall_id, start_time, language 
+						FROM movie_shows 
+						WHERE start_time BETWEEN $1 AND $2
+						ORDER BY start_time`, now, endTime)
+					rows.Close()
+
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkDBWithConcurrencyNEW_ind_movie(b *testing.B) {
+	db := setupTestDBmovie(b, false, 1_000_000)
+	defer db.Close()
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"10000_workers", 10000},
+		{"20000_workers", 20000},
+		{"30000_workers", 30000},
+		{"40000_workers", 40000},
+		{"50000_workers", 50000},
+		{"60000_workers", 60000},
+		{"70000_workers", 70000},
+		{"80000_workers", 80000},
+		{"90000_workers", 90000},
+		{"100000_workers", 100000},
+		// {"200000_workers", 200000},
+		// {"300000_workers", 300000},
+		// {"400000_workers", 400000},
+		// {"500000_workers", 500000},
+		// {"600000_workers", 600000},
+		// {"700000_workers", 700000},
+		// {"800000_workers", 800000},
+		// {"900000_workers", 900000},
+		// {"1000000_workers", 1000000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				hours := rand.Intn(24 * 4)
+				now := time.Now()
+				endTime := now.Add(time.Duration(hours) * time.Hour)
+
+				for pb.Next() {
+					rows, err := db.Query(context.Background(), `
+						SELECT id, movie_id, hall_id, start_time, language 
+						FROM movie_shows 
+						WHERE start_time BETWEEN $1 AND $2
+						ORDER BY start_time`, now, endTime)
+
+					// println("HERE")
+
+					rows.Close()
+
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+				}
+			})
+		})
+	}
+}
+
+func Benchmark_movie_ni(b *testing.B) {
+	db := setupTestDBmovie(b, false, 1_000_000)
+	defer db.Close()
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"3_workers", 3},
+		{"4_workers", 4},
+		{"5_workers", 5},
+		{"6_workers", 6},
+		{"7_workers", 7},
+		{"8_workers", 8},
+		{"9_workers", 9},
+		{"10_workers", 10},
+		{"11_workers", 11},
+		{"12_workers", 12},
+
+		{"10000_workers", 10000},
+		{"20000_workers", 20000},
+		{"30000_workers", 30000},
+		{"40000_workers", 40000},
+		{"50000_workers", 50000},
+		{"60000_workers", 60000},
+		{"70000_workers", 70000},
+		{"80000_workers", 80000},
+		{"90000_workers", 90000},
+		{"100000_workers", 100000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+			var totalLatency time.Duration
+			var queryCount int64
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				hours := rand.Intn(24 * 4)
+				now := time.Now()
+				endTime := now.Add(time.Duration(hours) * time.Hour)
+
+				for pb.Next() {
+					start := time.Now()
+					rows, err := db.Query(context.Background(), `
+					SELECT id, movie_id, hall_id, start_time, language 
+					FROM movie_shows 
+					WHERE start_time BETWEEN $1 AND $2
+					ORDER BY start_time`, now, endTime)
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+
+					var count int
+					for rows.Next() {
+						count++
+					}
+					if err := rows.Err(); err != nil {
+						b.Error("Rows error:", err)
+					}
+					rows.Close()
+
+					latency := time.Since(start)
+					atomicAddDuration(&totalLatency, latency)
+					atomic.AddInt64(&queryCount, 1)
+				}
+
+				// for pb.Next() {
+				// 	start := time.Now()
+
+				// 	rows, err := db.Query(context.Background(), `
+				//         SELECT id, movie_id, hall_id, start_time, language
+				//         FROM movie_shows
+				//         WHERE start_time BETWEEN $1 AND $2
+				//         ORDER BY start_time`, now, endTime)
+
+				// 	latency := time.Since(start)
+				// 	atomic.AddInt64(&queryCount, 1)
+				// 	atomicAddDuration(&totalLatency, latency)
+
+				// 	if err != nil {
+				// 		b.Error("Query failed:", err)
+				// 		continue
+				// 	}
+				// 	rows.Close()
+				// }
+			})
+
+			avgLatency := time.Duration(0)
+			if queryCount > 0 {
+				avgLatency = totalLatency / time.Duration(queryCount)
+			}
+			b.ReportMetric(float64(avgLatency.Nanoseconds())/1e6, "avg_latency_ms")
+			b.ReportMetric(float64(queryCount)/b.Elapsed().Seconds(), "queries_per_sec")
+		})
+	}
+}
+
+func Benchmark_movie_i(b *testing.B) {
+	db := setupTestDBmovie(b, true, 1_000_000)
+	defer db.Close()
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"3_workers", 3},
+		{"4_workers", 4},
+		{"5_workers", 5},
+		{"6_workers", 6},
+		{"7_workers", 7},
+		{"8_workers", 8},
+		{"9_workers", 9},
+		{"10_workers", 10},
+		{"11_workers", 11},
+		{"12_workers", 12},
+
+		{"10000_workers", 10000},
+		{"20000_workers", 20000},
+		{"30000_workers", 30000},
+		{"40000_workers", 40000},
+		{"50000_workers", 50000},
+		{"60000_workers", 60000},
+		{"70000_workers", 70000},
+		{"80000_workers", 80000},
+		{"90000_workers", 90000},
+		{"100000_workers", 100000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+			var totalLatency time.Duration
+			var queryCount int64
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				hours := rand.Intn(24 * 4)
+				now := time.Now()
+				endTime := now.Add(time.Duration(hours) * time.Hour)
+
+				for pb.Next() {
+					start := time.Now()
+					rows, err := db.Query(context.Background(), `
+					SELECT id, movie_id, hall_id, start_time, language 
+					FROM movie_shows 
+					WHERE start_time BETWEEN $1 AND $2
+					ORDER BY start_time`, now, endTime)
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+
+					var count int
+					for rows.Next() {
+						count++
+					}
+					if err := rows.Err(); err != nil {
+						b.Error("Rows error:", err)
+					}
+					rows.Close()
+
+					latency := time.Since(start)
+					atomicAddDuration(&totalLatency, latency)
+					atomic.AddInt64(&queryCount, 1)
+				}
+
+				// for pb.Next() {
+				// 	start := time.Now()
+
+				// 	rows, err := db.Query(context.Background(), `
+				//         SELECT id, movie_id, hall_id, start_time, language
+				//         FROM movie_shows
+				//         WHERE start_time BETWEEN $1 AND $2
+				//         ORDER BY start_time`, now, endTime)
+
+				// 	latency := time.Since(start)
+				// 	atomic.AddInt64(&queryCount, 1)
+				// 	atomicAddDuration(&totalLatency, latency)
+
+				// 	if err != nil {
+				// 		b.Error("Query failed:", err)
+				// 		continue
+				// 	}
+				// 	rows.Close()
+				// }
+			})
+
+			avgLatency := time.Duration(0)
+			if queryCount > 0 {
+				avgLatency = totalLatency / time.Duration(queryCount)
+			}
+			b.ReportMetric(float64(avgLatency.Nanoseconds())/1e6, "avg_latency_ms")
+			b.ReportMetric(float64(queryCount)/b.Elapsed().Seconds(), "queries_per_sec")
+		})
+	}
+}
+
+func atomicAddDuration(addr *time.Duration, delta time.Duration) {
+	for {
+		old := atomic.LoadInt64((*int64)(unsafe.Pointer(addr)))
+		new := old + int64(delta)
+		if atomic.CompareAndSwapInt64((*int64)(unsafe.Pointer(addr)), old, new) {
+			return
+		}
+	}
+}
+
+func generateMovieShows(db *pgxpool.Pool, n int) error {
+	ctx := context.Background()
+
+	movies, err := getMovies(ctx, db)
+	if err != nil {
+		return fmt.Errorf("failed to get movies: %v", err)
+	}
+
+	halls, err := getHalls(ctx, db)
+	if err != nil {
+		return fmt.Errorf("failed to get halls: %v", err)
+	}
+
+	languages := []string{"English", "Spanish", "French", "German", "Italian", "Русский"}
+
+	startTime := time.Now()
+
+	println(n)
+
+	_, err = db.Exec(ctx, "ALTER TABLE movie_shows DISABLE TRIGGER check_movie_show_on_insert;")
+
+	batchSize := 1000
+
+	rng := rand.New(rand.NewSource(6585))
+
+	for i := 0; i < n; i += batchSize {
+		batch := make([]string, 0, batchSize)
+		currentBatchSize := min(batchSize, n-i)
+
+		for j := 0; j < currentBatchSize; j++ {
+			movie := movies[rng.Intn(len(movies))]
+			hall := halls[rng.Intn(len(halls))]
+			lang := languages[rng.Intn(len(languages))]
+
+			// timeOffset := time.Duration(rng.Intn(60*24*14)) * time.Minute
+			showTime := startTime
+
+			batch = append(batch, fmt.Sprintf(
+				"(uuid_generate_v4(), '%s', '%s', '%s', '%s')",
+				movie.ID, hall.ID, showTime.Format(time.RFC3339), lang,
+			))
+		}
+
+		_, err = db.Exec(ctx,
+			"INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language) VALUES "+
+				strings.Join(batch, ","))
+		if err != nil {
+			println(err.Error())
+			return fmt.Errorf("failed to insert batch %d: %v", i/batchSize, err)
+		}
+
+		startTime = startTime.Add(time.Hour / 3)
+
+		if (i/batchSize)%100 == 0 {
+			log.Printf("Inserted %d of %d records", i, n)
+		}
+	}
+
+	// for i := 0; i < n; i += 1 {
+	// 	movie := movies[rand.Intn(len(movies))]
+	// 	hall := halls[rand.Intn(len(halls))]
+	// 	lang := languages[rand.Intn(len(languages))]
+
+	// 	timeOffset := time.Duration(rand.Intn(60*24*14)) * time.Minute
+	// 	showTime := startTime.Add(timeOffset)
+
+	// 	// println(i)
+	// 	_, err = db.Exec(ctx,
+	// 		fmt.Sprintf("INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language) VALUES ('%s', '%s', '%s', '%s', '%s')",
+	// 			uuid.New(), movie.ID, hall.ID, showTime.Format(time.RFC3339), lang))
+	// 	if err != nil {
+	// 		println(err.Error())
+	// 		return fmt.Errorf("failed to insert %d: %v", i, err)
+	// 	}
+
+	// 	startTime = startTime.Add(1 * time.Hour)
+	// }
+
+	_, err = db.Exec(ctx, "ALTER TABLE movie_shows ENABLE TRIGGER check_movie_show_on_insert;")
+	println("DONE")
+
+	return nil
+}
+
+func getMovies(ctx context.Context, db *pgxpool.Pool) ([]struct{ ID string }, error) {
+	rows, err := db.Query(ctx, "SELECT id FROM movies")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var movies []struct{ ID string }
+	for rows.Next() {
+		var m struct{ ID string }
+		if err := rows.Scan(&m.ID); err != nil {
+			return nil, err
+		}
+		movies = append(movies, m)
+	}
+	return movies, nil
+}
+
+func getHalls(ctx context.Context, db *pgxpool.Pool) ([]struct{ ID string }, error) {
+	rows, err := db.Query(ctx, "SELECT id FROM halls")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var halls []struct{ ID string }
+	for rows.Next() {
+		var h struct{ ID string }
+		if err := rows.Scan(&h.ID); err != nil {
+			return nil, err
+		}
+		halls = append(halls, h)
+	}
+	return halls, nil
 }

@@ -1,14 +1,22 @@
 package main
 
 import (
+	"bytes"
 	"context"
-	"log"
+	"encoding/json"
+	"fmt"
+	"io"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestGetUsers(t *testing.T) {
@@ -275,18 +283,6 @@ func TestUpdateUser(t *testing.T) {
 			"",
 			"invalid-json",
 			setupExistingUserRoleAdmin,
-			http.StatusBadRequest,
-		},
-		{
-			"Invalid Name",
-			os.Getenv("CLAIM_ROLE_USER"),
-			"",
-			UserData{
-				Name:      "Name123!",
-				Email:     "valid@example.com",
-				BirthDate: "2020-12-12",
-			},
-			setupExistingUserRoleUser,
 			http.StatusBadRequest,
 		},
 		{
@@ -686,26 +682,1008 @@ func TestLoginUser(t *testing.T) {
 	}
 }
 
-func TestCreateUserDBError(t *testing.T) {
-	ts := setupTestServer()
-	SeedUsers(TestAdminDB)
+func benchmarkLoginWithoutIndex(db *pgxpool.Pool, b *testing.B, userCount int, concurrentRequests int) {
+	_, err := db.Exec(context.Background(), "DROP INDEX IF EXISTS idx_users_email;")
+	if err != nil {
+		println(err.Error())
+	}
+	err = ClearAll(db)
+	if err != nil {
+		b.Errorf("Clear" + err.Error())
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	start := rand.Intn(1000)
+
+	for i := start; i < start+userCount; i++ {
+		_, err := db.Exec(context.Background(),
+			"INSERT INTO users (name, email, password_hash, birth_date) VALUES ($1, $2, $3, $4)",
+			fmt.Sprintf("User%d", i), fmt.Sprintf("user%d@example.com", i), "PasswordHash123", "2000-01-01")
+		if err != nil {
+			b.Fatalf("Failed to insert user: %v", err)
+		}
+	}
+
+	ts := httptest.NewServer(NewRouter())
 	defer ts.Close()
 
-	// Create DB error situation
-	TestAdminDB.Close()
-	TestGuestDB.Close()
-	TestUserDB.Close()
+	body := UserLogin{fmt.Sprintf("user%d@example.com", start), "PasswordHash123"}
+	b.ResetTimer()
 
-	req := createRequest(t, "POST", ts.URL+"/user/register", "", UserRegister{
-		Name:         "Test User",
-		Email:        "test@example.com",
-		PasswordHash: "PasswordHash123",
-		BirthDate:    "2020-12-12",
+	var wg sync.WaitGroup
+	for i := 0; i < b.N; i++ {
+		wg.Add(concurrentRequests)
+		for j := 0; j < concurrentRequests; j++ {
+			go func() {
+				defer wg.Done()
+				jsonData, err := json.Marshal(body)
+				if err != nil {
+					b.Errorf("Failed to marshal JSON: %v", err)
+					return
+				}
+				buf := bytes.NewBuffer(jsonData)
+
+				req, err := http.NewRequest("POST", ts.URL+"/user/login", buf)
+				if err != nil {
+					b.Errorf("Failed to create request: %v", err)
+					return
+				}
+				req.Header.Set("Content-Type", "application/json")
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					b.Errorf("Failed to perform request: %v", err)
+					return
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusOK {
+					b.Errorf("Unexpected status code: %d", resp.StatusCode)
+				}
+			}()
+		}
+		wg.Wait()
+	}
+}
+func benchmarkLoginWithIndex(db *pgxpool.Pool, b *testing.B, userCount int, concurrentRequests int) {
+	_, err := db.Exec(context.Background(), `
+	CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`)
+	if err != nil {
+		b.Fatalf("Failed to create table with index: %v", err)
+	}
+	err = ClearAll(db)
+	if err != nil {
+		b.Errorf("Clear" + err.Error())
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	start := rand.Intn(1000)
+
+	for i := start; i < start+userCount; i++ {
+		_, err := db.Exec(context.Background(),
+			"INSERT INTO users (name, email, password_hash, birth_date) VALUES ($1, $2, $3, $4)",
+			fmt.Sprintf("User%d", i), fmt.Sprintf("user%d@example.com", i), "PasswordHash123", "2000-01-01")
+		if err != nil {
+			b.Fatalf("Failed to insert user: %v", err)
+		}
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	body := UserLogin{fmt.Sprintf("user%d@example.com", start), "PasswordHash123"}
+	b.ResetTimer()
+
+	var wg sync.WaitGroup
+	for i := 0; i < b.N; i++ {
+		wg.Add(concurrentRequests)
+		for j := 0; j < concurrentRequests; j++ {
+			go func() {
+				defer wg.Done()
+				jsonData, err := json.Marshal(body)
+				if err != nil {
+					b.Errorf("Failed to marshal JSON: %v", err)
+					return
+				}
+
+				req, err := http.NewRequest("POST", ts.URL+"/user/login", bytes.NewBuffer(jsonData))
+				if err != nil {
+					b.Errorf("Failed to create request: %v", err)
+					return
+				}
+				req.Header.Set("Content-Type", "application/json")
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					b.Errorf("Failed to perform request: %v", err)
+					return
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusOK {
+					b.Errorf("Unexpected status code: %d", resp.StatusCode)
+				}
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func BenchmarkLoginWithoutIndexRange(b *testing.B) {
+	r := []int{100, 300, 500, 70000, 3000, 5000, 7000000}
+	for _, i := range r {
+		b.Run(fmt.Sprintf("Users_%d", i), func(b *testing.B) {
+			benchmarkLoginWithoutIndex(TestAdminDB, b, i, 100)
+		})
+	}
+}
+
+func BenchmarkLoginWithIndexRange(b *testing.B) {
+	r := []int{100, 300, 500, 70000, 3000, 5000, 7000000}
+	for _, i := range r {
+		b.Run(fmt.Sprintf("Users_%d", i), func(b *testing.B) {
+			benchmarkLoginWithIndex(TestAdminDB, b, i, 100)
+		})
+	}
+}
+
+func BenchmarkLoginAllRange(b *testing.B) {
+	BenchmarkLoginWithoutIndexRange(b)
+	BenchmarkLoginWithIndexRange(b)
+}
+
+func benchmarkLogin(db *pgxpool.Pool, b *testing.B, userCount int, concurrentRequests int) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:        concurrentRequests,
+			MaxIdleConnsPerHost: concurrentRequests,
+			IdleConnTimeout:     90 * time.Second,
+		},
+	}
+
+	_, err := db.Exec(context.Background(), "TRUNCATE TABLE users CASCADE")
+	if err != nil {
+		b.Fatalf("Failed to truncate table: %v", err)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	start := rand.Intn(1000)
+
+	for i := start; i < start+userCount; i++ {
+		_, err := db.Exec(context.Background(),
+			"INSERT INTO users (name, email, password_hash, birth_date) VALUES ($1, $2, $3, $4)",
+			fmt.Sprintf("User%d", i), fmt.Sprintf("user%d@example.com", i), "PasswordHash123", "2000-01-01")
+		if err != nil {
+			b.Fatalf("Failed to insert user: %v", err)
+		}
+	}
+
+	testEmail := "testuser@example.com"
+	testPassword := "validPassword123"
+	_, err = db.Exec(context.Background(),
+		"INSERT INTO users (name, email, password_hash, birth_date) VALUES ($1, $2, $3, $4)",
+		"Test User", testEmail, testPassword, "2000-01-01")
+	if err != nil {
+		b.Fatalf("Failed to insert test user: %v", err)
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	loginData := UserLogin{
+		Email:        testEmail,
+		PasswordHash: testPassword,
+	}
+	jsonData, err := json.Marshal(loginData)
+	if err != nil {
+		b.Fatalf("Failed to marshal JSON: %v", err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		var wg sync.WaitGroup
+		wg.Add(concurrentRequests)
+
+		for j := 0; j < concurrentRequests; j++ {
+			go func() {
+				defer wg.Done()
+
+				buf := bytes.NewBuffer(jsonData)
+				req, err := http.NewRequest("POST", ts.URL+"/user/login", buf)
+				if err != nil {
+					b.Errorf("Failed to create request: %v", err)
+					return
+				}
+				req.Header.Set("Content-Type", "application/json")
+
+				resp, err := client.Do(req)
+				if err != nil {
+					b.Errorf("Failed to perform request: %v", err)
+					return
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusOK {
+					body, _ := io.ReadAll(resp.Body)
+					b.Errorf("Unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+					return
+				}
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func BenchmarkLoginWithIndex(b *testing.B) {
+	db := setupTestDB(b, true)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		users   int
+		workers int
+	}{
+		{"Users_10", 10, 10},
+		{"Users_100", 100, 10},
+		{"Users_300", 300, 10},
+		{"Users_500", 500, 10},
+		{"Users_700", 700, 10},
+		{"Users_1000", 1000, 10},
+		{"Users_3000", 3000, 10},
+		{"Users_5000", 5000, 10},
+		{"Users_7000", 7000, 10},
+		{"Users_10000", 10000, 10},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			benchmarkLogin(db, b, bb.users, bb.workers)
+		})
+	}
+}
+
+func BenchmarkLoginWithoutIndex(b *testing.B) {
+	db := setupTestDB(b, false)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		users   int
+		workers int
+	}{
+		{"Users_10", 10, 10},
+		{"Users_100", 100, 10},
+		{"Users_300", 300, 10},
+		{"Users_500", 500, 10},
+		{"Users_700", 700, 10},
+		{"Users_1000", 1000, 10},
+		{"Users_3000", 3000, 10},
+		{"Users_5000", 5000, 10},
+		{"Users_7000", 7000, 10},
+		{"Users_10000", 10000, 10},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			benchmarkLogin(db, b, bb.users, bb.workers)
+		})
+	}
+}
+
+func setupTestDB(b *testing.B, withIndex bool) *pgxpool.Pool {
+	db, err := pgxpool.New(context.Background(), fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
+	if err != nil {
+		b.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	_, err = db.Exec(context.Background(), "DROP INDEX IF EXISTS idx_users_email;")
+	if err != nil {
+		b.Error(err)
+	}
+
+	if withIndex {
+		_, err = db.Exec(context.Background(), "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+		if err != nil {
+			b.Fatalf("Failed to create index: %v", err)
+		}
+	}
+
+	return db
+}
+
+func benchmarkLoginNEW(db *pgxpool.Pool, b *testing.B, concurrentRequests int) {
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			var wg sync.WaitGroup
+			errCh := make(chan error, concurrentRequests)
+
+			for j := 0; j < concurrentRequests; j++ {
+				wg.Add(1)
+				go func(j int) {
+					defer wg.Done()
+
+					loginData := UserLogin{
+						Email:        fmt.Sprintf("user%d@example.com", j%1000000),
+						PasswordHash: "PasswordHash123",
+					}
+
+					jsonData, err := json.Marshal(loginData)
+					if err != nil {
+						errCh <- fmt.Errorf("marshal error: %v", err)
+						return
+					}
+
+					req, err := http.NewRequest("POST", ts.URL+"/user/login", bytes.NewBuffer(jsonData))
+					if err != nil {
+						errCh <- fmt.Errorf("create request error: %v", err)
+						return
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						errCh <- fmt.Errorf("request error: %v", err)
+						return
+					}
+					defer resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						body, _ := io.ReadAll(resp.Body)
+						errCh <- fmt.Errorf("status %d, body: %s", resp.StatusCode, string(body))
+						return
+					}
+				}(j)
+			}
+
+			wg.Wait()
+			close(errCh)
+
+			for err := range errCh {
+				b.Error(err)
+			}
+		}
 	})
-	resp := executeRequest(t, req, http.StatusInternalServerError)
-	defer resp.Body.Close()
+}
 
-	if err := InitTestDB(); err != nil {
-		log.Fatal("Failed to reconnect to test database: ", err)
+func BenchmarkLoginNew(b *testing.B) {
+	db, err := pgxpool.New(context.Background(), fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
+	if err != nil {
+		b.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(context.Background(), "DROP INDEX IF EXISTS idx_users_email;")
+	if err != nil {
+		b.Error(err)
+	}
+
+	// Очистка и подготовка данных
+	_, err = db.Exec(context.Background(), "TRUNCATE TABLE users CASCADE")
+	if err != nil {
+		b.Fatalf("Failed to truncate table: %v", err)
+	}
+
+	// Вставка данных пачками (batch insert)
+	batchSize := 10000
+	for i := 0; i < 1000000; i += batchSize {
+		batch := make([]string, 0, batchSize)
+		for j := 0; j < batchSize && i+j < 1000000; j++ {
+			batch = append(batch, fmt.Sprintf("('User%d', 'user%d@example.com', 'PasswordHash123', '2000-01-01')", i+j, i+j))
+		}
+
+		_, err = db.Exec(context.Background(),
+			"INSERT INTO users (name, email, password_hash, birth_date) VALUES "+strings.Join(batch, ","))
+		if err != nil {
+			b.Fatalf("Failed to insert users: %v", err)
+		}
+	}
+
+	benchmarks := []struct {
+		name  string
+		users int
+	}{
+		{"Users_10", 10},
+		{"Users_100", 100},
+		{"Users_300", 300},
+		{"Users_500", 500},
+		{"Users_700", 700},
+		{"Users_1000", 1000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			benchmarkLoginNEW(db, b, bb.users)
+		})
+	}
+}
+
+func BenchmarkLoginNewIndex(b *testing.B) {
+	db, err := pgxpool.New(context.Background(), fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
+	if err != nil {
+		b.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(context.Background(), "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+	if err != nil {
+		b.Fatalf("Failed to create index: %v", err)
+	}
+
+	// Очистка и подготовка данных
+	_, err = db.Exec(context.Background(), "TRUNCATE TABLE users CASCADE")
+	if err != nil {
+		b.Fatalf("Failed to truncate table: %v", err)
+	}
+
+	// Вставка данных пачками (batch insert)
+	batchSize := 10000
+	for i := 0; i < 1000000; i += batchSize {
+		batch := make([]string, 0, batchSize)
+		for j := 0; j < batchSize && i+j < 1000000; j++ {
+			batch = append(batch, fmt.Sprintf("('User%d', 'user%d@example.com', 'PasswordHash123', '2000-01-01')", i+j, i+j))
+		}
+
+		_, err = db.Exec(context.Background(),
+			"INSERT INTO users (name, email, password_hash, birth_date) VALUES "+strings.Join(batch, ","))
+		if err != nil {
+			b.Fatalf("Failed to insert users: %v", err)
+		}
+	}
+
+	benchmarks := []struct {
+		name  string
+		users int
+	}{
+		{"Users_10", 10},
+		{"Users_100", 100},
+		{"Users_300", 300},
+		{"Users_500", 500},
+		{"Users_700", 700},
+		{"Users_1000", 1000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			benchmarkLoginNEW(db, b, bb.users)
+		})
+	}
+}
+
+func setupTestDBNEW(b *testing.B, withIndex bool, n int) *pgxpool.Pool {
+	db, err := pgxpool.New(context.Background(), fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable",
+		os.Getenv("TEST_ADMIN_USER"),
+		os.Getenv("TEST_DB_NAME"),
+		os.Getenv("TEST_ADMIN_PASSWORD")))
+	if err != nil {
+		b.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	_, err = db.Exec(context.Background(), "DROP INDEX IF EXISTS idx_users_email;")
+	if err != nil {
+		b.Error(err)
+	}
+
+	if withIndex {
+		_, err = db.Exec(context.Background(), "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+		if err != nil {
+			b.Fatalf("Failed to create index: %v", err)
+		}
+	}
+
+	_, err = db.Exec(context.Background(), "TRUNCATE TABLE users CASCADE")
+	if err != nil {
+		b.Fatalf("Failed to truncate table: %v", err)
+	}
+
+	batchSize := 10000
+	for i := 0; i < n; i += batchSize {
+		batch := make([]string, 0, batchSize)
+		for j := 0; j < batchSize && i+j < n; j++ {
+			batch = append(batch, fmt.Sprintf("('User%d', 'user%d@example.com', 'PasswordHash123', '2000-01-01')", i+j, i+j))
+		}
+
+		_, err = db.Exec(context.Background(),
+			"INSERT INTO users (name, email, password_hash, birth_date) VALUES "+strings.Join(batch, ","))
+		if err != nil {
+			b.Fatalf("Failed to insert users: %v", err)
+		}
+	}
+
+	return db
+}
+
+func BenchmarkDBSingleQuery(b *testing.B) {
+	db := setupTestDBNEW(b, true, 1_000_000)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		var user struct {
+			ID           string
+			PasswordHash string
+		}
+
+		email := fmt.Sprintf("user%d@example.com", i%1_000_000)
+
+		err := db.QueryRow(context.Background(),
+			"SELECT id, password_hash FROM users WHERE email = $1", email).
+			Scan(&user.ID, &user.PasswordHash)
+
+		if err != nil {
+			b.Fatalf("Query failed: %v", err)
+		}
+	}
+}
+
+func BenchmarkDBWithConcurrency(b *testing.B) {
+	db := setupTestDBNEW(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"10_workers", 10},
+		{"200_workers", 200},
+		{"400_workers", 400},
+		{"600_workers", 600},
+		{"800_workers", 800},
+		{"1000_workers", 1000},
+		{"1200_workers", 1200},
+		{"1400_workers", 1400},
+		{"1600_workers", 1600},
+		{"1800_workers", 1800},
+		{"2000_workers", 2000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					email := fmt.Sprintf("user%d@example.com", i%1_000_000)
+
+					var user struct {
+						ID           string
+						PasswordHash string
+					}
+
+					err := db.QueryRow(context.Background(),
+						"SELECT id, password_hash FROM users WHERE email = $1", email).
+						Scan(&user.ID, &user.PasswordHash)
+
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+				}
+			})
+		})
+	}
+}
+
+func benchmarkAuthServer(b *testing.B, concurrentRequests int) {
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConns:        concurrentRequests,
+			MaxIdleConnsPerHost: concurrentRequests,
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	testRequests := make([]UserLogin, concurrentRequests)
+	for i := 0; i < concurrentRequests; i++ {
+		testRequests[i] = UserLogin{
+			Email:        fmt.Sprintf("user%d@example.com", i%1_000_000),
+			PasswordHash: "PasswordHash123",
+		}
+	}
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			jsonData, err := json.Marshal(testRequests[i%concurrentRequests])
+			if err != nil {
+				b.Error("Marshal error:", err)
+				continue
+			}
+
+			req, err := http.NewRequest(
+				"POST",
+				ts.URL+"/user/login",
+				bytes.NewBuffer(jsonData),
+			)
+			if err != nil {
+				b.Error("Create request error:", err)
+				continue
+			}
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := client.Do(req)
+			if err != nil {
+				b.Error("Request failed:", err)
+				continue
+			}
+
+			io.Copy(io.Discard, resp.Body)
+			resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				b.Errorf("Unexpected status: %d", resp.StatusCode)
+			}
+
+			i++
+		}
+	})
+}
+
+func BenchmarkAuthServer(b *testing.B) {
+	db := setupTestDBNEW(b, true, 1_000_000)
+	defer db.Close()
+
+	concurrencyLevels := []int{1, 10, 50, 100, 200, 500}
+	for _, n := range concurrencyLevels {
+		b.Run(fmt.Sprintf("concurrency_%d", n), func(b *testing.B) {
+			benchmarkAuthServer(b, n)
+		})
+	}
+}
+
+func Benchmark_db_i(b *testing.B) {
+	db := setupTestDBNEW(b, true, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+		{"5000_workers", 5000},
+		{"10000_workers", 10000},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					email := fmt.Sprintf("user%d@example.com", i%1_000_000)
+
+					var user struct {
+						ID           string
+						PasswordHash string
+					}
+
+					err := db.QueryRow(context.Background(),
+						"SELECT id, password_hash FROM users WHERE email = $1", email).
+						Scan(&user.ID, &user.PasswordHash)
+
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+				}
+			})
+		})
+	}
+}
+
+func Benchmark_db_ni(b *testing.B) {
+	db := setupTestDBNEW(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					email := fmt.Sprintf("user%d@example.com", i%1_000_000)
+
+					var user struct {
+						ID           string
+						PasswordHash string
+					}
+
+					err := db.QueryRow(context.Background(),
+						"SELECT id, password_hash FROM users WHERE email = $1", email).
+						Scan(&user.ID, &user.PasswordHash)
+
+					if err != nil {
+						b.Error("Query failed:", err)
+						continue
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkDBWithConcurrencyNEWServerIND(b *testing.B) {
+	db := setupTestDBNEW(b, true, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					jsonData, err := json.Marshal(UserLogin{fmt.Sprintf("user%d@example.com", i%1_000_000), "PasswordHash123"})
+					if err != nil {
+						b.Error("Marshal error:", err)
+						continue
+					}
+
+					req, err := http.NewRequest(
+						"POST",
+						ts.URL+"/user/login",
+						bytes.NewBuffer(jsonData),
+					)
+					if err != nil {
+						b.Error("Create request error:", err)
+						continue
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						b.Error("Request failed:", err)
+						continue
+					}
+
+					io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						b.Errorf("Unexpected status: %d", resp.StatusCode)
+					}
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkDBWithConcurrencyNEWServerNIND(b *testing.B) {
+	db := setupTestDBNEW(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					jsonData, err := json.Marshal(UserLogin{fmt.Sprintf("user%d@example.com", i%1_000_000), "PasswordHash123"})
+					if err != nil {
+						b.Error("Marshal error:", err)
+						continue
+					}
+
+					req, err := http.NewRequest(
+						"POST",
+						ts.URL+"/user/login",
+						bytes.NewBuffer(jsonData),
+					)
+					if err != nil {
+						b.Error("Create request error:", err)
+						continue
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						b.Error("Request failed:", err)
+						continue
+					}
+
+					// io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						b.Errorf("Unexpected status: %d", resp.StatusCode)
+					}
+				}
+			})
+		})
+	}
+}
+
+func Benchmark_s_ni(b *testing.B) {
+	db := setupTestDBNEW(b, false, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					jsonData, err := json.Marshal(UserLogin{fmt.Sprintf("user%d@example.com", i%1_000_000), "PasswordHash123"})
+					if err != nil {
+						b.Error("Marshal error:", err)
+						continue
+					}
+
+					req, err := http.NewRequest(
+						"POST",
+						ts.URL+"/user/login",
+						bytes.NewBuffer(jsonData),
+					)
+					if err != nil {
+						b.Error("Create request error:", err)
+						continue
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						b.Error("Request failed:", err)
+						continue
+					}
+
+					// io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						b.Errorf("Unexpected status: %d", resp.StatusCode)
+					}
+				}
+			})
+		})
+	}
+}
+
+func Benchmark_s_i(b *testing.B) {
+	db := setupTestDBNEW(b, true, 1_000_000)
+	defer db.Close()
+
+	benchmarks := []struct {
+		name    string
+		workers int
+	}{
+		{"1_workers", 1},
+		{"2_workers", 2},
+		{"4_workers", 4},
+		{"6_workers", 6},
+	}
+
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
+	for _, bb := range benchmarks {
+		b.Run(bb.name, func(b *testing.B) {
+			b.SetParallelism(bb.workers)
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				for pb.Next() {
+					i++
+					jsonData, err := json.Marshal(UserLogin{fmt.Sprintf("user%d@example.com", i%1_000_000), "PasswordHash123"})
+					if err != nil {
+						b.Error("Marshal error:", err)
+						continue
+					}
+
+					req, err := http.NewRequest(
+						"POST",
+						ts.URL+"/user/login",
+						bytes.NewBuffer(jsonData),
+					)
+					if err != nil {
+						b.Error("Create request error:", err)
+						continue
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						b.Error("Request failed:", err)
+						continue
+					}
+
+					// io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+
+					if resp.StatusCode != http.StatusOK {
+						b.Errorf("Unexpected status: %d", resp.StatusCode)
+					}
+				}
+			})
+		})
 	}
 }

@@ -1,0 +1,129 @@
+1000000
+2025/05/25 18:05:32 Inserted 0 of 1000000 records
+2025/05/25 18:05:34 Inserted 100000 of 1000000 records
+2025/05/25 18:05:36 Inserted 200000 of 1000000 records
+2025/05/25 18:05:38 Inserted 300000 of 1000000 records
+2025/05/25 18:05:40 Inserted 400000 of 1000000 records
+2025/05/25 18:05:42 Inserted 500000 of 1000000 records
+2025/05/25 18:05:44 Inserted 600000 of 1000000 records
+2025/05/25 18:05:46 Inserted 700000 of 1000000 records
+2025/05/25 18:05:48 Inserted 800000 of 1000000 records
+2025/05/25 18:05:50 Inserted 900000 of 1000000 records
+DONE
+DB FILLED
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    3988	    252592 ns/op	     989 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4093	    278344 ns/op	     786 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4200	    276722 ns/op	     790 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    3973	    283884 ns/op	     806 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    3843	    282853 ns/op	     799 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4162	    278988 ns/op	     800 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4318	    276823 ns/op	     789 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4041	    276415 ns/op	     798 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4286	    284242 ns/op	     791 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/200_workers-12         	    4188	    279957 ns/op	     791 B/op	      16 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    3890	    282192 ns/op	     997 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    3937	    283798 ns/op	     855 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    4266	    282978 ns/op	     837 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    4153	    279859 ns/op	     839 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    4323	    279249 ns/op	     837 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    4116	    282845 ns/op	     844 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    3777	    293224 ns/op	     858 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    3986	    278996 ns/op	     849 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    4027	    278451 ns/op	     847 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/300_workers-12         	    4065	    276617 ns/op	     846 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    4477	    278302 ns/op	     986 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3988	    275395 ns/op	     887 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3927	    283980 ns/op	     883 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3986	    282750 ns/op	     886 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3675	    278502 ns/op	     885 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3838	    277789 ns/op	     883 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    4527	    282279 ns/op	     874 B/op	      17 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3854	    279084 ns/op	     883 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3970	    277685 ns/op	     883 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/400_workers-12         	    3843	    282427 ns/op	     886 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    4098	    285546 ns/op	    1053 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    4063	    279589 ns/op	     904 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    4004	    281367 ns/op	     902 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    3952	    279756 ns/op	     904 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    4237	    278571 ns/op	     903 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    4507	    285301 ns/op	     896 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    3896	    281242 ns/op	     909 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    4075	    281478 ns/op	     905 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    3723	    285441 ns/op	     912 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/500_workers-12         	    3699	    283274 ns/op	     917 B/op	      18 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    4064	    279175 ns/op	    1049 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    4090	    279965 ns/op	     935 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    3691	    287851 ns/op	     938 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    3787	    281844 ns/op	     939 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    3963	    280124 ns/op	     928 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    4000	    283807 ns/op	     937 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    4028	    285639 ns/op	     929 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    4210	    281307 ns/op	     922 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    3870	    276241 ns/op	     931 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/600_workers-12         	    3957	    278713 ns/op	     932 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3847	    281028 ns/op	     958 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    4117	    279786 ns/op	     947 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3973	    283507 ns/op	     954 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    4291	    279770 ns/op	     948 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3859	    281139 ns/op	    1118 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3722	    284137 ns/op	     970 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3813	    279566 ns/op	     963 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3908	    282999 ns/op	     954 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3999	    281821 ns/op	     951 B/op	      19 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/700_workers-12         	    3873	    285865 ns/op	     966 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3876	    280770 ns/op	     998 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    4129	    281122 ns/op	    1061 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3933	    277752 ns/op	     980 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    4201	    281840 ns/op	     970 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3748	    283413 ns/op	     988 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3937	    284292 ns/op	    1017 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3972	    279871 ns/op	     981 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    4149	    282567 ns/op	     970 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3694	    285640 ns/op	     994 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/800_workers-12         	    3763	    281298 ns/op	     984 B/op	      20 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3836	    283427 ns/op	    1010 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3894	    282418 ns/op	    1002 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3874	    285466 ns/op	    1015 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3807	    284658 ns/op	    1005 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3952	    278203 ns/op	    1010 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    4069	    286293 ns/op	    1000 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3944	    283603 ns/op	    1006 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    4098	    284734 ns/op	    1001 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3952	    284494 ns/op	    1006 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/900_workers-12         	    3916	    282363 ns/op	    1168 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    4274	    284722 ns/op	    1016 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    4264	    279959 ns/op	    1014 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3943	    278389 ns/op	    1034 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3855	    283941 ns/op	    1034 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3626	    279661 ns/op	    1048 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3700	    283117 ns/op	    1045 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3542	    283751 ns/op	    1051 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    4171	    283255 ns/op	    1016 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3756	    280836 ns/op	    1043 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1000_workers-12        	    3678	    281898 ns/op	    1044 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    3788	    285191 ns/op	    1062 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    3865	    281549 ns/op	    1059 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    3686	    284142 ns/op	    1069 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    4080	    282086 ns/op	    1044 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    4173	    282571 ns/op	    1041 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    3643	    294880 ns/op	    1070 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    4011	    281659 ns/op	    1050 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    4255	    285614 ns/op	    1039 B/op	      21 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    4234	    280455 ns/op	    1040 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1100_workers-12        	    3808	    287525 ns/op	    1063 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    4230	    279726 ns/op	    1067 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3688	    286823 ns/op	    1089 B/op	      23 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3763	    283245 ns/op	    1094 B/op	      23 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    4186	    284295 ns/op	    1064 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3663	    280189 ns/op	    1097 B/op	      23 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3919	    284539 ns/op	    1085 B/op	      23 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3877	    283887 ns/op	    1087 B/op	      23 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3756	    281675 ns/op	    1085 B/op	      23 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    4050	    281561 ns/op	    1073 B/op	      22 allocs/op
+BenchmarkDBWithConcurrencyNEW_ind_movie/1200_workers-12        	    3724	    284569 ns/op	    1098 B/op	      23 allocs/op
+PASS
+ok  	cw	155.323s
