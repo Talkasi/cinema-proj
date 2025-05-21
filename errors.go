@@ -193,6 +193,10 @@ func IsError(w http.ResponseWriter, err error) bool {
 			http.Error(w, err.Error(), http.StatusConflict)
 			return true
 		}
+		if strings.Contains(err.Error(), "permission denied") {
+			http.Error(w, "Доступ запрещён", http.StatusForbidden)
+			return true
+		}
 
 		http.Error(w, fmt.Sprintf("Ошибка при вставке %v\n", err), http.StatusInternalServerError)
 		return true

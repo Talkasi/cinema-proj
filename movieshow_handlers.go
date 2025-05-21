@@ -173,7 +173,7 @@ func CreateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID киносеанса"
-// @Param movie_show body MovieShowAdmin true "Новые данные киносеанса"
+// @Param movie_show body MovieShowData true "Новые данные киносеанса"
 // @Success 200 "Данные киносеанса обновлены"
 // @Failure 400 {object} ErrorResponse "Неверные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
@@ -188,18 +188,18 @@ func UpdateMovieShow(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var ms MovieShowAdmin
+		var ms MovieShowData
 		if !DecodeJSONBody(w, r, &ms) {
 			return
 		}
 
-		if !validateMovieShowAdmin(w, ms) {
+		if !validateMovieShowData(w, ms) {
 			return
 		}
 
 		res, err := db.Exec(context.Background(),
-			"UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4, base_price=$5 WHERE id=$6",
-			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, ms.BasePrice, id)
+			"UPDATE movie_shows SET movie_id=$1, hall_id=$2, start_time=$3, language=$4 WHERE id=$5",
+			ms.MovieID, ms.HallID, ms.StartTime, ms.Language, id)
 
 		if IsError(w, err) {
 			return

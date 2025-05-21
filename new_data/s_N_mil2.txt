@@ -1,0 +1,45 @@
+1000000
+2025/05/26 16:47:22 Inserted 0 of 1000000 records
+2025/05/26 16:47:24 Inserted 100000 of 1000000 records
+2025/05/26 16:47:26 Inserted 200000 of 1000000 records
+2025/05/26 16:47:28 Inserted 300000 of 1000000 records
+2025/05/26 16:47:30 Inserted 400000 of 1000000 records
+2025/05/26 16:47:32 Inserted 500000 of 1000000 records
+2025/05/26 16:47:34 Inserted 600000 of 1000000 records
+2025/05/26 16:47:36 Inserted 700000 of 1000000 records
+2025/05/26 16:47:38 Inserted 800000 of 1000000 records
+2025/05/26 16:47:41 Inserted 900000 of 1000000 records
+DONE
+goos: linux
+goarch: amd64
+pkg: cw
+cpu: AMD Ryzen 5 5500U with Radeon Graphics         
+BenchmarkDBWithConcurrencyNEWServerINDmovie/1_workers-12         	      21	  48903047 ns/op	85557972 B/op	  504264 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/1_workers-12         	      21	  50992358 ns/op	87144804 B/op	  504208 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/1_workers-12         	      21	  49914929 ns/op	88735721 B/op	  504205 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/2_workers-12         	      21	  49627282 ns/op	80748452 B/op	  504227 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/2_workers-12         	      20	  50396540 ns/op	85067675 B/op	  504235 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/2_workers-12         	      20	  50178765 ns/op	81707323 B/op	  504227 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/4_workers-12         	      21	  49211277 ns/op	83943365 B/op	  504234 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/4_workers-12         	      20	  50347568 ns/op	86738558 B/op	  504233 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/4_workers-12         	      21	  50154379 ns/op	82343060 B/op	  504231 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/6_workers-12         	      21	  54014924 ns/op	87143031 B/op	  504241 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/6_workers-12         	      19	  53493797 ns/op	82769454 B/op	  504231 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/6_workers-12         	      21	  51338962 ns/op	82350830 B/op	  504233 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/10000_workers-12     	      20	  51510725 ns/op	85544190 B/op	  516230 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/10000_workers-12     	      20	  51370567 ns/op	85547621 B/op	  516227 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/10000_workers-12     	      22	  50036296 ns/op	84881037 B/op	  515133 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/30000_workers-12     	      21	  51665368 ns/op	86910661 B/op	  538510 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/30000_workers-12     	      19	  52638825 ns/op	91349502 B/op	  542127 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/30000_workers-12     	      22	  49920428 ns/op	82704972 B/op	  536948 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/50000_workers-12     	      19	  57049444 ns/op	88837480 B/op	  567549 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/50000_workers-12     	      19	  56377885 ns/op	87058980 B/op	  567385 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/50000_workers-12     	      19	  58400418 ns/op	87058225 B/op	  567399 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/70000_workers-12     	      18	  62809654 ns/op	87684422 B/op	  597604 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/70000_workers-12     	      19	  55879331 ns/op	91604269 B/op	  592724 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/70000_workers-12     	      18	  61593952 ns/op	87681502 B/op	  597584 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/100000_workers-12    	      14	  76200578 ns/op	97195370 B/op	  675673 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/100000_workers-12    	       9	 123475223 ns/op	105808238 B/op	  770913 allocs/op
+BenchmarkDBWithConcurrencyNEWServerINDmovie/100000_workers-12    	      10	 108094452 ns/op	104741070 B/op	  744256 allocs/op
+PASS
+ok  	cw	79.345s

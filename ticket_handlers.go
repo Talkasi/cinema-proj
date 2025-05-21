@@ -248,8 +248,8 @@ func UpdateTicket(db *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-// @Summary Забронировать билет (user* | admin)
-// @Description Бронирует пользователю билет по ID.
+// @Summary Изменить статус бронирования билета билет (user* | admin)
+// @Description Бронирует или возвращает билет по ID.
 // @Tags Билеты
 // @Accept json
 // @Produce json

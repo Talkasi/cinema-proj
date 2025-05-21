@@ -382,42 +382,38 @@ func UpdateMovie(db *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-
-		tx, err := db.Begin(ctx)
-		if IsError(w, err) {
-			return
-		}
-		defer func() {
-			if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-				log.Printf("failed to rollback transaction: %v", err)
+		genreUUIDs := make([]uuid.UUID, len(data.GenreIDs))
+		for i, gid := range data.GenreIDs {
+			parsedUUID, err := uuid.Parse(gid)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Неверный формат ID жанра: %s", gid), http.StatusBadRequest)
+				return
 			}
-		}()
+			genreUUIDs[i] = parsedUUID
+		}
 
-		res, err := tx.Exec(ctx, `
-            UPDATE movies 
-            SET title = $1, 
-                duration = $2, 
-                description = $3, 
-                age_limit = $4, 
-                release_date = $5
-            WHERE id = $6`,
-			data.Title, data.Duration, data.Description,
-			data.AgeLimit, data.ReleaseDate, id)
+		var exists bool
+		err := db.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM movies WHERE id = $1)", id).Scan(&exists)
+		if err != nil {
+			http.Error(w, "Ошибка при проверке существования фильма", http.StatusInternalServerError)
+			return
+		}
+		if !exists {
+			http.Error(w, "Фильм не найден", http.StatusNotFound)
+			return
+		}
 
+		_, err = db.Exec(r.Context(),
+			"CALL update_movie($1, $2, $3, $4, $5, $6, $7)",
+			id,
+			data.Title,
+			data.Duration,
+			data.Description,
+			data.AgeLimit,
+			data.ReleaseDate,
+			genreUUIDs,
+		)
 		if IsError(w, err) {
-			return
-		}
-
-		if !CheckRowsAffected(w, res.RowsAffected()) {
-			return
-		}
-
-		if err := updateMovieGenres(tx, ctx, id, data.GenreIDs); IsError(w, err) {
-			return
-		}
-
-		if err := tx.Commit(ctx); IsError(w, err) {
 			return
 		}
 

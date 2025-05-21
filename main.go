@@ -230,8 +230,6 @@ func validRoleClaim(db *pgxpool.Pool, userID string, claimed_is_admin bool) (boo
 
 func Midleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// println(r.Method, r.RequestURI)
-
 		tokenString := r.Header.Get("Authorization")
 		if tokenString != "" {
 			claims := &Claims{}
@@ -246,11 +244,8 @@ func Midleware(next http.HandlerFunc) http.HandlerFunc {
 
 			r.Header.Set("UserID", claims.UserID)
 			r.Header.Set("Role", claims.Role)
-			// println("claims.Role", claims.Role)
-			// println("claims.UserID", claims.UserID)
 		} else {
 			r.Header.Set("Role", os.Getenv("CLAIM_ROLE_GUEST"))
-			// println("claims.Role", os.Getenv("CLAIM_ROLE_GUEST"))
 		}
 		next.ServeHTTP(w, r)
 	}
