@@ -56,7 +56,7 @@ run: db-init swagger
 # Обновление документации Swagger
 swagger:
 	@echo "Обновление документации Swagger..."
-	@swag init -g main.go  # Замените main.go на файл, в котором находится ваша точка входа
+	@swag init -g main.go
 
 cover:
 	go test -cover -coverprofile=c.out ./...
