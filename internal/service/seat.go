@@ -1,0 +1,40 @@
+package service
+
+import (
+	"context"
+
+	"cw/internal/domain"
+	"cw/internal/repository"
+)
+
+type SeatService struct {
+	repo repository.SeatRepository
+}
+
+func NewSeatService(repo repository.SeatRepository) *SeatService {
+	return &SeatService{repo: repo}
+}
+
+func (s *SeatService) GetAll(ctx context.Context) ([]domain.Seat, error) {
+	return s.repo.GetAll(ctx)
+}
+
+func (s *SeatService) GetByID(ctx context.Context, id string) (domain.Seat, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *SeatService) Create(ctx context.Context, seat domain.Seat) (domain.Seat, error) {
+	return s.repo.Create(ctx, seat)
+}
+
+func (s *SeatService) Update(ctx context.Context, seat domain.Seat) (domain.Seat, error) {
+	return s.repo.Update(ctx, seat)
+}
+
+func (s *SeatService) Delete(ctx context.Context, id string) error {
+	return s.repo.Delete(ctx, id)
+}
+
+func (s *SeatService) GetByHall(ctx context.Context, hallId string) ([]domain.Seat, error) {
+	return s.repo.GetByHall(ctx, hallId)
+}
