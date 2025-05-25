@@ -1,4 +1,4 @@
-package dto
+package models
 
 type Movie struct {
 	ID               string   `json:"id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`
