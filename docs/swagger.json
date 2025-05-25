@@ -77,7 +77,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -233,7 +233,7 @@
                         "description": "Данные о жанре успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -385,7 +385,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -647,7 +647,7 @@
                         "description": "Данные о кинозале успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1162,7 +1162,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1216,7 +1216,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1372,7 +1372,7 @@
                         "description": "Данные о фильме успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1635,7 +1635,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1741,7 +1741,7 @@
                         "description": "Данные отзыва успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1887,7 +1887,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2043,7 +2043,7 @@
                         "description": "Данные о типе экрана успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2189,7 +2189,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2345,7 +2345,7 @@
                         "description": "Данные о типе места успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2502,7 +2502,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "type": "string"
                         }
@@ -2608,7 +2608,7 @@
                         "description": "Данные о месте успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "type": "string"
                         }
@@ -2721,7 +2721,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3131,7 +3131,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3196,7 +3196,7 @@
                         "description": "Статус администрации для пользователя успешно обновлён"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3254,7 +3254,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3303,7 +3303,7 @@
                         "description": "Пользователь успешно зарегистрирован в системе"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3353,7 +3353,7 @@
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3510,7 +3510,7 @@
                         "description": "Данные пользователя успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }

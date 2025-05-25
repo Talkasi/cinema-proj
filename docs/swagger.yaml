@@ -484,7 +484,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -589,7 +589,7 @@ paths:
         "200":
           description: Данные о жанре успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -685,7 +685,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -827,7 +827,7 @@ paths:
         "200":
           description: Данные о кинозале успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1191,7 +1191,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1296,7 +1296,7 @@ paths:
         "200":
           description: Данные о фильме успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1408,7 +1408,7 @@ paths:
               $ref: '#/definitions/main.Movie'
             type: array
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
@@ -1499,7 +1499,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1600,7 +1600,7 @@ paths:
         "200":
           description: Данные отзыва успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1662,7 +1662,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1763,7 +1763,7 @@ paths:
         "200":
           description: Данные о типе экрана успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1858,7 +1858,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -1959,7 +1959,7 @@ paths:
         "200":
           description: Данные о типе места успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -2060,7 +2060,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             type: string
         "403":
@@ -2161,7 +2161,7 @@ paths:
         "200":
           description: Данные о месте успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             type: string
         "403":
@@ -2201,7 +2201,7 @@ paths:
           schema:
             $ref: '#/definitions/main.CreateResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -2466,7 +2466,7 @@ paths:
           schema:
             type: string
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "404":
@@ -2499,7 +2499,7 @@ paths:
           schema:
             $ref: '#/definitions/main.UserAdmin'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -2541,7 +2541,7 @@ paths:
         "200":
           description: Статус администрации для пользователя успешно обновлён
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":
@@ -2581,7 +2581,7 @@ paths:
           schema:
             $ref: '#/definitions/main.AuthResponse'
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "401":
@@ -2613,7 +2613,7 @@ paths:
         "201":
           description: Пользователь успешно зарегистрирован в системе
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "409":
@@ -2743,7 +2743,7 @@ paths:
         "200":
           description: Данные пользователя успешно обновлены
         "400":
-          description: В запросе предоставлены неверные данные
+          description: Некорректные данные
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "403":

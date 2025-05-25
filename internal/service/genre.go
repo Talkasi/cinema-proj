@@ -28,8 +28,8 @@ func (s *GenreService) Create(ctx context.Context, genre domain.Genre) (domain.G
 	return s.repo.Create(ctx, genre)
 }
 
-func (s *GenreService) Update(ctx context.Context, genre domain.Genre) (domain.Genre, *utils.Error) {
-	return s.repo.Update(ctx, genre)
+func (s *GenreService) Update(ctx context.Context, id string, genre domain.Genre) (domain.Genre, *utils.Error) {
+	return s.repo.Update(ctx, id, genre)
 }
 
 func (s *GenreService) Delete(ctx context.Context, id string) *utils.Error {

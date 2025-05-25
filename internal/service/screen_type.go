@@ -28,8 +28,8 @@ func (s *ScreenTypeService) Create(ctx context.Context, screenType domain.Screen
 	return s.repo.Create(ctx, screenType)
 }
 
-func (s *ScreenTypeService) Update(ctx context.Context, screenType domain.ScreenType) (domain.ScreenType, *utils.Error) {
-	return s.repo.Update(ctx, screenType)
+func (s *ScreenTypeService) Update(ctx context.Context, id string, screenType domain.ScreenType) (domain.ScreenType, *utils.Error) {
+	return s.repo.Update(ctx, id, screenType)
 }
 
 func (s *ScreenTypeService) Delete(ctx context.Context, id string) *utils.Error {

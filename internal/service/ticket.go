@@ -36,8 +36,8 @@ func (s *TicketService) Create(ctx context.Context, ticket domain.Ticket) (domai
 	return s.repo.Create(ctx, ticket)
 }
 
-func (s *TicketService) Update(ctx context.Context, ticket domain.Ticket) (domain.Ticket, *utils.Error) {
-	return s.repo.Update(ctx, ticket)
+func (s *TicketService) Update(ctx context.Context, id string, ticket domain.Ticket) (domain.Ticket, *utils.Error) {
+	return s.repo.Update(ctx, id, ticket)
 }
 
 func (s *TicketService) Delete(ctx context.Context, id string) *utils.Error {

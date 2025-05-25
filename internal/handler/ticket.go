@@ -2,8 +2,8 @@ package handler
 
 import (
 	"context"
+	"cw/internal/service"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
 
@@ -12,34 +12,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateTicketData(w http.ResponseWriter, t TicketData) bool {
-	if err := validateTicketStatus(t.Status); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-	if t.Price < 0 {
-		http.Error(w, "Цена не может быть отрицательной", http.StatusBadRequest)
-		return false
-	}
-
-	if err := uuid.Validate(t.MovieShowID); err != nil {
-		http.Error(w, "Неверный формат ID сеанса", http.StatusBadRequest)
-		return false
-	}
-
-	if err := uuid.Validate(t.SeatID); err != nil {
-		http.Error(w, "Неверный формат ID места", http.StatusBadRequest)
-		return false
-	}
-
-	return true
+type TicketHandler struct {
+	ticketService service.TicketService
 }
 
-func validateTicketStatus(status TicketStatusEnumType) error {
-	if !status.IsValid() {
-		return errors.New("недопустимый статус билета")
-	}
-	return nil
+func NewTicketHandler(ts service.TicketService) *TicketHandler {
+	return &TicketHandler{ticketService: ts}
 }
 
 // @Summary Получить все билеты для сеанса фильма по ID (admin)
@@ -172,7 +150,7 @@ func GetAvailableTicketsByMovieShowID(db *pgxpool.Pool) http.HandlerFunc {
 // @Security BearerAuth
 // @Param ticket body TicketData true "Билет"
 // @Success 201 {object} CreateResponse "ID созданного билета"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /tickets [post]

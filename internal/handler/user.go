@@ -2,94 +2,22 @@ package handler
 
 import (
 	"context"
+	"cw/internal/service"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllUserData(w http.ResponseWriter, u UserData) bool {
-	u.Name = PrepareString(u.Name)
-	u.Email = PrepareString(u.Email)
-	u.BirthDate = PrepareString(u.BirthDate)
-
-	if err := validateUserName(u.Name); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateUserEmail(u.Email); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateUserBirthDate(u.BirthDate); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	return true
+type UserHandler struct {
+	userService service.UserService
 }
 
-func validateUserName(name string) error {
-	validNameRegex := regexp.MustCompile(`\S`)
-	if !validNameRegex.MatchString(name) {
-		return errors.New("имя пользователя может содержать только буквы, пробелы и дефисы")
-	}
-
-	if !regexp.MustCompile(`\S`).MatchString(name) {
-		return errors.New("имя пользователя не может состоять только из пробелов")
-	}
-
-	if len(name) == 0 || len(name) > 50 {
-		return errors.New("имя пользователя не может быть пустым и не может превышать 50 символов")
-	}
-	return nil
-}
-
-func validateUserEmail(email string) error {
-	validEmailRegex := regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$`)
-	if !validEmailRegex.MatchString(email) {
-		return errors.New("неверный формат email")
-	}
-
-	if len(email) > 100 {
-		return errors.New("email не может превышать 100 символов")
-	}
-	return nil
-}
-
-func validateUserBirthDate(birthDate string) error {
-	parsedDate, err := time.Parse("2006-01-02", birthDate)
-	if err != nil {
-		return errors.New("неверный формат даты, используйте YYYY-MM-DD")
-	}
-
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	minBirthDate := today.AddDate(-100, 0, 0)
-
-	if parsedDate.After(today) {
-		return errors.New("дата рождения не может быть в будущем")
-	}
-
-	if parsedDate.Before(minBirthDate) {
-		return errors.New("дата рождения не может быть более 100 лет назад")
-	}
-
-	return nil
-}
-
-func validateUserPassword(password string) error {
-	if len(password) < 8 {
-		return errors.New("пароль должен содержать не менее 8 символов")
-	}
-	return nil
+func NewUserHandler(us service.UserService) *UserHandler {
+	return &UserHandler{userService: us}
 }
 
 // @Summary Получить всех пользователей (admin)
@@ -102,41 +30,13 @@ func validateUserPassword(password string) error {
 // @Failure 404 {object} ErrorResponse "Пользователи не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /users [get]
-func GetUsers(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("Role")
-		// println("Role", role, os.Getenv("CLAIM_ROLE_USER"), os.Getenv("CLAIM_ROLE_ADMIN"))
-
-		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
-			http.Error(w, "Доступ запрещён", http.StatusForbidden)
-			return
-		}
-
-		rows, err := db.Query(context.Background(),
-			"SELECT id, name, email, birth_date, password_hash, is_admin FROM users")
-		if HandleDatabaseError(w, err, "пользователями") {
-			return
-		}
-		defer rows.Close()
-
-		var users []User
-		var birthDate time.Time
-		for rows.Next() {
-			var u User
-			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &birthDate, &u.PasswordHash, &u.IsAdmin); HandleDatabaseError(w, err, "пользователем") {
-				return
-			}
-			u.BirthDate = birthDate.Format("2006-01-02")
-			users = append(users, u)
-		}
-
-		if len(users) == 0 {
-			http.Error(w, "Пользователи не найдены", http.StatusNotFound)
-			return
-		}
-
-		json.NewEncoder(w).Encode(users)
+func (u *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
+	seatType, err := u.userService.GetAll(r.Context())
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
 	}
+	json.NewEncoder(w).Encode(seatType)
 }
 
 // @Summary Получить пользователя по ID (user* | admin)
@@ -188,7 +88,7 @@ func GetUserByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Param id path string true "ID пользователя"
 // @Param user body UserData true "Новые данные пользователя"
 // @Success 200 "Данные пользователя успешно обновлены"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -239,7 +139,7 @@ func UpdateUser(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Param id path string true "ID пользователя"
 // @Success 200 {string} Nickname "Nickname пользователя"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /user/{id} [get]
@@ -273,7 +173,7 @@ func GetUserNickname(db *pgxpool.Pool) http.HandlerFunc {
 // @Param id path string true "ID пользователя"
 // @Param user body UserAdmin true "Статус администратора"
 // @Success 200 "Статус администрации для пользователя успешно обновлён"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -321,7 +221,7 @@ func UpdateAdminStatusUser(db *pgxpool.Pool) http.HandlerFunc {
 // @Security BearerAuth
 // @Param id path string true "ID пользователя"
 // @Success 200 {object} UserAdmin "Статус администрации для пользователя"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
@@ -400,7 +300,7 @@ func DeleteUser(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Param user body UserRegister true "Данные для регистрации"
 // @Success 201 "Пользователь успешно зарегистрирован в системе"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 409 {object} ErrorResponse "Пользователь с таким email уже существует"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /user/register [post]
@@ -456,7 +356,7 @@ func RegisterUser(db *pgxpool.Pool) http.HandlerFunc {
 // @Produce json
 // @Param credentials body UserLogin true "Данные для входа"
 // @Success 200 {object} AuthResponse "Данные авторизации"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 401 {object} ErrorResponse "Неверный email или пароль"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /user/login [post]

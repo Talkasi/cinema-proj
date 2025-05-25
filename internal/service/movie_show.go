@@ -25,12 +25,12 @@ func (s *MovieShowService) GetByID(ctx context.Context, id string) (domain.Movie
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *MovieShowService) Create(ctx context.Context, MovieShow domain.MovieShow) (domain.MovieShow, *utils.Error) {
-	return s.repo.Create(ctx, MovieShow)
+func (s *MovieShowService) Create(ctx context.Context, movieShow domain.MovieShow) (domain.MovieShow, *utils.Error) {
+	return s.repo.Create(ctx, movieShow)
 }
 
-func (s *MovieShowService) Update(ctx context.Context, MovieShow domain.MovieShow) (domain.MovieShow, *utils.Error) {
-	return s.repo.Update(ctx, MovieShow)
+func (s *MovieShowService) Update(ctx context.Context, id string, movieShow domain.MovieShow) (domain.MovieShow, *utils.Error) {
+	return s.repo.Update(ctx, id, movieShow)
 }
 
 func (s *MovieShowService) Delete(ctx context.Context, id string) *utils.Error {

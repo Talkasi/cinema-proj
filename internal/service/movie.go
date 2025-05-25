@@ -28,8 +28,8 @@ func (s *MovieService) Create(ctx context.Context, movie domain.Movie) (domain.M
 	return s.repo.Create(ctx, movie)
 }
 
-func (s *MovieService) Update(ctx context.Context, movie domain.Movie) (domain.Movie, *utils.Error) {
-	return s.repo.Update(ctx, movie)
+func (s *MovieService) Update(ctx context.Context, id string, movie domain.Movie) (domain.Movie, *utils.Error) {
+	return s.repo.Update(ctx, id, movie)
 }
 
 func (s *MovieService) Delete(ctx context.Context, id string) *utils.Error {

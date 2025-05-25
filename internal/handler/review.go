@@ -3,71 +3,19 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
-	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func validateAllReviewData(w http.ResponseWriter, r ReviewData) bool {
-	r.Comment = PrepareString(r.Comment)
-
-	if err := validateReviewUserID(r.UserID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateReviewMovieID(r.MovieID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateReviewRating(r.Rating); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateReviewComment(r.Comment); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	return true
+type ReviewHandler struct {
+	reviewService service.ReviewService
 }
 
-func validateReviewUserID(userID string) error {
-	if _, err := uuid.Parse(userID); err != nil {
-		return errors.New("неверный формат ID пользователя")
-	}
-	return nil
-}
-
-func validateReviewMovieID(movieID string) error {
-	if _, err := uuid.Parse(movieID); err != nil {
-		return errors.New("неверный формат ID фильма")
-	}
-	return nil
-}
-
-func validateReviewRating(rating int) error {
-	if rating < 1 || rating > 10 {
-		return errors.New("рейтинг должен быть от 1 до 10")
-	}
-	return nil
-}
-
-func validateReviewComment(comment string) error {
-	validCommentRegex := regexp.MustCompile(`\S`)
-	if !validCommentRegex.MatchString(comment) {
-		return errors.New("комментарий не может быть пустым или состоять только из пробелов")
-	}
-	if len(comment) > 2000 {
-		return errors.New("комментарий не может превышать 2000 символов")
-	}
-	return nil
+func NewReviewHandler(rs service.ReviewService) *ReviewHandler {
+	return &ReviewHandler{reviewService: rs}
 }
 
 // @Summary Получить все отзывы (admin)
@@ -79,36 +27,13 @@ func validateReviewComment(comment string) error {
 // @Failure 404 {object} ErrorResponse "Отзывы не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /reviews [get]
-func GetReviews(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query(context.Background(), "SELECT id, user_id, movie_id, rating, review_comment FROM reviews")
-		if HandleDatabaseError(w, err, "отзывами") {
-			return
-		}
-		defer rows.Close()
-
-		role := r.Header.Get("Role")
-		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
-			http.Error(w, "Доступ запрещён", http.StatusForbidden)
-			return
-		}
-
-		var reviews []Review
-		for rows.Next() {
-			var review Review
-			if err := rows.Scan(&review.ID, &review.UserID, &review.MovieID, &review.Rating, &review.Comment); HandleDatabaseError(w, err, "отзывом") {
-				return
-			}
-			reviews = append(reviews, review)
-		}
-
-		if len(reviews) == 0 {
-			http.Error(w, "Отзывы не найдены", http.StatusNotFound)
-			return
-		}
-
-		json.NewEncoder(w).Encode(reviews)
+func (rs *ReviewHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
+	review, err := rs.reviewService.GetAll(r.Context())
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
 	}
+	json.NewEncoder(w).Encode(review)
 }
 
 // @Summary Получить отзыв по ID (guset | user | admin)
@@ -150,7 +75,7 @@ func GetReviewByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Security BearerAuth
 // @Param review body ReviewData true "Данные отзыва"
 // @Success 201 {object} CreateResponse "ID созданного отзыва"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /reviews [post]
@@ -199,7 +124,7 @@ func CreateReview(db *pgxpool.Pool) http.HandlerFunc {
 // @Param id path string true "ID отзыва"
 // @Param review body ReviewData true "Новые данные отзыва"
 // @Success 200 "Данные отзыва успешно обновлены"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Отзыв не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"

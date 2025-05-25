@@ -28,8 +28,8 @@ func (s *SeatService) Create(ctx context.Context, seat domain.Seat) (domain.Seat
 	return s.repo.Create(ctx, seat)
 }
 
-func (s *SeatService) Update(ctx context.Context, seat domain.Seat) (domain.Seat, *utils.Error) {
-	return s.repo.Update(ctx, seat)
+func (s *SeatService) Update(ctx context.Context, id string, seat domain.Seat) (domain.Seat, *utils.Error) {
+	return s.repo.Update(ctx, id, seat)
 }
 
 func (s *SeatService) Delete(ctx context.Context, id string) *utils.Error {

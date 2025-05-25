@@ -28,8 +28,8 @@ func (s *HallService) Create(ctx context.Context, hall domain.Hall) (domain.Hall
 	return s.repo.Create(ctx, hall)
 }
 
-func (s *HallService) Update(ctx context.Context, hall domain.Hall) (domain.Hall, *utils.Error) {
-	return s.repo.Update(ctx, hall)
+func (s *HallService) Update(ctx context.Context, id string, hall domain.Hall) (domain.Hall, *utils.Error) {
+	return s.repo.Update(ctx, id, hall)
 }
 
 func (s *HallService) Delete(ctx context.Context, id string) *utils.Error {

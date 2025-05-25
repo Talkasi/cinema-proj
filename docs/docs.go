@@ -85,7 +85,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -241,7 +241,7 @@ const docTemplate = `{
                         "description": "Данные о жанре успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -393,7 +393,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -655,7 +655,7 @@ const docTemplate = `{
                         "description": "Данные о кинозале успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1170,7 +1170,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1224,7 +1224,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1380,7 +1380,7 @@ const docTemplate = `{
                         "description": "Данные о фильме успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1643,7 +1643,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1749,7 +1749,7 @@ const docTemplate = `{
                         "description": "Данные отзыва успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -1895,7 +1895,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2051,7 +2051,7 @@ const docTemplate = `{
                         "description": "Данные о типе экрана успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2197,7 +2197,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2353,7 +2353,7 @@ const docTemplate = `{
                         "description": "Данные о типе места успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -2510,7 +2510,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "type": "string"
                         }
@@ -2616,7 +2616,7 @@ const docTemplate = `{
                         "description": "Данные о месте успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "type": "string"
                         }
@@ -2729,7 +2729,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3139,7 +3139,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3204,7 +3204,7 @@ const docTemplate = `{
                         "description": "Статус администрации для пользователя успешно обновлён"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3262,7 +3262,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3311,7 +3311,7 @@ const docTemplate = `{
                         "description": "Пользователь успешно зарегистрирован в системе"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3361,7 +3361,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -3518,7 +3518,7 @@ const docTemplate = `{
                         "description": "Данные пользователя успешно обновлены"
                     },
                     "400": {
-                        "description": "В запросе предоставлены неверные данные",
+                        "description": "Некорректные данные",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }

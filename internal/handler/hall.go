@@ -7,8 +7,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"cw/internal/models"
+	"cw/internal/dto"
 	"cw/internal/service"
+	"cw/internal/utils"
 )
 
 type HallHandler struct {
@@ -30,10 +31,10 @@ func NewHallHandler(hs service.HallService) *HallHandler {
 func (h *HallHandler) GetHalls(w http.ResponseWriter, r *http.Request) {
 	halls, err := h.hallService.GetAll(r.Context())
 	if err != nil {
-		http.Error(w, "Ошибка при получении залов", http.StatusInternalServerError)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
-	json.NewEncoder(w).Encode(halls)
+	json.NewEncoder(w).Encode(dto.HallsFromDomainList(halls))
 }
 
 // @Summary Получить кинозал по ID (guest | user | admin)
@@ -50,10 +51,10 @@ func (h *HallHandler) GetHallByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	hall, err := h.hallService.GetByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Зал не найден", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
-	json.NewEncoder(w).Encode(hall)
+	json.NewEncoder(w).Encode(dto.HallFromDomain(hall))
 }
 
 // @Summary Создать кинозал (admin)
@@ -64,24 +65,24 @@ func (h *HallHandler) GetHallByID(w http.ResponseWriter, r *http.Request) {
 // @Security BearerAuth
 // @Param hall body HallData true "Данные кинозала"
 // @Success 201 {object} CreateResponse "ID созданного кинозала"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 409 {object} ErrorResponse "Конфликт при создании кинозала"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /halls [post]
 func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
-	var data models.HallData
+	var data dto.HallRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
 		return
 	}
-	hall, err := h.hallService.Create(r.Context(), data)
+	hall, err := h.hallService.Create(r.Context(), data.ToDomain())
 	if err != nil {
-		http.Error(w, "Ошибка при создании зала", http.StatusInternalServerError)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(hall)
+	json.NewEncoder(w).Encode(hall.ID)
 }
 
 // @Summary Обновить кинозал (admin)
@@ -93,7 +94,7 @@ func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
 // @Param hall body HallData true "Обновлённые данные зала"
 // @Security BearerAuth
 // @Success 200 "Данные о кинозале успешно обновлены"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Зал не найден"
 // @Failure 409 {object} ErrorResponse "Конфликт при обновлении кинозала"
@@ -101,17 +102,17 @@ func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
 // @Router /halls/{id} [put]
 func (h *HallHandler) UpdateHall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var data models.HallData
+	var data dto.HallRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
 		return
 	}
-	hall, err := h.hallService.Update(r.Context(), id, data)
+	_, err := h.hallService.Update(r.Context(), id, data.ToDomain())
 	if err != nil {
-		http.Error(w, "Зал не найден", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
-	json.NewEncoder(w).Encode(hall)
+	json.NewEncoder(w)
 }
 
 // @Summary Удалить кинозал (admin)
@@ -130,7 +131,7 @@ func (h *HallHandler) DeleteHall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	err := h.hallService.Delete(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Зал не найден", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -155,17 +156,12 @@ func (h *HallHandler) GetHallsByScreenType(w http.ResponseWriter, r *http.Reques
 
 	halls, err := h.hallService.GetByScreenType(r.Context(), screenTypeID)
 	if err != nil {
-		http.Error(w, "Ошибка при получении залов", http.StatusInternalServerError)
-		return
-	}
-
-	if len(halls) == 0 {
-		http.Error(w, "Кинозалы с указанным типом экрана не найдены", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(halls)
+	json.NewEncoder(w).Encode(dto.HallsFromDomainList(halls))
 }
 
 // @Summary Поиск залов по названию (guest | user | admin)
@@ -180,7 +176,7 @@ func (h *HallHandler) GetHallsByScreenType(w http.ResponseWriter, r *http.Reques
 // @Router /halls/search [get]
 func (h *HallHandler) SearchHallsByName(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("query")
-	query = PrepareString(query)
+	query = utils.PrepareString(query)
 	if query == "" {
 		http.Error(w, "Строка поиска пуста", http.StatusBadRequest)
 		return
@@ -188,15 +184,10 @@ func (h *HallHandler) SearchHallsByName(w http.ResponseWriter, r *http.Request) 
 
 	halls, err := h.hallService.SearchByName(r.Context(), query)
 	if err != nil {
-		http.Error(w, "Ошибка при поиске залов", http.StatusInternalServerError)
-		return
-	}
-
-	if len(halls) == 0 {
-		http.Error(w, "Кинозалы по запросу не найдены", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(halls)
+	json.NewEncoder(w).Encode(dto.HallsFromDomainList(halls))
 }

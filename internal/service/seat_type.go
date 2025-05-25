@@ -28,8 +28,8 @@ func (s *SeatTypeService) Create(ctx context.Context, SeatType domain.SeatType) 
 	return s.repo.Create(ctx, SeatType)
 }
 
-func (s *SeatTypeService) Update(ctx context.Context, SeatType domain.SeatType) (domain.SeatType, *utils.Error) {
-	return s.repo.Update(ctx, SeatType)
+func (s *SeatTypeService) Update(ctx context.Context, id string, SeatType domain.SeatType) (domain.SeatType, *utils.Error) {
+	return s.repo.Update(ctx, id, SeatType)
 }
 
 func (s *SeatTypeService) Delete(ctx context.Context, id string) *utils.Error {

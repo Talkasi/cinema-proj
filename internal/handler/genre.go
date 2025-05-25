@@ -25,13 +25,13 @@ func NewGenreHandler(gs service.GenreService) *GenreHandler {
 // @Failure 404 {object} ErrorResponse "Жанры не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres [get]
-func (h *GenreHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
-	halls, err := h.genreService.GetAll(r.Context())
+func (g *GenreHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
+	genre, err := g.genreService.GetAll(r.Context())
 	if err != nil {
 		http.Error(w, err.Message, err.Code)
 		return
 	}
-	json.NewEncoder(w).Encode(halls)
+	json.NewEncoder(w).Encode(dto.GenresFromDomainList(genre))
 }
 
 // @Summary Получить жанр по ID (guest | user | admin)
@@ -44,14 +44,14 @@ func (h *GenreHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} ErrorResponse "Жанр не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [get]
-func (h *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
+func (g *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	hall, err := h.genreService.GetByID(r.Context(), id)
+	genre, err := g.genreService.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Message, err.Code)
 		return
 	}
-	json.NewEncoder(w).Encode(hall)
+	json.NewEncoder(w).Encode(dto.GenreFromDomain(genre))
 }
 
 // @Summary Создать жанр (admin)
@@ -62,23 +62,23 @@ func (h *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
 // @Security BearerAuth
 // @Param genre body GenreData true "Данные жанра"
 // @Success 201 {object} CreateResponse "ID созданного жанра"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres [post]
-func (h *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
-	var data dto.GenreData
+func (g *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
+	var data dto.GenreRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
 		return
 	}
-	hall, err := h.genreService.Create(r.Context(), data)
+	genre, err := g.genreService.Create(r.Context(), data.ToDomain())
 	if err != nil {
-		http.Error(w, "Ошибка при создании зала", http.StatusInternalServerError)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(hall)
+	json.NewEncoder(w).Encode(genre.ID)
 }
 
 // @Summary Обновить жанр (admin)
@@ -90,24 +90,24 @@ func (h *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "ID жанра"
 // @Param genre body GenreData true "Новые данные жанра"
 // @Success 200 "Данные о жанре успешно обновлены"
-// @Failure 400 {object} ErrorResponse "В запросе предоставлены неверные данные"
+// @Failure 400 {object} ErrorResponse "Некорректные данные"
 // @Failure 403 {object} ErrorResponse "Доступ запрещён"
 // @Failure 404 {object} ErrorResponse "Жанр не найден"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [put]
-func (h *GenreHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
+func (g *GenreHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var data dto.GenreData
+	var data dto.GenreRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
 		return
 	}
-	hall, err := h.genreService.Update(r.Context(), id, data)
+	_, err := g.genreService.Update(r.Context(), id, data.ToDomain())
 	if err != nil {
-		http.Error(w, "Зал не найден", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
-	json.NewEncoder(w).Encode(hall)
+	json.NewEncoder(w)
 }
 
 // @Summary Удалить жанр (admin)
@@ -122,11 +122,11 @@ func (h *GenreHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
 // @Failure 409 {object} ErrorResponse "Конфликт при удалении жанра"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/{id} [delete]
-func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
+func (g *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	err := h.genreService.Delete(r.Context(), id)
+	err := g.genreService.Delete(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Зал не найден", http.StatusNotFound)
+		http.Error(w, err.Message, err.Code)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -142,38 +142,12 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} ErrorResponse "Жанры не найдены"
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres/search [get]
-// func SearchGenres(db *pgxpool.Pool) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		query := r.URL.Query().Get("query")
-// 		query = PrepareString(query)
-// 		if query == "" {
-// 			http.Error(w, "Строка поиска пуста", http.StatusBadRequest)
-// 			return
-// 		}
-
-// 		rows, err := db.Query(context.Background(),
-// 			"SELECT id, name, description FROM genres WHERE name ILIKE $1",
-// 			"%"+query+"%")
-// 		if IsError(w, err) {
-// 			return
-// 		}
-// 		defer rows.Close()
-
-// 		var genres []Genre
-// 		for rows.Next() {
-// 			var g Genre
-// 			if err := rows.Scan(&g.ID, &g.Name, &g.Description); HandleDatabaseError(w, err, "жанром") {
-// 				return
-// 			}
-
-// 			genres = append(genres, g)
-// 		}
-
-// 		if len(genres) == 0 {
-// 			http.Error(w, "Жанры по запросу не найдены", http.StatusNotFound)
-// 			return
-// 		}
-
-// 		json.NewEncoder(w).Encode(genres)
-// 	}
-// }
+func (g *GenreHandler) SearchGenres(w http.ResponseWriter, r *http.Request) {
+	query := chi.URLParam(r, "query")
+	genres, err := g.genreService.SearchByName(r.Context(), query)
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
+	}
+	json.NewEncoder(w).Encode(dto.GenresFromDomainList(genres))
+}

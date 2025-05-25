@@ -1,67 +1,20 @@
 package handler
 
 import (
-	"context"
+	"cw/internal/dto"
+	"cw/internal/service"
 	"encoding/json"
-	"errors"
 	"net/http"
-	"os"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/go-chi/chi/v5"
 )
 
-// Валидаторы для мест
-func validateAllSeatData(w http.ResponseWriter, s SeatData) bool {
-	if err := validateHallID(s.HallID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateSeatTypeID(s.SeatTypeID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateRowNumber(s.RowNumber); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	if err := validateSeatNumber(s.SeatNumber); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	return true
+type SeatHandler struct {
+	seatService service.SeatService
 }
 
-func validateHallID(hallID string) error {
-	if _, err := uuid.Parse(hallID); err != nil {
-		return errors.New("неверный формат ID зала")
-	}
-	return nil
-}
-
-func validateSeatTypeID(seatTypeID string) error {
-	if _, err := uuid.Parse(seatTypeID); err != nil {
-		return errors.New("неверный формат ID типа места")
-	}
-	return nil
-}
-
-func validateRowNumber(rowNumber int) error {
-	if rowNumber <= 0 || rowNumber > 100 {
-		return errors.New("номер ряда должен быть от 1 до 100")
-	}
-	return nil
-}
-
-func validateSeatNumber(seatNumber int) error {
-	if seatNumber <= 0 || seatNumber > 100 {
-		return errors.New("номер места должен быть от 1 до 100")
-	}
-	return nil
+func NewSeatHandler(st service.SeatService) *SeatHandler {
+	return &SeatHandler{seatService: st}
 }
 
 // @Summary Получить все места (admin)
@@ -74,39 +27,13 @@ func validateSeatNumber(seatNumber int) error {
 // @Failure 404 {string} string "Места не найдены"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats [get]
-func GetSeats(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("Role")
-		if role != os.Getenv("CLAIM_ROLE_ADMIN") {
-			http.Error(w, "Доступ запрещён", http.StatusForbidden)
-			return
-		}
-
-		rows, err := db.Query(context.Background(), `
-			SELECT id, hall_id, seat_type_id, row_number, seat_number 
-			FROM seats`)
-		if HandleDatabaseError(w, err, "местами") {
-			return
-		}
-		defer rows.Close()
-
-		var seats []Seat
-		for rows.Next() {
-			var s Seat
-			if err := rows.Scan(&s.ID, &s.HallID, &s.SeatTypeID, &s.RowNumber, &s.SeatNumber); HandleDatabaseError(w, err, "местом") {
-				return
-			}
-			seats = append(seats, s)
-		}
-
-		if len(seats) == 0 {
-			http.Error(w, "Места не найдены", http.StatusNotFound)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(seats)
+func (s *SeatHandler) GetSeats(w http.ResponseWriter, r *http.Request) {
+	seat, err := s.seatService.GetAll(r.Context())
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
 	}
+	json.NewEncoder(w).Encode(seat)
 }
 
 // @Summary Получить место по ID (guest | user | admin)
@@ -119,27 +46,14 @@ func GetSeats(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 404 {string} string "Место не найдено"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats/{id} [get]
-func GetSeatByID(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
-		if !ok {
-			return
-		}
-
-		var s Seat
-		s.ID = id.String()
-		err := db.QueryRow(context.Background(), `
-			SELECT hall_id, seat_type_id, row_number, seat_number 
-			FROM seats WHERE id = $1`, id).
-			Scan(&s.HallID, &s.SeatTypeID, &s.RowNumber, &s.SeatNumber)
-
-		if IsError(w, err) {
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(s)
+func (s *SeatHandler) GetSeatByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	seat, err := s.seatService.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
 	}
+	json.NewEncoder(w).Encode(dto.SeatFromDomain(seat))
 }
 
 // @Summary Создать место (admin)
@@ -150,34 +64,23 @@ func GetSeatByID(db *pgxpool.Pool) http.HandlerFunc {
 // @Security BearerAuth
 // @Param seat body SeatData true "Данные места"
 // @Success 201 {object} CreateResponse "ID созданного места"
-// @Failure 400 {string} string "В запросе предоставлены неверные данные"
+// @Failure 400 {string} string "Некорректные данные"
 // @Failure 403 {string} string "Доступ запрещён"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats [post]
-func CreateSeat(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var s SeatData
-		if !DecodeJSONBody(w, r, &s) {
-			return
-		}
-		if !validateAllSeatData(w, s) {
-			return
-		}
-
-		id := uuid.New()
-		_, err := db.Exec(context.Background(), `
-			INSERT INTO seats (id, hall_id, seat_type_id, row_number, seat_number) 
-			VALUES ($1, $2, $3, $4, $5)`,
-			id, s.HallID, s.SeatTypeID, s.RowNumber, s.SeatNumber)
-
-		if IsError(w, err) {
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(id.String())
+func (s *SeatHandler) CreateSeat(w http.ResponseWriter, r *http.Request) {
+	var data dto.SeatRequest
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "Некорректные данные", http.StatusBadRequest)
+		return
 	}
+	seat, err := s.seatService.Create(r.Context(), data.ToDomain())
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(seat.ID)
 }
 
 // @Summary Обновить место (admin)
@@ -189,43 +92,24 @@ func CreateSeat(db *pgxpool.Pool) http.HandlerFunc {
 // @Param id path string true "ID места"
 // @Param seat body SeatData true "Обновлённые данные места"
 // @Success 200 "Данные о месте успешно обновлены"
-// @Failure 400 {string} string "В запросе предоставлены неверные данные"
+// @Failure 400 {string} string "Некорректные данные"
 // @Failure 403 {string} string "Доступ запрещён"
 // @Failure 404 {string} string "Место не найдено"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats/{id} [put]
-func UpdateSeat(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
-		if !ok {
-			return
-		}
-
-		var s SeatData
-		if !DecodeJSONBody(w, r, &s) {
-			return
-		}
-		if !validateAllSeatData(w, s) {
-			return
-		}
-
-		res, err := db.Exec(context.Background(), `
-			UPDATE seats 
-			SET hall_id=$1, seat_type_id=$2, row_number=$3, seat_number=$4 
-			WHERE id=$5`,
-			s.HallID, s.SeatTypeID, s.RowNumber, s.SeatNumber, id)
-
-		if IsError(w, err) {
-			return
-		}
-
-		if !CheckRowsAffected(w, res.RowsAffected()) {
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w)
+func (s *SeatHandler) UpdateSeat(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var data dto.SeatRequest
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "Некорректные данные", http.StatusBadRequest)
+		return
 	}
+	_, err := s.seatService.Update(r.Context(), id, data.ToDomain())
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
+	}
+	json.NewEncoder(w)
 }
 
 // @Summary Удалить место (admin)
@@ -239,26 +123,14 @@ func UpdateSeat(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 404 {string} string "Место не найдено"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /seats/{id} [delete]
-func DeleteSeat(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := ParseUUIDFromPath(w, r.PathValue("id"))
-		if !ok {
-			return
-		}
-
-		res, err := db.Exec(context.Background(),
-			"DELETE FROM seats WHERE id = $1", id)
-
-		if IsError(w, err) {
-			return
-		}
-
-		if !CheckRowsAffected(w, res.RowsAffected()) {
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+func (s *SeatHandler) DeleteSeat(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	err := s.seatService.Delete(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
 	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // @Summary Получить места по ID зала (guest | user | admin)
@@ -271,38 +143,14 @@ func DeleteSeat(db *pgxpool.Pool) http.HandlerFunc {
 // @Failure 404 {string} string "Места не найдены"
 // @Failure 500 {string} string "Ошибка сервера"
 // @Router /halls/{hall_id}/seats [get]
-func GetSeatsByHallID(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		hallID, ok := ParseUUIDFromPath(w, r.PathValue("hall_id"))
-		if !ok {
-			return
-		}
-
-		rows, err := db.Query(context.Background(), `
-            SELECT s.id, s.hall_id, s.seat_type_id, s.row_number, s.seat_number
-            FROM seats s
-            WHERE s.hall_id = $1
-            ORDER BY s.row_number, s.seat_number`, hallID)
-		if IsError(w, err) {
-			return
-		}
-		defer rows.Close()
-
-		var seats []Seat
-		for rows.Next() {
-			var s Seat
-			if err := rows.Scan(&s.ID, &s.HallID, &s.SeatTypeID, &s.RowNumber, &s.SeatNumber); IsError(w, err) {
-				return
-			}
-			seats = append(seats, s)
-		}
-
-		if len(seats) == 0 {
-			http.Error(w, "Места не найдены", http.StatusNotFound)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(seats)
+func (s *SeatHandler) GetSeatsByHallID(w http.ResponseWriter, r *http.Request) {
+	hallId := chi.URLParam(r, "hall_id")
+	seat, err := s.seatService.GetByHall(r.Context(), hallId)
+	if err != nil {
+		http.Error(w, err.Message, err.Code)
+		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dto.SeatFromDomainList(seat))
 }

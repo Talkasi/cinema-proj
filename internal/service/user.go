@@ -35,8 +35,8 @@ func (s *UserService) UpdateAdminStatus(ctx context.Context, admin domain.User) 
 	return s.repo.UpdateAdminStatus(ctx, admin)
 }
 
-func (s *UserService) Update(ctx context.Context, user domain.User) (domain.User, *utils.Error) {
-	return s.repo.Update(ctx, user)
+func (s *UserService) Update(ctx context.Context, id string, user domain.User) (domain.User, *utils.Error) {
+	return s.repo.Update(ctx, id, user)
 }
 
 func (s *UserService) Delete(ctx context.Context, id string) *utils.Error {
