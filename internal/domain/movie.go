@@ -1,13 +1,13 @@
 package domain
 
 type Movie struct {
-	ID               string   `json:"id" example:"9b165097-1c9f-4ea3-bef0-e505baa4ff63"`
-	Title            string   `json:"title" example:"Властелин колец"`
-	Duration         string   `json:"duration" example:"02:58:00"`
-	Rating           *float64 `json:"rating,omitempty" example:"8.8"`
-	Description      string   `json:"description" example:"Эпическая история о кольце власти."`
-	AgeLimit         int      `json:"age_limit" example:"12"`
-	BoxOfficeRevenue float64  `json:"box_office_revenue" example:"300000000"`
-	ReleaseDate      string   `json:"release_date" example:"2001-12-19"`
-	Genres           []Genre  `json:"genres"`
+	ID               string
+	Title            string
+	Duration         string
+	Rating           *float64
+	Description      string
+	AgeLimit         int
+	BoxOfficeRevenue float64
+	ReleaseDate      string
+	Genres           []Genre
 }
