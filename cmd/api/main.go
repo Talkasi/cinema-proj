@@ -16,7 +16,7 @@ import (
 	_ "cw/docs"
 )
 
-// @title Курсовая работа по базам данных
+// @title Cinema Proj
 // @version 1.0
 // @description Разработка базы данных для управления кинотеатром
 // @securityDefinitions.apikey BearerAuth

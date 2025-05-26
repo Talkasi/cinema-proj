@@ -1,4 +1,4 @@
-package models
+package dto
 
 type Seat struct {
 	ID         string `json:"id" example:"a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"`
