@@ -1,4 +1,4 @@
-package models
+package dto
 
 type ScreenType struct {
 	ID          string `json:"id" example:"de01f085-dffa-4347-88da-168560207511"`

@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"cw/internal/models"
+	"cw/internal/dto"
 	"cw/internal/service"
 	"encoding/json"
 	"net/http"
@@ -67,14 +67,14 @@ func (h *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ErrorResponse "Ошибка сервера"
 // @Router /genres [post]
 func (h *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
-	var data models.GenreData
+	var data dto.GenreData
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
 		return
 	}
 	hall, err := h.genreService.Create(r.Context(), data)
 	if err != nil {
-		http.Error(w, err.Message, err.Code)
+		http.Error(w, "Ошибка при создании зала", http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -97,14 +97,14 @@ func (h *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 // @Router /genres/{id} [put]
 func (h *GenreHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var data models.GenreData
+	var data dto.GenreData
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "Некорректные данные", http.StatusBadRequest)
 		return
 	}
 	hall, err := h.genreService.Update(r.Context(), id, data)
 	if err != nil {
-		http.Error(w, err.Message, err.Code)
+		http.Error(w, "Зал не найден", http.StatusNotFound)
 		return
 	}
 	json.NewEncoder(w).Encode(hall)
@@ -126,7 +126,7 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	err := h.genreService.Delete(r.Context(), id)
 	if err != nil {
-		http.Error(w, err.Message, err.Code)
+		http.Error(w, "Зал не найден", http.StatusNotFound)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
