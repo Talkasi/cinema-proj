@@ -1,3 +1,5 @@
+export PGCLIENTENCODING = UTF-8
+
 # Настройки подключения к основной БД
 DB_NAME = cinema
 DB_USER = postgres
@@ -49,25 +51,78 @@ test-clean:
 	@$(TEST_PSQL_CONN) -q -f sql/drop_test_roles.sql || true
 
 # Запуск приложения
-run: db-init swagger
+run: 
 	@echo "Запуск приложения..."
-	@go run .
+	@go run ./cmd/api/main.go
 
 # Обновление документации Swagger
 swagger:
 	@echo "Обновление документации Swagger..."
-	@swag init -g main.go
+	@swag init -g cmd/api/main.go
 
+# Анализ покрытия тестами
 cover:
-	go test -cover -coverprofile=c.out ./...
-	go tool cover -html=c.out
+	@echo "Анализ покрытия тестами..."
+	@go test -cover -coverprofile=c.out ./...
+	@go tool cover -html=c.out
 
 # Запуск тестов
-test: test-init
+test:
 	@echo "Запуск тестов..."
 	@go test -cover -count=1 ./...
 
 # Запуск тестов с верификацией
-test-v: test-init
+test-v:
 	@echo "Запуск тестов с верификацией..."
 	@go test -cover -count=1 -v ./...
+
+# Сборка приложения
+build:
+	@echo "Сборка приложения..."
+	@go build -o bin/api ./cmd/api
+
+# Очистка билдов
+clean:
+	@echo "Очистка билдов..."
+	@if exist bin rmdir /s /q bin
+	@if exist c.out del c.out
+
+# Запуск линтера
+lint:
+	@echo "Запуск линтера..."
+	@golangci-lint run ./...
+
+# Форматирование кода
+fmt:
+	@echo "Форматирование кода..."
+	@gofmt -w .
+
+# Запуск всех проверок (линтер + тесты)
+check: lint test
+
+# Запуск с горячей перезагрузкой (если установлен air)
+air:
+	@echo "Запуск с горячей перезагрузкой..."
+	@air
+
+# Показать зависимости
+deps:
+	@echo "Анализ зависимостей..."
+	@go mod graph
+
+# Помощь
+help:
+	@echo "Доступные команды:"
+	@echo "  run     - Запуск приложения"
+	@echo "  test    - Запуск тестов"
+	@echo "  test-v  - Запуск тестов с детальным выводом"
+	@echo "  swagger - Обновление Swagger документации"
+	@echo "  cover   - Анализ покрытия тестами"
+	@echo "  build   - Сборка приложения"
+	@echo "  clean   - Очистка билдов"
+	@echo "  lint    - Запуск линтера"
+	@echo "  fmt     - Форматирование кода"
+	@echo "  check   - Запуск всех проверок"
+	@echo "  air     - Запуск с горячей перезагрузкой"
+	@echo "  deps    - Показать зависимости"
+	@echo "  help    - Показать эту справку"

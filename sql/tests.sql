@@ -17,7 +17,7 @@ BEGIN
     SELECT box_office_revenue INTO initial_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     
     -- Тест: Available → Purchased
-    UPDATE tickets SET ticket_status = 'Purchased'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Purchased'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 1: Available → Purchased, Revenue изменился с % на % (ожидалось +%)', initial_revenue, new_revenue, ticket_price;
 
@@ -25,7 +25,7 @@ BEGIN
     initial_revenue := new_revenue;
 
     -- Тест: Purchased → Available
-    UPDATE tickets SET ticket_status = 'Available'::ticket_status_enum, user_id = NULL WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Available'::ticket_Status_enum, user_id = NULL WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 2: Purchased → Available, Revenue изменился с % на % (ожидалось -%)', initial_revenue, new_revenue, ticket_price;
 
@@ -33,7 +33,7 @@ BEGIN
     initial_revenue := new_revenue;
 
     -- Тест: Available → Reserved
-    UPDATE tickets SET ticket_status = 'Reserved'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 3: Available → Reserved, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
 
@@ -41,7 +41,7 @@ BEGIN
     initial_revenue := new_revenue;
 
     -- Тест: Reserved → Purchased
-    UPDATE tickets SET ticket_status = 'Purchased'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Purchased'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 4: Reserved → Purchased, Revenue изменился с % на % (ожидалось +%)', initial_revenue, new_revenue, ticket_price;
 
@@ -49,7 +49,7 @@ BEGIN
     initial_revenue := new_revenue;
 
     -- Тест: Purchased → Reserved
-    UPDATE tickets SET ticket_status = 'Reserved'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 5: Purchased → Reserved, Revenue изменился с % на % (ожидалось -%)', initial_revenue, new_revenue, ticket_price;
 
@@ -57,7 +57,7 @@ BEGIN
     initial_revenue := new_revenue;
 
     -- Тест: Reserved → Available
-    UPDATE tickets SET ticket_status = 'Available'::ticket_status_enum, user_id = NULL WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Available'::ticket_Status_enum, user_id = NULL WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 6: Reserved → Available, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
 
@@ -91,7 +91,7 @@ BEGIN
     SELECT box_office_revenue INTO initial_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
 
     -- Тест: Available → Reserved
-    UPDATE tickets SET ticket_status = 'Reserved'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 1: Available → Reserved, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
 
@@ -99,7 +99,7 @@ BEGIN
     initial_revenue := new_revenue;
 
     -- Тест: Purchased → Reserved
-    UPDATE tickets SET ticket_status = 'Reserved'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
+    UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     RAISE NOTICE 'Тест 2: Purchased → Reserved, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
 

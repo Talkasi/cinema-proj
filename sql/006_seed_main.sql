@@ -163,7 +163,7 @@ BEGIN
             
             ticket_price := 300 * price_modifier_seat * price_modifier_screen;
             
-            INSERT INTO tickets (movie_show_id, seat_id, user_id, ticket_status, price)
+            INSERT INTO tickets (movie_show_id, seat_id, user_id, ticket_Status, price)
             VALUES (show_id, seat_id, NULL, 'Available', ticket_price);
         END LOOP;
     END LOOP;

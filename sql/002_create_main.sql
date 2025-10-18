@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS seats (
     CONSTRAINT unique_seat UNIQUE (hall_id, row_number, seat_number)
 );
 
-CREATE TYPE ticket_status_enum AS ENUM (
+CREATE TYPE ticket_Status_enum AS ENUM (
     'Purchased',
     'Reserved',
     'Available'
@@ -148,11 +148,11 @@ CREATE TABLE IF NOT EXISTS tickets (
     movie_show_id UUID REFERENCES movie_shows(id),
     seat_id UUID REFERENCES seats(id),
     user_id UUID REFERENCES users(id),
-    ticket_status ticket_status_enum NOT NULL,
+    ticket_Status ticket_Status_enum NOT NULL,
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
     CONSTRAINT unique_ticket UNIQUE (movie_show_id, seat_id),
-    CONSTRAINT user_id_status_check CHECK (
-        (user_id IS NULL AND ticket_status = 'Available') OR
+    CONSTRAINT user_id_Status_check CHECK (
+        (user_id IS NULL AND ticket_Status = 'Available') OR
         (user_id IS NOT NULL)
     )
 );
@@ -161,13 +161,13 @@ CREATE OR REPLACE FUNCTION update_box_office_revenue()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Если статус билета изменился на "Купленный"
-    IF NEW.ticket_status = 'Purchased' AND OLD.ticket_status <> 'Purchased' THEN
+    IF NEW.ticket_Status = 'Purchased' AND OLD.ticket_Status <> 'Purchased' THEN
         UPDATE movies
         SET box_office_revenue = box_office_revenue + NEW.price
         WHERE id = (SELECT movie_id FROM movie_shows WHERE id = NEW.movie_show_id);
     
     -- Если статус билета изменился с "Купленного" на другой статус
-    ELSIF OLD.ticket_status = 'Purchased' AND NEW.ticket_status <> 'Purchased' THEN
+    ELSIF OLD.ticket_Status = 'Purchased' AND NEW.ticket_Status <> 'Purchased' THEN
         UPDATE movies
         SET box_office_revenue = box_office_revenue - OLD.price
         WHERE id = (SELECT movie_id FROM movie_shows WHERE id = NEW.movie_show_id);
@@ -177,10 +177,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_movie_revenue_when_ticket_status_changed
+CREATE TRIGGER update_movie_revenue_when_ticket_Status_changed
 BEFORE UPDATE ON tickets
 FOR EACH ROW
-WHEN (OLD.ticket_status IS DISTINCT FROM NEW.ticket_status)
+WHEN (OLD.ticket_Status IS DISTINCT FROM NEW.ticket_Status)
 EXECUTE FUNCTION update_box_office_revenue();
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -223,7 +223,7 @@ BEGIN
     ) LOOP
         v_price := ROUND(p_base_price * v_screen_modifier * v_seat.seat_modifier, 2);
         
-        INSERT INTO tickets (id, movie_show_id, seat_id, ticket_status, price)
+        INSERT INTO tickets (id, movie_show_id, seat_id, ticket_Status, price)
         VALUES (uuid_generate_v4(), v_show_id, v_seat.id, 'Available', v_price);
     END LOOP;
 

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	dto "cw/internal/dto/models"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -58,7 +60,16 @@ func isPermissionDenied(err error) bool {
 }
 
 func isNoRows(err error) bool {
-	return (err == pgx.ErrNoRows) || (errors.Is(err, pgx.ErrNoRows) || (err != nil && err.Error() == "no rows in result set"))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return true
+	}
+
+	// Дополнительные проверки для pgx
+	if err != nil && err.Error() == "no rows in result set" {
+		return true
+	}
+
+	return false
 }
 
 func isUniqueViolation(err error) bool {
@@ -66,6 +77,17 @@ func isUniqueViolation(err error) bool {
 		return pgErr.Code == "23505" // Код ошибки для уникального нарушения
 	}
 	return false
+}
+
+func IsDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errorStr := strings.ToLower(err.Error())
+	return strings.Contains(errorStr, "duplicate") ||
+		strings.Contains(errorStr, "unique") ||
+		strings.Contains(errorStr, "23505")
 }
 
 func isForeignKeyViolation(err error) bool {
@@ -78,6 +100,20 @@ func isForeignKeyViolation(err error) bool {
 func isNotNullViolation(err error) bool {
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		return pgErr.Code == "23502" // Код ошибки для нарушения NOT NULL
+	}
+	return false
+}
+
+func isCheckViolation(err error) bool {
+	if pgErr, ok := err.(*pgconn.PgError); ok {
+		return pgErr.Code == "23514" // Код ошибки для нарушения CHECK ограничения
+	}
+	return false
+}
+
+func isInvalidTextRepresentation(err error) bool {
+	if pgErr, ok := err.(*pgconn.PgError); ok {
+		return pgErr.Code == "22P02" // Код ошибки для неверного формата текста
 	}
 	return false
 }
@@ -128,7 +164,40 @@ func ConvertError(err error) *Error {
 			}
 		case isNotNullViolation(err):
 			{
-				return NewInternal("Передан null в обязательный непустой параметр", err)
+				return NewBadRequest("Обязательное поле не заполнено", err)
+			}
+		case isCheckViolation(err):
+			{
+				// Анализируем какое именно check ограничение нарушено
+				errorStr := strings.ToLower(err.Error())
+				switch {
+				case strings.Contains(errorStr, "valid_name"):
+					return NewBadRequest("Некорректное имя", err)
+				case strings.Contains(errorStr, "valid_description"):
+					return NewBadRequest("Некорректное описание", err)
+				case strings.Contains(errorStr, "email_format"):
+					return NewBadRequest("Некорректный формат email", err)
+				case strings.Contains(errorStr, "valid_birth_date"):
+					return NewBadRequest("Некорректная дата рождения", err)
+				case strings.Contains(errorStr, "valid_duration"):
+					return NewBadRequest("Некорректная длительность", err)
+				case strings.Contains(errorStr, "valid_age_limit"):
+					return NewBadRequest("Некорректный возрастной рейтинг", err)
+				case strings.Contains(errorStr, "box_office_revenue"):
+					return NewBadRequest("Некорректная выручка", err)
+				case strings.Contains(errorStr, "start_time"):
+					return NewBadRequest("Некорректное время начала", err)
+				case strings.Contains(errorStr, "price"):
+					return NewBadRequest("Некорректная цена", err)
+				case strings.Contains(errorStr, "rating"):
+					return NewBadRequest("Некорректный рейтинг", err)
+				default:
+					return NewBadRequest("Нарушение ограничений данных", err)
+				}
+			}
+		case isInvalidTextRepresentation(err):
+			{
+				return NewBadRequest("Некорректный формат данных", err)
 			}
 		case strings.Contains(err.Error(), "Невозможно запланировать показ"):
 			{
@@ -136,10 +205,24 @@ func ConvertError(err error) *Error {
 			}
 		default:
 			{
-				return NewInternal("Неизвестная сервера", err)
+				// Дополнительные проверки по тексту ошибки для обратной совместимости
+				errorStr := strings.ToLower(err.Error())
+				if strings.Contains(errorStr, "check constraint") {
+					return NewBadRequest("Нарушение ограничений данных", err)
+				}
+				if strings.Contains(errorStr, "invalid input") {
+					return NewBadRequest("Некорректные входные данные", err)
+				}
+				return NewInternal("Неизвестная ошибка сервера", err)
 			}
 		}
 	}
 
 	return nil
+}
+
+func WriteError(w http.ResponseWriter, err *Error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(err.Code)
+	json.NewEncoder(w).Encode(dto.ErrorResponse{Message: err.Message})
 }

@@ -1,5 +1,5 @@
 -- Удаляем триггеры
-DROP TRIGGER IF EXISTS update_movie_revenue_when_ticket_status_changed ON tickets;
+DROP TRIGGER IF EXISTS update_movie_revenue_when_ticket_Status_changed ON tickets;
 DROP TRIGGER IF EXISTS check_movie_show_on_insert ON movie_shows;
 DROP TRIGGER IF EXISTS check_movie_show_on_update ON movie_shows;
 
@@ -34,7 +34,7 @@ DROP TABLE IF EXISTS movies CASCADE;
 DROP TABLE IF EXISTS seat_types CASCADE;
 
 -- Удаляем типы
-DROP TYPE IF EXISTS ticket_status_enum;
+DROP TYPE IF EXISTS ticket_Status_enum;
 DROP TYPE IF EXISTS language_enum;
 
 -- Удаляем расширение

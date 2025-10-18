@@ -1,546 +1,1025 @@
+basePath: /api/v1
 definitions:
-  main.AuthResponse:
+  dto.AuthResponse:
     properties:
       token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiaXNfYWRtaW4iOmZhbHNlLCJleHAiOjE3MDAwMDAwMDB9
         type: string
       user_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
-  main.CreateResponse:
+  dto.CreateGenreRequest:
+    properties:
+      description:
+        example: Фильмы о будущем, технологиях и космосе
+        type: string
+      name:
+        example: Фантастика
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  dto.CreateHallRequest:
+    properties:
+      description:
+        example: Зал с системой IMAX для полного погружения в фильм
+        maxLength: 1000
+        type: string
+      name:
+        example: Зал IMAX
+        maxLength: 100
+        minLength: 1
+        type: string
+      screen_type_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - name
+    - screen_type_id
+    type: object
+  dto.CreateMovieRequest:
+    properties:
+      age_limit:
+        example: 12
+        maximum: 21
+        minimum: 0
+        type: integer
+      box_office_revenue:
+        example: 836836967
+        minimum: 0
+        type: number
+      description:
+        example: Триллер о проникновении в сны с целью кражи идей
+        maxLength: 1000
+        minLength: 1
+        type: string
+      duration:
+        example: "02:28:00"
+        type: string
+      genre_ids:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 550e8400-e29b-41d4-a716-446655440001
+        items:
+          type: string
+        type: array
+      release_date:
+        example: "2010-07-08"
+        type: string
+      title:
+        example: Начало
+        maxLength: 200
+        minLength: 1
+        type: string
+    required:
+    - age_limit
+    - description
+    - duration
+    - release_date
+    - title
+    type: object
+  dto.CreateMovieShowRequest:
+    properties:
+      base_price:
+        example: 400
+        minimum: 0
+        type: number
+      hall_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      language:
+        example: English
+        maxLength: 50
+        minLength: 1
+        type: string
+      movie_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      start_time:
+        example: "2024-01-15T19:30:00Z"
+        type: string
+    required:
+    - hall_id
+    - language
+    - movie_id
+    - start_time
+    type: object
+  dto.CreateResponse:
     properties:
       id:
-        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
-  main.ErrorResponse:
+  dto.CreateReviewRequest:
+    properties:
+      comment:
+        example: Очень понравилась операторская работа и саундтрек
+        maxLength: 1000
+        type: string
+      movie_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      rating:
+        example: 8
+        maximum: 10
+        minimum: 1
+        type: integer
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+    required:
+    - movie_id
+    - rating
+    - user_id
+    type: object
+  dto.CreateScreenTypeRequest:
+    properties:
+      description:
+        example: Технология с движущимися креслами и спецэффектами
+        maxLength: 1000
+        minLength: 1
+        type: string
+      name:
+        example: 4DX
+        maxLength: 100
+        minLength: 1
+        type: string
+      price_modifier:
+        example: 2
+        maximum: 10
+        minimum: 0.1
+        type: number
+    required:
+    - description
+    - name
+    - price_modifier
+    type: object
+  dto.CreateSeatRequest:
+    properties:
+      hall_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      row_number:
+        example: 3
+        minimum: 1
+        type: integer
+      seat_number:
+        example: 8
+        minimum: 1
+        type: integer
+      seat_type_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+    required:
+    - hall_id
+    - row_number
+    - seat_number
+    - seat_type_id
+    type: object
+  dto.CreateSeatTypeRequest:
+    properties:
+      description:
+        example: Стандартные комфортабельные кресла
+        maxLength: 1000
+        minLength: 1
+        type: string
+      name:
+        example: Стандарт
+        maxLength: 100
+        minLength: 1
+        type: string
+      price_modifier:
+        example: 1
+        maximum: 10
+        minimum: 0.1
+        type: number
+    required:
+    - description
+    - name
+    - price_modifier
+    type: object
+  dto.CreateTicketRequest:
+    properties:
+      movie_show_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      price:
+        example: 500
+        minimum: 0
+        type: number
+      seat_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      ticket_Status:
+        enum:
+        - Available
+        - Reserved
+        - Sold
+        - Used
+        - Cancelled
+        example: Available
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+    required:
+    - movie_show_id
+    - price
+    - seat_id
+    - ticket_Status
+    type: object
+  dto.CreateUserRequest:
+    properties:
+      birth_date:
+        example: "1985-08-20"
+        type: string
+      email:
+        example: maria@example.com
+        type: string
+      name:
+        example: Мария Петрова
+        maxLength: 50
+        minLength: 1
+        type: string
+      password_hash:
+        example: securepassword123
+        minLength: 6
+        type: string
+    required:
+    - birth_date
+    - email
+    - name
+    - password_hash
+    type: object
+  dto.ErrorResponse:
     properties:
       message:
-        example: Описание ошибки
+        example: Произошла ошибка при обработке запроса
         type: string
     type: object
-  main.Genre:
+  dto.GenreResponse:
     properties:
       description:
-        example: Жанр игрового кинематографа, повествующий о той или иной эпохе, людях
-          и событиях прошлых лет
+        example: Фильмы о будущем, технологиях и космосе
         type: string
       id:
-        example: ad2805ab-bf4c-4f93-ac68-2e0a854022f8
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       name:
-        example: Исторический
+        example: Фантастика
         type: string
     type: object
-  main.GenreData:
+  dto.HallResponse:
     properties:
       description:
-        example: Жанр игрового кинематографа, повествующий о той или иной эпохе, людях
-          и событиях прошлых лет
-        type: string
-      name:
-        example: Исторический
-        type: string
-    type: object
-  main.Hall:
-    properties:
-      description:
-        example: Комфортабельный зал с современным оборудованием
+        example: Основной кинозал с комфортными креслами
         type: string
       id:
-        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       name:
         example: Зал 1
         type: string
       screen_type_id:
-        example: de01f085-dffa-4347-88da-168560207511
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
-  main.HallData:
+  dto.LoginRequest:
     properties:
-      description:
-        example: Комфортабельный зал с современным оборудованием
+      email:
+        example: user@example.com
         type: string
-      name:
-        example: Зал 1
+      password_hash:
+        example: $2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C
         type: string
-      screen_type_id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
+    required:
+    - email
+    - password_hash
     type: object
-  main.LanguageEnumType:
-    enum:
-    - English
-    - Spanish
-    - French
-    - German
-    - Italian
-    - Русский
-    type: string
-    x-enum-varnames:
-    - English
-    - Spanish
-    - French
-    - German
-    - Italian
-    - Russian
-  main.Movie:
+  dto.MovieResponse:
     properties:
       age_limit:
         example: 12
         type: integer
       box_office_revenue:
-        example: 300000000
+        example: 677471339
         type: number
       description:
-        example: Эпическая история о кольце власти.
+        example: Фантастический эпос о путешествии через червоточину в поисках нового
+          дома для человечества
         type: string
       duration:
-        example: "02:58:00"
+        example: "02:49:00"
         type: string
       genres:
         items:
-          $ref: '#/definitions/main.Genre'
+          $ref: '#/definitions/dto.GenreResponse'
         type: array
       id:
-        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       rating:
-        example: 8.8
+        example: 8.6
         type: number
       release_date:
-        example: "2001-12-19"
+        example: "2014-10-26"
         type: string
       title:
-        example: Властелин колец
+        example: Интерстеллар
         type: string
     type: object
-  main.MovieData:
+  dto.MovieShowResponse:
     properties:
-      age_limit:
+      base_price:
+        example: 350.5
+        type: number
+      hall_id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      language:
+        example: Русский
+        type: string
+      movie_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      start_time:
+        example: "2024-01-15T20:00:00Z"
+        type: string
+    type: object
+  dto.PaginatedGenreResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.GenreResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedHallResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.HallResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedMovieResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.MovieResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedMovieShowResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.MovieShowResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedReviewResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.ReviewResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedScreenTypeResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.ScreenTypeResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedSeatResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.SeatResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedSeatTypeResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.SeatTypeResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedTicketResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.TicketResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.PaginatedUserResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 150
+        type: integer
+    type: object
+  dto.RegisterResponse:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  dto.ReviewResponse:
+    properties:
+      comment:
+        example: Отличный фильм с захватывающим сюжетом и великолепной актерской игрой!
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      movie_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      rating:
+        example: 9
+        type: integer
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+    type: object
+  dto.ScreenTypeResponse:
+    properties:
+      description:
+        example: Технология кинопоказа с увеличенным разрешением и улучшенным звуком
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: IMAX
+        type: string
+      price_modifier:
+        example: 1.5
+        type: number
+    type: object
+  dto.SeatResponse:
+    properties:
+      hall_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      row_number:
+        example: 5
+        type: integer
+      seat_number:
         example: 12
         type: integer
+      seat_type_id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+    type: object
+  dto.SeatTypeResponse:
+    properties:
       description:
-        example: Эпическая история о кольце власти.
+        example: Премиальные кресла с увеличенным пространством и дополнительным сервисом
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: VIP
+        type: string
+      price_modifier:
+        example: 1.8
+        type: number
+    type: object
+  dto.TicketResponse:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      movie_show_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      price:
+        example: 450.5
+        type: number
+      seat_id:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      ticket_Status:
+        example: Reserved
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+    type: object
+  dto.UpdateAdminStatusRequest:
+    properties:
+      is_admin:
+        example: true
+        type: boolean
+    required:
+    - is_admin
+    type: object
+  dto.UpdateGenreRequest:
+    properties:
+      description:
+        example: Фильмы, основанные на научных концепциях и технологиях будущего
+        type: string
+      name:
+        example: Научная фантастика
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  dto.UpdateHallRequest:
+    properties:
+      description:
+        example: Обновленный зал IMAX с улучшенной акустикой
+        maxLength: 1000
+        type: string
+      name:
+        example: Зал IMAX Premium
+        maxLength: 100
+        minLength: 1
+        type: string
+      screen_type_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - name
+    - screen_type_id
+    type: object
+  dto.UpdateMovieRequest:
+    properties:
+      age_limit:
+        example: 16
+        maximum: 21
+        minimum: 0
+        type: integer
+      box_office_revenue:
+        example: 900000000
+        minimum: 0
+        type: number
+      description:
+        example: Расширенная версия триллера о проникновении в сны
+        maxLength: 1000
+        minLength: 1
         type: string
       duration:
-        example: "02:58:00"
+        example: "02:48:00"
         type: string
       genre_ids:
         example:
-        - '["f297eeaf-e784-43bf-a068-eef84f75baa4"'
-        - ' "c5c8e037-a073-4105-9941-21e1cb4e79dd"]'
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 550e8400-e29b-41d4-a716-446655440002
         items:
           type: string
         type: array
       release_date:
-        example: "2001-12-19"
+        example: "2010-07-16"
         type: string
       title:
-        example: Властелин колец
+        example: Начало (режиссерская версия)
+        maxLength: 200
+        minLength: 1
         type: string
+    required:
+    - age_limit
+    - description
+    - duration
+    - release_date
+    - title
     type: object
-  main.MovieShow:
-    properties:
-      hall_id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
-      id:
-        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
-        type: string
-      language:
-        allOf:
-        - $ref: '#/definitions/main.LanguageEnumType'
-        example: Русский
-      movie_id:
-        example: 1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6
-        type: string
-      start_time:
-        example: "2023-10-01T14:30:00Z"
-        type: string
-    type: object
-  main.MovieShowAdmin:
+  dto.UpdateMovieShowRequest:
     properties:
       base_price:
-        example: 300
+        example: 450
+        minimum: 0
         type: number
       hall_id:
-        example: de01f085-dffa-4347-88da-168560207511
+        example: 550e8400-e29b-41d4-a716-446655440001
         type: string
       language:
-        allOf:
-        - $ref: '#/definitions/main.LanguageEnumType'
         example: Русский
+        maxLength: 50
+        minLength: 1
+        type: string
       movie_id:
-        example: 1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       start_time:
-        example: "2023-10-01T14:30:00Z"
+        example: "2024-01-15T21:00:00Z"
         type: string
+    required:
+    - hall_id
+    - language
+    - movie_id
+    - start_time
     type: object
-  main.MovieShowData:
+  dto.UpdateReviewRequest:
     properties:
-      hall_id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
-      language:
-        allOf:
-        - $ref: '#/definitions/main.LanguageEnumType'
-        example: Русский
-      movie_id:
-        example: 1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6
-        type: string
-      start_time:
-        example: "2023-10-01T14:30:00Z"
-        type: string
-    type: object
-  main.Review:
-    properties:
-      id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+      comment:
+        example: После повторного просмотра повышаю оценку - фильм стал еще лучше!
+        maxLength: 1000
         type: string
       movie_id:
-        example: 2002d9d0-80fa-4bc3-ab85-8525d1e9674c
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       rating:
-        example: 8
+        example: 9
+        maximum: 10
+        minimum: 1
         type: integer
-      review_comment:
-        example: Отличный фильм!
-        type: string
       user_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        example: 550e8400-e29b-41d4-a716-446655440001
         type: string
+    required:
+    - movie_id
+    - rating
+    - user_id
     type: object
-  main.ReviewData:
-    properties:
-      movie_id:
-        example: 2002d9d0-80fa-4bc3-ab85-8525d1e9674c
-        type: string
-      rating:
-        example: 8
-        type: integer
-      review_comment:
-        example: Отличный фильм!
-        type: string
-      user_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
-        type: string
-    type: object
-  main.ScreenType:
+  dto.UpdateScreenTypeRequest:
     properties:
       description:
-        example: Экран с технологией IMAX для максимального погружения
-        type: string
-      id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
-      name:
-        example: IMAX
-        type: string
-    type: object
-  main.ScreenTypeAdmin:
-    properties:
-      description:
-        example: Экран с технологией IMAX для максимального погружения
+        example: Улучшенная версия 4DX с дополнительными эффектами
+        maxLength: 1000
+        minLength: 1
         type: string
       name:
-        example: IMAX
+        example: 4DX Premium
+        maxLength: 100
+        minLength: 1
         type: string
       price_modifier:
-        example: 1
+        example: 2.2
+        maximum: 10
+        minimum: 0.1
         type: number
+    required:
+    - description
+    - name
+    - price_modifier
     type: object
-  main.Seat:
+  dto.UpdateSeatRequest:
     properties:
       hall_id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
-      id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       row_number:
-        example: 5
+        example: 4
+        minimum: 1
         type: integer
       seat_number:
-        example: 12
+        example: 10
+        minimum: 1
         type: integer
       seat_type_id:
-        example: premium
+        example: 550e8400-e29b-41d4-a716-446655440002
         type: string
+    required:
+    - hall_id
+    - row_number
+    - seat_number
+    - seat_type_id
     type: object
-  main.SeatData:
-    properties:
-      hall_id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
-      row_number:
-        example: 5
-        type: integer
-      seat_number:
-        example: 12
-        type: integer
-      seat_type_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
-        type: string
-    type: object
-  main.SeatType:
+  dto.UpdateSeatTypeRequest:
     properties:
       description:
-        example: Комфортабельные места с дополнительным пространством и удобствами
-        type: string
-      id:
-        example: de01f085-dffa-4347-88da-168560207511
-        type: string
-      name:
-        example: Премиум
-        type: string
-    type: object
-  main.SeatTypeAdmin:
-    properties:
-      description:
-        example: Комфортабельные места с дополнительным пространством и удобствами
+        example: Улучшенные стандартные кресла с дополнительным комфортом
+        maxLength: 1000
+        minLength: 1
         type: string
       name:
-        example: Премиум
+        example: Стандарт Плюс
+        maxLength: 100
+        minLength: 1
         type: string
       price_modifier:
-        example: 1
+        example: 1.2
+        maximum: 10
+        minimum: 0.1
         type: number
+    required:
+    - description
+    - name
+    - price_modifier
     type: object
-  main.Ticket:
+  dto.UpdateStatusRequest:
     properties:
-      id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+      ticket_Status:
+        enum:
+        - Available
+        - Reserved
+        - Sold
+        - Used
+        - Cancelled
+        example: Sold
         type: string
-      movie_show_id:
-        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
-        type: string
-      price:
-        example: 800
-        type: number
-      seat_id:
-        example: c1bf35fb-4e5f-46cb-914b-bc8d76aaca23
-        type: string
-      ticket_status:
-        allOf:
-        - $ref: '#/definitions/main.TicketStatusEnumType'
-        example: Purchased
       user_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+    required:
+    - ticket_Status
     type: object
-  main.TicketData:
-    properties:
-      movie_show_id:
-        example: 9b165097-1c9f-4ea3-bef0-e505baa4ff63
-        type: string
-      price:
-        example: 800
-        type: number
-      seat_id:
-        example: c1bf35fb-4e5f-46cb-914b-bc8d76aaca23
-        type: string
-      ticket_status:
-        allOf:
-        - $ref: '#/definitions/main.TicketStatusEnumType'
-        example: Available
-      user_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
-        type: string
-    type: object
-  main.TicketStatusData:
-    properties:
-      reserve:
-        example: true
-        type: boolean
-      user_id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
-        type: string
-    type: object
-  main.TicketStatusEnumType:
-    enum:
-    - Purchased
-    - Reserved
-    - Available
-    type: string
-    x-enum-varnames:
-    - Purchased
-    - Reserved
-    - Available
-  main.User:
+  dto.UpdateUserRequest:
     properties:
       birth_date:
-        example: "1990-01-01"
+        example: "1985-08-20"
+        type: string
+      email:
+        example: maria.sidorova@example.com
+        type: string
+      name:
+        example: Мария Сидорова
+        maxLength: 50
+        minLength: 1
+        type: string
+    required:
+    - birth_date
+    - email
+    - name
+    type: object
+  dto.UserResponse:
+    properties:
+      birth_date:
+        example: "1990-05-15"
         type: string
       email:
         example: ivan@example.com
         type: string
       id:
-        example: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       is_admin:
-        example: true
+        example: false
         type: boolean
       name:
         example: Иван Иванов
         type: string
-      password_hash:
-        example: "93652657623450"
-        type: string
     type: object
-  main.UserAdmin:
-    properties:
-      is_admin:
-        example: true
-        type: boolean
-    type: object
-  main.UserData:
-    properties:
-      birth_date:
-        example: "1990-01-01"
-        type: string
-      email:
-        example: ivan@example.com
-        type: string
-      name:
-        example: Иван Иванов
-        type: string
-      password_hash:
-        example: "93652657623450"
-        type: string
-    type: object
-  main.UserLogin:
-    properties:
-      email:
-        example: admin@admin.com
-        type: string
-      password_hash:
-        example: $2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C
-        type: string
-    type: object
-  main.UserRegister:
-    properties:
-      birth_date:
-        example: "1990-01-01"
-        type: string
-      email:
-        example: ivan@example.com
-        type: string
-      name:
-        example: Иван Иванов
-        type: string
-      password_hash:
-        example: hashed_password
-        type: string
-    type: object
+host: localhost:8080
 info:
   contact: {}
   description: Разработка базы данных для управления кинотеатром
-  title: Курсовая работа по базам данных
+  title: Курсовая работа по базам данных - API управления кинотеатром
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентифицирует пользователя и возвращает JWT-токен
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная аутентификация
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Неавторизованный доступ
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Аутентификация пользователя
+      tags:
+      - Аутентификация
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя в системе
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID созданного пользователя
+          schema:
+            $ref: '#/definitions/dto.RegisterResponse'
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Конфликт данных
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - Аутентификация
   /genres:
     get:
-      description: Возвращает список всех жанров, хранящихся в базе данных.
+      description: Возвращает пагинированный список всех жанров с фильтрацией
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Поиск по названию жанра (регистронезависимый поиск вхождений)
+        in: query
+        name: name
+        type: string
+      - description: Поиск по описанию жанра (регистронезависимый поиск вхождений)
+        in: query
+        name: description
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Список жанров
           schema:
-            items:
-              $ref: '#/definitions/main.Genre'
-            type: array
+            $ref: '#/definitions/dto.PaginatedGenreResponse'
         "404":
-          description: Жанры не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Ошибка сервера
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все жанры (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить список жанров
       tags:
-      - Жанры фильмов
+      - Жанры
     post:
       consumes:
       - application/json
-      description: Создаёт новый жанр.
+      description: Создает новый жанр (только для администраторов)
       parameters:
       - description: Данные жанра
         in: body
         name: genre
         required: true
         schema:
-          $ref: '#/definitions/main.GenreData'
+          $ref: '#/definitions/dto.CreateGenreRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного жанра
+          description: Жанр создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать жанр (admin)
+      summary: Создать жанр
       tags:
-      - Жанры фильмов
+      - Жанры
   /genres/{id}:
     delete:
-      description: Удаляет жанр по ID.
+      description: Удаляет жанр по идентификатору (только для администраторов)
       parameters:
-      - description: ID жанра
+      - description: UUID жанра
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о жанре успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Жанр удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Жанр не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при удалении жанра
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить жанр (admin)
+      summary: Удалить жанр
       tags:
-      - Жанры фильмов
+      - Жанры
     get:
-      description: Возвращает жанр по ID.
+      description: Возвращает информацию о жанре по его идентификатору
       parameters:
-      - description: ID жанра
+      - description: UUID жанра
         in: path
         name: id
         required: true
@@ -549,30 +1028,22 @@ paths:
       - application/json
       responses:
         "200":
-          description: Жанр
+          description: Информация о жанре
           schema:
-            $ref: '#/definitions/main.Genre'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.GenreResponse'
         "404":
-          description: Жанр не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить жанр по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить жанр по ID
       tags:
-      - Жанры фильмов
+      - Жанры
     put:
       consumes:
       - application/json
-      description: Обновляет существующий жанр.
+      description: Обновляет информацию о жанре (только для администраторов)
       parameters:
-      - description: ID жанра
+      - description: UUID жанра
         in: path
         name: id
         required: true
@@ -582,203 +1053,228 @@ paths:
         name: genre
         required: true
         schema:
-          $ref: '#/definitions/main.GenreData'
+          $ref: '#/definitions/dto.UpdateGenreRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о жанре успешно обновлены
+          description: Жанр обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Жанр не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить жанр (admin)
+      summary: Обновить жанр
       tags:
-      - Жанры фильмов
-  /genres/search:
+      - Жанры
+  /halls:
     get:
-      description: Возвращает список жанров, имена которых содержат указанную строку
-        (регистронезависимый поиск).
+      description: Возвращает пагинированный список всех кинозалов с фильтрацией
       parameters:
-      - description: Строка для поиска
+      - default: 1
+        description: Номер страницы
         in: query
-        name: query
-        required: true
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Поиск по названию зала (регистронезависимый поиск вхождений)
+        in: query
+        name: name
+        type: string
+      - description: Фильтр по ID типа экрана
+        in: query
+        name: screen_type_id
+        type: string
+      - description: Поиск по описанию зала (регистронезависимый поиск вхождений)
+        in: query
+        name: description
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Список найденных жанров
+          description: Список залов
           schema:
-            items:
-              $ref: '#/definitions/main.Genre'
-            type: array
-        "400":
-          description: Строка поиска пуста
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.PaginatedHallResponse'
         "404":
-          description: Жанры не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Поиск жанров по имени (guest | user | admin)
-      tags:
-      - Жанры фильмов
-  /halls:
-    get:
-      description: Возвращает список всех кинозалов, содержащихся в базе данных.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список кинозалов
-          schema:
-            items:
-              $ref: '#/definitions/main.Hall'
-            type: array
-        "404":
-          description: Данные не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все кинозалы (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить список залов
       tags:
       - Кинозалы
     post:
       consumes:
       - application/json
-      description: Создаёт новый кинозал.
+      description: Создает новый кинозал (только для администраторов)
       parameters:
-      - description: Данные кинозала
+      - description: Данные зала
         in: body
         name: hall
         required: true
         schema:
-          $ref: '#/definitions/main.HallData'
+          $ref: '#/definitions/dto.CreateHallRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного кинозала
+          description: Зал создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при создании кинозала
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать кинозал (admin)
+      summary: Создать зал
       tags:
       - Кинозалы
   /halls/{hall_id}/seats:
     get:
-      description: Возвращает список мест в указанном зале.
+      description: Возвращает пагинированный список мест в указанном зале с фильтрацией
       parameters:
-      - description: ID зала
+      - description: UUID зала
         in: path
         name: hall_id
         required: true
         type: string
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Фильтр по ID типа места
+        in: query
+        name: seat_type_id
+        type: string
+      - description: Минимальный номер ряда
+        in: query
+        minimum: 1
+        name: row_number_min
+        type: integer
+      - description: Максимальный номер ряда
+        in: query
+        minimum: 1
+        name: row_number_max
+        type: integer
+      - description: Минимальный номер места
+        in: query
+        minimum: 1
+        name: seat_number_min
+        type: integer
+      - description: Максимальный номер места
+        in: query
+        minimum: 1
+        name: seat_number_max
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: Список мест
           schema:
-            items:
-              $ref: '#/definitions/main.Seat'
-            type: array
-        "400":
-          description: Неверный формат ID зала
-          schema:
-            type: string
+            $ref: '#/definitions/dto.PaginatedSeatResponse'
         "404":
-          description: Места не найдены
+          description: Ресурс не найден
           schema:
-            type: string
-        "500":
-          description: Ошибка сервера
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить места в зале
+      tags:
+      - Места
+    post:
+      consumes:
+      - application/json
+      description: Создает новое место (только для администраторов)
+      parameters:
+      - description: UUID зала
+        in: path
+        name: hall_id
+        required: true
+        type: string
+      - description: Данные места
+        in: body
+        name: seat
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateSeatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Место создано
           schema:
-            type: string
-      summary: Получить места по ID зала (guest | user | admin)
+            $ref: '#/definitions/dto.CreateResponse'
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать место
       tags:
       - Места
   /halls/{id}:
     delete:
-      description: Удаляет кинозал по ID.
+      description: Удаляет кинозал по идентификатору (только для администраторов)
       parameters:
-      - description: ID кинозала
+      - description: UUID зала
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о кинозале успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Зал удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Данные не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при удалении кинозала
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить кинозал (admin)
+      summary: Удалить зал
       tags:
       - Кинозалы
     get:
-      description: Возвращает кинозал по ID.
+      description: Возвращает информацию о кинозале по его идентификатору
       parameters:
-      - description: ID зала
+      - description: UUID зала
         in: path
         name: id
         required: true
@@ -787,231 +1283,169 @@ paths:
       - application/json
       responses:
         "200":
-          description: Данные кинозала
+          description: Информация о зале
           schema:
-            $ref: '#/definitions/main.Hall'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.HallResponse'
         "404":
-          description: Данные не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить кинозал по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить зал по ID
       tags:
       - Кинозалы
     put:
       consumes:
       - application/json
-      description: Обновляет существующий кинозал.
+      description: Обновляет информацию о кинозале (только для администраторов)
       parameters:
-      - description: ID зала
+      - description: UUID зала
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные зала
+      - description: Новые данные зала
         in: body
         name: hall
         required: true
         schema:
-          $ref: '#/definitions/main.HallData'
+          $ref: '#/definitions/dto.UpdateHallRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о кинозале успешно обновлены
+          description: Зал обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Зал не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при обновлении кинозала
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить кинозал (admin)
-      tags:
-      - Кинозалы
-  /halls/by-screen-type:
-    get:
-      description: Возвращает список залов с указанным типом экрана.
-      parameters:
-      - description: ID типа экрана
-        in: query
-        name: screen_type_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список найденных кинозалов
-          schema:
-            items:
-              $ref: '#/definitions/main.Hall'
-            type: array
-        "400":
-          description: Неверный формат ID типа экрана
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Залы не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить залы по типу экрана (guest | user | admin)
-      tags:
-      - Кинозалы
-  /halls/search:
-    get:
-      description: Возвращает список залов, названия которых содержат указанную строку.
-      parameters:
-      - description: Строка для поиска
-        in: query
-        name: query
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список найденных кинозалов
-          schema:
-            items:
-              $ref: '#/definitions/main.Hall'
-            type: array
-        "400":
-          description: Строка поиска пуста
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Залы не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Поиск залов по названию (guest | user | admin)
+      summary: Обновить зал
       tags:
       - Кинозалы
   /movie-shows:
     get:
-      description: Возвращает список всех киносеансов, хранящихся в базе данных.
+      description: Возвращает пагинированный список всех киносеансов с фильтрацией
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Фильтр по ID фильма (можно указать несколько через запятую)
+        in: query
+        name: movie_id
+        type: string
+      - description: Фильтр по ID зала (можно указать несколько через запятую)
+        in: query
+        name: hall_id
+        type: string
+      - description: Фильтр по языкам показа (можно указать несколько через запятую)
+        in: query
+        name: language
+        type: string
+      - description: Фильтр по дате (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      - description: Фильтр по времени начала (от)
+        in: query
+        name: start_time_from
+        type: string
+      - description: Фильтр по времени начала (до)
+        in: query
+        name: start_time_to
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Список киносеансов
           schema:
-            items:
-              $ref: '#/definitions/main.MovieShow'
-            type: array
+            $ref: '#/definitions/dto.PaginatedMovieShowResponse'
         "404":
-          description: Киносеансы не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все киносеансы (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить список киносеансов
       tags:
       - Киносеансы
     post:
       consumes:
       - application/json
-      description: Создаёт новый киносеанс (а также билеты на него)
+      description: Создает новый киносеанс (только для администраторов)
       parameters:
       - description: Данные киносеанса
         in: body
         name: movie_show
         required: true
         schema:
-          $ref: '#/definitions/main.MovieShowAdmin'
+          $ref: '#/definitions/dto.CreateMovieShowRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного киносеанса
+          description: Киносеанс создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Неверные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать киносеанс (admin)
+      summary: Создать киносеанс
       tags:
       - Киносеансы
   /movie-shows/{id}:
     delete:
-      description: Удаляет данные о киносеансе.
+      description: Удаляет киносеанс по идентификатору (только для администраторов)
       parameters:
-      - description: ID киносеанса
+      - description: UUID киносеанса
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о киносеансе удалёны
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Киносеанс удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Киносеанс не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при удалении киносеанса
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить киносеанс фильма (admin)
+      summary: Удалить киносеанс
       tags:
       - Киносеансы
     get:
-      description: Возвращает даныне о киносеансе по ID.
+      description: Возвращает информацию о киносеансе по его идентификатору
       parameters:
-      - description: ID киносеанса фильма
+      - description: UUID киносеанса
         in: path
         name: id
         required: true
@@ -1020,30 +1454,22 @@ paths:
       - application/json
       responses:
         "200":
-          description: Данные киносеанса
+          description: Информация о киносеансе
           schema:
-            $ref: '#/definitions/main.MovieShow'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.MovieShowResponse'
         "404":
-          description: Киносеанс не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить киносеанс по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить киносеанс по ID
       tags:
       - Киносеансы
     put:
       consumes:
       - application/json
-      description: Обновляет данные о киносеансе.
+      description: Обновляет информацию о киносеансе (только для администраторов)
       parameters:
-      - description: ID киносеанса
+      - description: UUID киносеанса
         in: path
         name: id
         required: true
@@ -1053,201 +1479,166 @@ paths:
         name: movie_show
         required: true
         schema:
-          $ref: '#/definitions/main.MovieShowData'
+          $ref: '#/definitions/dto.UpdateMovieShowRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные киносеанса обновлены
+          description: Киносеанс обновлен
         "400":
-          description: Неверные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Киносеанс не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при обновлении киносеанса
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить киносеанс (admin)
+      summary: Обновить киносеанс
       tags:
       - Киносеансы
-  /movie-shows/by-date/{date}:
-    get:
-      description: Возвращает сеансы, начинающиеся в указанный день.
+  /movie-shows/{movie_show_id}/tickets:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый билет для указанного киносеанса (только для авторизованных
+        пользователей)
       parameters:
-      - description: Дата (YYYY-MM-DD)
+      - description: UUID киносеанса
         in: path
-        name: date
+        name: movie_show_id
         required: true
         type: string
+      - description: Данные билета
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTicketRequest'
       produces:
       - application/json
       responses:
-        "200":
-          description: Данные о киносеансах
+        "201":
+          description: Билет создан
           schema:
-            items:
-              $ref: '#/definitions/main.MovieShow'
-            type: array
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Неверный формат даты
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Киносеансы в указанную дату не найдены
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить сеансы на указанную дату (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать билет на сеанс
       tags:
-      - Киносеансы
-  /movie-shows/upcoming:
-    get:
-      description: Возвращает сеансы, начинающиеся в ближайшие N часов.
-      parameters:
-      - description: Период в часах (по умолчанию 24)
-        in: query
-        name: hours
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные о киносеансах
-          schema:
-            items:
-              $ref: '#/definitions/main.MovieShow'
-            type: array
-        "400":
-          description: Неверный формат даты
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Киносеансы в указанную дату не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить ближайшие сеансы (guest | user | admin)
-      tags:
-      - Киносеансы
+      - Билеты
   /movies:
     get:
-      description: Возвращает список всех фильмов, содержащихся в базе данных.
+      description: Возвращает пагинированный список всех фильмов
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Фильтр по жанру
+        in: query
+        name: genre
+        type: string
+      - description: Поиск по названию
+        in: query
+        name: title
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Список фильмов
           schema:
-            items:
-              $ref: '#/definitions/main.Movie'
-            type: array
+            $ref: '#/definitions/dto.PaginatedMovieResponse'
         "404":
-          description: Фильмы не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все фильмы (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить список фильмов
       tags:
       - Фильмы
     post:
       consumes:
       - application/json
-      description: Создаёт новый фильм.
+      description: Создаёт новый фильм (только для администраторов)
       parameters:
       - description: Данные фильма
         in: body
         name: movie
         required: true
         schema:
-          $ref: '#/definitions/main.MovieData'
+          $ref: '#/definitions/dto.CreateMovieRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного фильма
+          description: Фильм создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать фильм (admin)
+      summary: Создать новый фильм
       tags:
       - Фильмы
   /movies/{id}:
     delete:
-      description: Удаляет фильм по ID.
+      description: Удаляет фильм по идентификатору (только для администраторов)
       parameters:
-      - description: ID фильма
+      - description: UUID фильма
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о фильме успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Фильм удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Фильм не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Конфликт при удалении фильма
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить фильм (admin)
+      summary: Удалить фильм
       tags:
       - Фильмы
     get:
-      description: Возвращает фильм по ID.
+      description: Возвращает информацию о фильме по его идентификатору
       parameters:
-      - description: ID фильма
+      - description: UUID фильма
         in: path
         name: id
         required: true
@@ -1256,30 +1647,22 @@ paths:
       - application/json
       responses:
         "200":
-          description: Фильм
+          description: Информация о фильме
           schema:
-            $ref: '#/definitions/main.Movie'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.MovieResponse'
         "404":
-          description: Фильм не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить фильм по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить фильм по ID
       tags:
       - Фильмы
     put:
       consumes:
       - application/json
-      description: Обновляет существующий фильм.
+      description: Полностью обновляет информацию о фильме (только для администраторов)
       parameters:
-      - description: ID фильма
+      - description: UUID фильма
         in: path
         name: id
         required: true
@@ -1289,303 +1672,156 @@ paths:
         name: movie
         required: true
         schema:
-          $ref: '#/definitions/main.MovieData'
+          $ref: '#/definitions/dto.UpdateMovieRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о фильме успешно обновлены
+          description: Фильм обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Фильм не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить фильм (admin)
+      summary: Обновить фильм
       tags:
       - Фильмы
   /movies/{movie_id}/reviews:
-    get:
-      description: Возвращает все отзывы для указанного фильма.
-      parameters:
-      - description: ID фильма
-        in: path
-        name: movie_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список отзывов
-          schema:
-            items:
-              $ref: '#/definitions/main.Review'
-            type: array
-        "400":
-          description: Неверный формат ID фильма
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Отзывы не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить отзывы по ID фильма (guest | user | admin)
-      tags:
-      - Отзывы
-  /movies/{movie_id}/shows:
-    get:
-      description: Возвращает киносеансы для указанного фильма в ближайшие N часов.
-      parameters:
-      - description: ID фильма
-        in: path
-        name: movie_id
-        required: true
-        type: string
-      - description: Период в часах (по умолчанию 24)
-        in: query
-        name: hours
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные о найденных киносеансах
-          schema:
-            items:
-              $ref: '#/definitions/main.MovieShow'
-            type: array
-        "400":
-          description: Неверный формат ID фильма или параметра hours
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Киносеансы для данного фильма не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить киносеансы по ID фильма (guest | user | admin)
-      tags:
-      - Киносеансы
-  /movies/by-genres/search:
-    get:
-      description: Возвращает фильмы, относящиеся ко всем указанным жанрам.
-      parameters:
-      - collectionFormat: multi
-        description: Список ID жанров
-        in: query
-        items:
-          type: string
-        name: genre_ids
-        required: true
-        type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Найденные фильмы
-          schema:
-            items:
-              $ref: '#/definitions/main.Movie'
-            type: array
-        "400":
-          description: Некорректные данные
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Жанры не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить фильмы по списку жанров (guest | user | admin)
-      tags:
-      - Фильмы
-  /movies/by-title/search:
-    get:
-      description: Возвращает фильмы, в названии которых содержится заданная строка.
-      parameters:
-      - description: Поисковый запрос
-        in: query
-        name: query
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Найденные фильмы
-          schema:
-            items:
-              $ref: '#/definitions/main.Movie'
-            type: array
-        "400":
-          description: Строка поиска пуста
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Данные не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Поиск фильмов по названию (guest | user | admin)
-      tags:
-      - Фильмы
-  /reviews:
-    get:
-      description: Возвращает список всех отзывов, хранящихся в базе данных.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список отзывов
-          schema:
-            items:
-              $ref: '#/definitions/main.Review'
-            type: array
-        "404":
-          description: Отзывы не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Получить все отзывы (admin)
-      tags:
-      - Отзывы
     post:
       consumes:
       - application/json
-      description: Создаёт новый отзыв.
+      description: Создает новый отзыв для указанного фильма (только для авторизованных
+        пользователей)
       parameters:
+      - description: UUID фильма
+        in: path
+        name: movie_id
+        required: true
+        type: string
       - description: Данные отзыва
         in: body
         name: review
         required: true
         schema:
-          $ref: '#/definitions/main.ReviewData'
+          $ref: '#/definitions/dto.CreateReviewRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного отзыва
+          description: Отзыв создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать отзыв (user* | admin)
+      summary: Создать отзыв к фильму
       tags:
       - Отзывы
-  /reviews/{id}:
-    delete:
-      description: Удаляет отзыв по ID.
-      parameters:
-      - description: ID отзыва
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: Данные отзыва успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Отзыв не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Удалить отзыв (user* | admin)
-      tags:
-      - Отзывы
+  /reviews:
     get:
-      description: Возвращает отзыв по ID.
+      description: Возвращает пагинированный список отзывов с фильтрацией
       parameters:
-      - description: ID отзыва
-        in: path
-        name: id
-        required: true
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Поиск по фильму
+        in: query
+        name: movie_id
+        type: string
+      - description: Поиск по пользователю
+        in: query
+        name: user_id
+        type: string
+      - description: Минимальный рейтинг
+        in: query
+        maximum: 10
+        minimum: 1
+        name: rating_min
+        type: integer
+      - description: Максимальный рейтинг
+        in: query
+        maximum: 10
+        minimum: 1
+        name: rating_max
+        type: integer
+      - description: Поиск по тексту отзыва (регистронезависимый поиск вхождений)
+        in: query
+        name: comment
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Отзыв
+          description: Список отзывов
           schema:
-            $ref: '#/definitions/main.Review'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.PaginatedReviewResponse'
         "404":
-          description: Отзыв не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить отзывы
+      tags:
+      - Отзывы
+  /reviews/{review_id}:
+    delete:
+      description: Удаляет отзыв по идентификатору (только автор отзыва или администратор)
+      parameters:
+      - description: UUID отзыва
+        in: path
+        name: review_id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Отзыв удален
+        "403":
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить отзыв по ID (guset | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Ресурс не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить отзыв
       tags:
       - Отзывы
     put:
       consumes:
       - application/json
-      description: Обновляет существующий отзыв.
+      description: Полностью обновляет информацию об отзыве (только автор отзыва или
+        администратор)
       parameters:
-      - description: ID отзыва
+      - description: UUID отзыва
         in: path
-        name: id
+        name: review_id
         required: true
         type: string
       - description: Новые данные отзыва
@@ -1593,128 +1829,128 @@ paths:
         name: review
         required: true
         schema:
-          $ref: '#/definitions/main.ReviewData'
+          $ref: '#/definitions/dto.UpdateReviewRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные отзыва успешно обновлены
+          description: Отзыв обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Отзыв не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить отзыв (user* | admin)
+      summary: Обновить отзыв
       tags:
       - Отзывы
   /screen-types:
     get:
-      description: Возвращает список всех типов экранов, содержащихся в базе данных.
+      description: Возвращает пагинированный список всех типов экранов с фильтрацией
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Поиск по названию типа экрана (регистронезависимый поиск вхождений)
+        in: query
+        name: name
+        type: string
+      - description: Поиск по описанию типа экрана (регистронезависимый поиск вхождений)
+        in: query
+        name: description
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Список типов экранов
           schema:
-            items:
-              $ref: '#/definitions/main.ScreenType'
-            type: array
+            $ref: '#/definitions/dto.PaginatedScreenTypeResponse'
         "404":
-          description: Типы экранов не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все типы экранов (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить список типов экранов
       tags:
       - Типы экранов
     post:
       consumes:
       - application/json
-      description: Создаёт новый тип экрана.
+      description: Создает новый тип экрана (только для администраторов)
       parameters:
       - description: Данные типа экрана
         in: body
         name: screen_type
         required: true
         schema:
-          $ref: '#/definitions/main.ScreenTypeAdmin'
+          $ref: '#/definitions/dto.CreateScreenTypeRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного типа экрана
+          description: Тип экрана создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать тип экрана (admin)
+      summary: Создать тип экрана
       tags:
       - Типы экранов
   /screen-types/{id}:
     delete:
-      description: Удаляет тип экрана по ID.
+      description: Удаляет тип экрана по идентификатору (только для администраторов)
       parameters:
-      - description: ID типа экрана
+      - description: UUID типа экрана
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о типе экрана успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Тип экрана удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Тип экрана не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить тип экрана (admin)
+      summary: Удалить тип экрана
       tags:
       - Типы экранов
     get:
-      description: Возвращает тип экрана по ID.
+      description: Возвращает информацию о типе экрана по его идентификатору
       parameters:
-      - description: ID типа экрана
+      - description: UUID типа экрана
         in: path
         name: id
         required: true
@@ -1723,194 +1959,153 @@ paths:
       - application/json
       responses:
         "200":
-          description: Тип экрана
+          description: Информация о типе экрана
           schema:
-            $ref: '#/definitions/main.ScreenType'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ScreenTypeResponse'
         "404":
-          description: Тип экрана не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить тип экрана по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить тип экрана по ID
       tags:
       - Типы экранов
     put:
       consumes:
       - application/json
-      description: Обновляет существующий тип экрана.
+      description: Полностью обновляет информацию о типе экрана (только для администраторов)
       parameters:
-      - description: ID типа экрана
+      - description: UUID типа экрана
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные типа экрана
+      - description: Новые данные типа экрана
         in: body
         name: screen_type
         required: true
         schema:
-          $ref: '#/definitions/main.ScreenTypeAdmin'
+          $ref: '#/definitions/dto.UpdateScreenTypeRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о типе экрана успешно обновлены
+          description: Тип экрана обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Тип экранов не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить тип экрана (admin)
-      tags:
-      - Типы экранов
-  /screen-types/search:
-    get:
-      description: Возвращает типы экранов, название которых содержит указанную строку.
-      parameters:
-      - description: Поисковый запрос
-        in: query
-        name: query
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список типов экранов
-          schema:
-            items:
-              $ref: '#/definitions/main.ScreenType'
-            type: array
-        "400":
-          description: Строка поиска пуста
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Типы экранов не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Поиск типов экранов по названию (guest | user | admin)
+      summary: Обновить тип экрана
       tags:
       - Типы экранов
   /seat-types:
     get:
-      description: Возвращает список всех типов мест, содержащихся в базе данных.
+      description: Возвращает пагинированный список всех типов мест с фильтрацией
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Поиск по названию типа места (регистронезависимый поиск вхождений)
+        in: query
+        name: name
+        type: string
+      - description: Поиск по описанию типа места (регистронезависимый поиск вхождений)
+        in: query
+        name: description
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Список типов мест
           schema:
-            items:
-              $ref: '#/definitions/main.SeatType'
-            type: array
+            $ref: '#/definitions/dto.PaginatedSeatTypeResponse'
         "404":
-          description: Типы мест не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить все типы мест (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить список типов мест
       tags:
       - Типы мест
     post:
       consumes:
       - application/json
-      description: Создаёт новый тип места.
+      description: Создает новый тип места (только для администраторов)
       parameters:
       - description: Данные типа места
         in: body
         name: seat_type
         required: true
         schema:
-          $ref: '#/definitions/main.SeatTypeAdmin'
+          $ref: '#/definitions/dto.CreateSeatTypeRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: ID созданного типа места
+          description: Тип места создан
           schema:
-            $ref: '#/definitions/main.CreateResponse'
+            $ref: '#/definitions/dto.CreateResponse'
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Создать тип места (admin)
+      summary: Создать тип места
       tags:
       - Типы мест
   /seat-types/{id}:
     delete:
-      description: Удаляет тип места по ID.
+      description: Удаляет тип места по идентификатору (только для администраторов)
       parameters:
-      - description: ID типа места
+      - description: UUID типа места
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о типе места успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Тип места удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Тип места не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить тип места (admin)
+      summary: Удалить тип места
       tags:
       - Типы мест
     get:
-      description: Возвращает тип места по ID.
+      description: Возвращает информацию о типе места по его идентификатору
       parameters:
-      - description: ID типа места
+      - description: UUID типа места
         in: path
         name: id
         required: true
@@ -1919,541 +2114,224 @@ paths:
       - application/json
       responses:
         "200":
-          description: Тип места
+          description: Информация о типе места
           schema:
-            $ref: '#/definitions/main.SeatType'
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.SeatTypeResponse'
         "404":
-          description: Тип места не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить тип места по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить тип места по ID
       tags:
       - Типы мест
     put:
       consumes:
       - application/json
-      description: Обновляет существующий тип места.
+      description: Полностью обновляет информацию о типе места (только для администраторов)
       parameters:
-      - description: ID типа места
+      - description: UUID типа места
         in: path
         name: id
         required: true
         type: string
-      - description: Обновлённые данные типа места
+      - description: Новые данные типа места
         in: body
         name: seat_type
         required: true
         schema:
-          $ref: '#/definitions/main.SeatTypeAdmin'
+          $ref: '#/definitions/dto.UpdateSeatTypeRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о типе места успешно обновлены
+          description: Тип места обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Тип места не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить тип места (admin)
+      summary: Обновить тип места
       tags:
       - Типы мест
-  /seat-types/search:
-    get:
-      description: Возвращает типы места, название которых содержит указанную строку.
-      parameters:
-      - description: Поисковый запрос
-        in: query
-        name: query
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список типов мест
-          schema:
-            items:
-              $ref: '#/definitions/main.SeatType'
-            type: array
-        "400":
-          description: Строка поиска пуста
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Типы мест не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Поиск типов места по названию (guest | user | admin)
-      tags:
-      - Типы мест
-  /seats:
-    get:
-      description: Возвращает список всех мест, содержащихся в базе данных.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список мест
-          schema:
-            items:
-              $ref: '#/definitions/main.Seat'
-            type: array
-        "403":
-          description: Доступ запрещён
-          schema:
-            type: string
-        "404":
-          description: Места не найдены
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Получить все места (admin)
-      tags:
-      - Места
-    post:
-      consumes:
-      - application/json
-      description: Создаёт новое место.
-      parameters:
-      - description: Данные места
-        in: body
-        name: seat
-        required: true
-        schema:
-          $ref: '#/definitions/main.SeatData'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: ID созданного места
-          schema:
-            $ref: '#/definitions/main.CreateResponse'
-        "400":
-          description: Некорректные данные
-          schema:
-            type: string
-        "403":
-          description: Доступ запрещён
-          schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: Создать место (admin)
-      tags:
-      - Места
-  /seats/{id}:
+  /seats/{seat_id}:
     delete:
-      description: Удаляет место по ID.
+      description: Удаляет место по идентификатору (только для администраторов)
       parameters:
-      - description: ID места
+      - description: UUID места
         in: path
-        name: id
+        name: seat_id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о месте успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            type: string
+          description: Место удалено
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            type: string
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Место не найдено
+          description: Ресурс не найден
           schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить место (admin)
+      summary: Удалить место
       tags:
       - Места
     get:
-      description: Возвращает место по ID.
+      description: Возвращает информацию о месте по его идентификатору
       parameters:
-      - description: ID места
+      - description: UUID места
         in: path
-        name: id
+        name: seat_id
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Место
+          description: Информация о месте
           schema:
-            $ref: '#/definitions/main.Seat'
-        "400":
-          description: Неверный формат ID
-          schema:
-            type: string
+            $ref: '#/definitions/dto.SeatResponse'
         "404":
-          description: Место не найдено
+          description: Ресурс не найден
           schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
-      summary: Получить место по ID (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить место по ID
       tags:
       - Места
     put:
       consumes:
       - application/json
-      description: Обновляет существующее место.
+      description: Полностью обновляет информацию о месте (только для администраторов)
       parameters:
-      - description: ID места
+      - description: UUID места
         in: path
-        name: id
+        name: seat_id
         required: true
         type: string
-      - description: Обновлённые данные места
+      - description: Новые данные места
         in: body
         name: seat
         required: true
         schema:
-          $ref: '#/definitions/main.SeatData'
+          $ref: '#/definitions/dto.UpdateSeatRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о месте успешно обновлены
+          description: Место обновлено
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            type: string
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            type: string
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Место не найдено
+          description: Ресурс не найден
           schema:
-            type: string
-        "500":
-          description: Ошибка сервера
-          schema:
-            type: string
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить место (admin)
+      summary: Обновить место
       tags:
       - Места
   /tickets:
-    post:
-      consumes:
-      - application/json
-      description: Создаёт новый билет.
+    get:
+      description: Возвращает пагинированный список билетов с фильтрацией
       parameters:
-      - description: Билет
-        in: body
-        name: ticket
-        required: true
-        schema:
-          $ref: '#/definitions/main.TicketData'
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Фильтр по статусу билета (можно указать несколько через запятую)
+        in: query
+        name: ticket_Status
+        type: string
+      - description: UUID сеанса
+        in: query
+        name: movie_show_id
+        type: string
+      - description: Минимальная цена билета
+        in: query
+        name: price_min
+        type: number
+      - description: Максимальная цена билета
+        in: query
+        name: price_max
+        type: number
+      - description: Фильтр по ID места (можно указать несколько через запятую)
+        in: query
+        name: seat_id
+        type: string
+      - description: Фильтр по ID пользователя (можно указать несколько через запятую)
+        in: query
+        name: user_id
+        type: string
       produces:
       - application/json
       responses:
-        "201":
-          description: ID созданного билета
+        "200":
+          description: Список билетов
           schema:
-            $ref: '#/definitions/main.CreateResponse'
-        "400":
-          description: Некорректные данные
+            $ref: '#/definitions/dto.PaginatedTicketResponse'
+        "404":
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Создать билет (admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить билеты
       tags:
       - Билеты
   /tickets/{id}:
     delete:
-      description: Удаляет билет по ID.
+      description: Удаляет билет по идентификатору (только для администраторов или
+        владельца)
       parameters:
-      - description: ID билета
+      - description: UUID билета
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Данные о билете успешно удалены
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Билет удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Билет не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить билет (admin)
+      summary: Удалить билет
       tags:
       - Билеты
-    put:
-      consumes:
-      - application/json
-      description: Обновляет существующий билет.
-      parameters:
-      - description: ID билета
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Обновлённые данные билета
-        in: body
-        name: ticket
-        required: true
-        schema:
-          $ref: '#/definitions/main.TicketData'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные о билете успешно обновлены
-        "400":
-          description: Неверный формат JSON
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Билет не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Обновить билет (admin)
-      tags:
-      - Билеты
-  /tickets/available-movie-show/{movie_show_id}:
     get:
-      description: Возвращает список свободные билетов по ID сеанса, содержащихся
-        в базе данных.
+      description: Возвращает информацию о билете по его идентификатору
       parameters:
-      - description: ID показа фильма
-        in: path
-        name: movie_show_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/main.Ticket'
-            type: array
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Билеты не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить свободные билеты для сеанса фильма по ID (guest | user | admin)
-      tags:
-      - Билеты
-  /tickets/movie-show/{movie_show_id}:
-    get:
-      description: Возвращает список всех билетов по ID сеанаса, содержащихся в базе
-        данных.
-      parameters:
-      - description: ID показа фильма
-        in: path
-        name: movie_show_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/main.Ticket'
-            type: array
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Билеты не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Получить все билеты для сеанса фильма по ID (admin)
-      tags:
-      - Билеты
-  /tickets/reserve/{id}:
-    put:
-      consumes:
-      - application/json
-      description: Бронирует или возвращает билет по ID.
-      parameters:
-      - description: ID билета
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Данные для бронирования билета
-        in: body
-        name: ticket
-        required: true
-        schema:
-          $ref: '#/definitions/main.TicketStatusData'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Билет успешно забронирован
-        "400":
-          description: Неверный формат JSON
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Билет не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Изменить статус бронирования билета билет (user* | admin)
-      tags:
-      - Билеты
-  /tickets/user/{user_id}:
-    get:
-      parameters:
-      - description: ID пользователя
-        in: path
-        name: user_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/main.Ticket'
-            type: array
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Получить билеты пользователя (user* | admin)
-      tags:
-      - Билеты
-  /user/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает nickname по ID пользователя.
-      parameters:
-      - description: ID пользователя
+      - description: UUID билета
         in: path
         name: id
         required: true
@@ -2462,237 +2340,130 @@ paths:
       - application/json
       responses:
         "200":
-          description: Nickname пользователя
+          description: Информация о билете
           schema:
-            type: string
-        "400":
-          description: Некорректные данные
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.TicketResponse'
         "404":
-          description: Пользователь не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Получить nickname по ID пользователя (guest | user | admin)
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Получить билет по ID
       tags:
-      - Пользователи
-  /user/admin-status/{id}:
-    get:
+      - Билеты
+    patch:
       consumes:
       - application/json
-      description: Возвращает статус администратора для пользователя по ID.
+      description: Обновляет статус билета (бронирование/покупка)
       parameters:
-      - description: ID пользователя
+      - description: UUID билета
         in: path
         name: id
         required: true
         type: string
+      - description: Данные статуса билета
+        in: body
+        name: Status
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStatusRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Статус администрации для пользователя
-          schema:
-            $ref: '#/definitions/main.UserAdmin'
+          description: Статус билета обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Пользователь не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить статус администратора для пользователя (admin)
+      summary: Обновить статус билета
       tags:
-      - Пользователи
-    put:
-      consumes:
-      - application/json
-      description: Изменяет статус администратора для пользователя по ID.
-      parameters:
-      - description: ID пользователя
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Статус администратора
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/main.UserAdmin'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Статус администрации для пользователя успешно обновлён
-        "400":
-          description: Некорректные данные
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "403":
-          description: Доступ запрещён
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Пользователь не найден
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Изменить статус администратора для пользователя (admin)
-      tags:
-      - Пользователи
-  /user/login:
-    post:
-      consumes:
-      - application/json
-      description: Аутентифицирует пользователя и возвращает JWT-токен.
-      parameters:
-      - description: Данные для входа
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/main.UserLogin'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные авторизации
-          schema:
-            $ref: '#/definitions/main.AuthResponse'
-        "400":
-          description: Некорректные данные
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "401":
-          description: Неверный email или пароль
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Вход пользователя (guest | user | admin)
-      tags:
-      - Пользователи
-  /user/register:
-    post:
-      consumes:
-      - application/json
-      description: Регистрирует нового пользователя в системе.
-      parameters:
-      - description: Данные для регистрации
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/main.UserRegister'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Пользователь успешно зарегистрирован в системе
-        "400":
-          description: Некорректные данные
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "409":
-          description: Пользователь с таким email уже существует
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-      summary: Зарегистрировать нового пользователя (guest | user | admin)
-      tags:
-      - Пользователи
+      - Билеты
   /users:
     get:
-      description: Возвращает список всех пользователей.
+      description: Возвращает пагинированный список пользователей с фильтрацией (только
+        для администраторов)
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Количество элементов на странице
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Фильтр по имени (регистронезависимый поиск)
+        in: query
+        name: name
+        type: string
+      - description: Фильтр по email (регистронезависимый поиск)
+        in: query
+        name: email
+        type: string
+      - description: Фильтр по статусу администратора
+        in: query
+        name: is_admin
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
           description: Список пользователей
           schema:
-            items:
-              $ref: '#/definitions/main.User'
-            type: array
+            $ref: '#/definitions/dto.PaginatedUserResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "404":
-          description: Пользователи не найдены
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить всех пользователей (admin)
+      summary: Получить список пользователей
       tags:
       - Пользователи
   /users/{id}:
     delete:
-      description: Удаляет пользователя по ID.
+      description: Удаляет пользователя (только для администраторов)
       parameters:
-      - description: ID пользователя
+      - description: UUID пользователя
         in: path
         name: id
         required: true
         type: string
       responses:
         "204":
-          description: Пользователь успешно удалён
-        "400":
-          description: Неверный формат ID
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+          description: Пользователь удален
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Пользователь не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Удалить пользователя (admin)
+      summary: Удалить пользователя
       tags:
       - Пользователи
     get:
-      description: Возвращает пользователя по ID.
+      description: Возвращает информацию о пользователе (доступно самому пользователю
+        или администратору)
       parameters:
-      - description: ID пользователя
+      - description: UUID пользователя
         in: path
         name: id
         required: true
@@ -2701,32 +2472,29 @@ paths:
       - application/json
       responses:
         "200":
-          description: Пользователь
+          description: Информация о пользователе
           schema:
-            $ref: '#/definitions/main.User'
-        "400":
-          description: Неверный формат ID
+            $ref: '#/definitions/dto.UserResponse'
+        "403":
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Пользователь не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить пользователя по ID (user* | admin)
+      summary: Получить пользователя по ID
       tags:
       - Пользователи
     put:
       consumes:
       - application/json
-      description: Обновляет данные пользователя.
+      description: Обновляет информацию о пользователе (доступно самому пользователю
+        или администратору)
       parameters:
-      - description: ID пользователя
+      - description: UUID пользователя
         in: path
         name: id
         required: true
@@ -2736,70 +2504,71 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/main.UserData'
+          $ref: '#/definitions/dto.UpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Данные пользователя успешно обновлены
+          description: Пользователь обновлен
         "400":
-          description: Некорректные данные
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "403":
-          description: Доступ запрещён
+          description: Доступ запрещен
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Пользователь не найден
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Обновить пользователя (user* | admin)
+      summary: Обновить пользователя
       tags:
       - Пользователи
-  /users/{user_id}/reviews:
-    get:
-      description: Возвращает все отзывы указанного пользователя.
+  /users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: Изменяет статус администратора пользователя (только для администраторов)
       parameters:
-      - description: ID пользователя
+      - description: UUID пользователя
         in: path
-        name: user_id
+        name: id
         required: true
         type: string
+      - description: Статус администратора
+        in: body
+        name: admin
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateAdminStatusRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Список отзывов
-          schema:
-            items:
-              $ref: '#/definitions/main.Review'
-            type: array
+          description: Статус администратора обновлен
         "400":
-          description: Неверный формат ID пользователя
+          description: Неверный запрос
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
-          description: Отзывы не найдены
+          description: Ресурс не найден
           schema:
-            $ref: '#/definitions/main.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/main.ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить отзывы пользователя (user* | admin)
+      summary: Изменить статус администратора
       tags:
-      - Отзывы
+      - Пользователи
 securityDefinitions:
   BearerAuth:
+    description: 'JWT токен в формате: Bearer <token>'
     in: header
     name: Authorization
     type: apiKey

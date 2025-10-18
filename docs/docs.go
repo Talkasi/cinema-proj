@@ -15,36 +15,156 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/genres": {
-            "get": {
-                "description": "Возвращает список всех жанров, хранящихся в базе данных.",
+        "/auth/login": {
+            "post": {
+                "description": "Аутентифицирует пользователя и возвращает JWT-токен",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Жанры фильмов"
+                    "Аутентификация"
                 ],
-                "summary": "Получить все жанры (guest | user | admin)",
+                "summary": "Аутентификация пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для входа",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная аутентификация",
+                        "schema": {
+                            "$ref": "#/definitions/dto.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Регистрирует нового пользователя в системе",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Аутентификация"
+                ],
+                "summary": "Регистрация нового пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для регистрации",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ID созданного пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Конфликт данных",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/genres": {
+            "get": {
+                "description": "Возвращает пагинированный список всех жанров с фильтрацией",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Жанры"
+                ],
+                "summary": "Получить список жанров",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по названию жанра (регистронезависимый поиск вхождений)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по описанию жанра (регистронезависимый поиск вхождений)",
+                        "name": "description",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список жанров",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Genre"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedGenreResponse"
                         }
                     },
                     "404": {
-                        "description": "Жанры не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Ошибка сервера",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -55,7 +175,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый жанр.",
+                "description": "Создает новый жанр (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -63,9 +183,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Жанры фильмов"
+                    "Жанры"
                 ],
-                "summary": "Создать жанр (admin)",
+                "summary": "Создать жанр",
                 "parameters": [
                     {
                         "description": "Данные жанра",
@@ -73,83 +193,27 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.GenreData"
+                            "$ref": "#/definitions/dto.CreateGenreRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного жанра",
+                        "description": "Жанр создан",
                         "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/genres/search": {
-            "get": {
-                "description": "Возвращает список жанров, имена которых содержат указанную строку (регистронезависимый поиск).",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Жанры фильмов"
-                ],
-                "summary": "Поиск жанров по имени (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Строка для поиска",
-                        "name": "query",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список найденных жанров",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Genre"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Строка поиска пуста",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Жанры не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -157,18 +221,18 @@ const docTemplate = `{
         },
         "/genres/{id}": {
             "get": {
-                "description": "Возвращает жанр по ID.",
+                "description": "Возвращает информацию о жанре по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Жанры фильмов"
+                    "Жанры"
                 ],
-                "summary": "Получить жанр по ID (guest | user | admin)",
+                "summary": "Получить жанр по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID жанра",
+                        "description": "UUID жанра",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -176,27 +240,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Жанр",
+                        "description": "Информация о жанре",
                         "schema": {
-                            "$ref": "#/definitions/main.Genre"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.GenreResponse"
                         }
                     },
                     "404": {
-                        "description": "Жанр не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -207,7 +259,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий жанр.",
+                "description": "Обновляет информацию о жанре (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -215,13 +267,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Жанры фильмов"
+                    "Жанры"
                 ],
-                "summary": "Обновить жанр (admin)",
+                "summary": "Обновить жанр",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID жанра",
+                        "description": "UUID жанра",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -232,36 +284,30 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.GenreData"
+                            "$ref": "#/definitions/dto.UpdateGenreRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о жанре успешно обновлены"
+                        "description": "Жанр обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Жанр не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -272,15 +318,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет жанр по ID.",
+                "description": "Удаляет жанр по идентификатору (только для администраторов)",
                 "tags": [
-                    "Жанры фильмов"
+                    "Жанры"
                 ],
-                "summary": "Удалить жанр (admin)",
+                "summary": "Удалить жанр",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID жанра",
+                        "description": "UUID жанра",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -288,36 +334,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о жанре успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Жанр удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Жанр не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при удалении жанра",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -325,34 +353,62 @@ const docTemplate = `{
         },
         "/halls": {
             "get": {
-                "description": "Возвращает список всех кинозалов, содержащихся в базе данных.",
+                "description": "Возвращает пагинированный список всех кинозалов с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Получить все кинозалы (guest | user | admin)",
+                "summary": "Получить список залов",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по названию зала (регистронезависимый поиск вхождений)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по ID типа экрана",
+                        "name": "screen_type_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по описанию зала (регистронезависимый поиск вхождений)",
+                        "name": "description",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Список кинозалов",
+                        "description": "Список залов",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Hall"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedHallResponse"
                         }
                     },
                     "404": {
-                        "description": "Данные не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -363,7 +419,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый кинозал.",
+                "description": "Создает новый кинозал (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -373,147 +429,35 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Создать кинозал (admin)",
+                "summary": "Создать зал",
                 "parameters": [
                     {
-                        "description": "Данные кинозала",
+                        "description": "Данные зала",
                         "name": "hall",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.HallData"
+                            "$ref": "#/definitions/dto.CreateHallRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного кинозала",
+                        "description": "Зал создан",
                         "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при создании кинозала",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/halls/by-screen-type": {
-            "get": {
-                "description": "Возвращает список залов с указанным типом экрана.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Кинозалы"
-                ],
-                "summary": "Получить залы по типу экрана (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID типа экрана",
-                        "name": "screen_type_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список найденных кинозалов",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Hall"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID типа экрана",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Залы не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/halls/search": {
-            "get": {
-                "description": "Возвращает список залов, названия которых содержат указанную строку.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Кинозалы"
-                ],
-                "summary": "Поиск залов по названию (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Строка для поиска",
-                        "name": "query",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список найденных кинозалов",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Hall"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Строка поиска пуста",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Залы не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -521,49 +465,141 @@ const docTemplate = `{
         },
         "/halls/{hall_id}/seats": {
             "get": {
-                "description": "Возвращает список мест в указанном зале.",
+                "description": "Возвращает пагинированный список мест в указанном зале с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить места по ID зала (guest | user | admin)",
+                "summary": "Получить места в зале",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID зала",
+                        "description": "UUID зала",
                         "name": "hall_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по ID типа места",
+                        "name": "seat_type_id",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Минимальный номер ряда",
+                        "name": "row_number_min",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Максимальный номер ряда",
+                        "name": "row_number_max",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Минимальный номер места",
+                        "name": "seat_number_min",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Максимальный номер места",
+                        "name": "seat_number_max",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Список мест",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Seat"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID зала",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.PaginatedSeatResponse"
                         }
                     },
                     "404": {
-                        "description": "Места не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новое место (только для администраторов)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Места"
+                ],
+                "summary": "Создать место",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID зала",
+                        "name": "hall_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные места",
+                        "name": "seat",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateSeatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Место создано",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
-                    "500": {
-                        "description": "Ошибка сервера",
+                    "400": {
+                        "description": "Неверный запрос",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -571,18 +607,18 @@ const docTemplate = `{
         },
         "/halls/{id}": {
             "get": {
-                "description": "Возвращает кинозал по ID.",
+                "description": "Возвращает информацию о кинозале по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Получить кинозал по ID (guest | user | admin)",
+                "summary": "Получить зал по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID зала",
+                        "description": "UUID зала",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -590,27 +626,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные кинозала",
+                        "description": "Информация о зале",
                         "schema": {
-                            "$ref": "#/definitions/main.Hall"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.HallResponse"
                         }
                     },
                     "404": {
-                        "description": "Данные не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -621,7 +645,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий кинозал.",
+                "description": "Обновляет информацию о кинозале (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -631,57 +655,45 @@ const docTemplate = `{
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Обновить кинозал (admin)",
+                "summary": "Обновить зал",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID зала",
+                        "description": "UUID зала",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные зала",
+                        "description": "Новые данные зала",
                         "name": "hall",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.HallData"
+                            "$ref": "#/definitions/dto.UpdateHallRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о кинозале успешно обновлены"
+                        "description": "Зал обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Зал не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при обновлении кинозала",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -692,15 +704,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет кинозал по ID.",
+                "description": "Удаляет кинозал по идентификатору (только для администраторов)",
                 "tags": [
                     "Кинозалы"
                 ],
-                "summary": "Удалить кинозал (admin)",
+                "summary": "Удалить зал",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID кинозала",
+                        "description": "UUID зала",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -708,36 +720,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о кинозале успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Зал удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Данные не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при удалении кинозала",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -745,34 +739,80 @@ const docTemplate = `{
         },
         "/movie-shows": {
             "get": {
-                "description": "Возвращает список всех киносеансов, хранящихся в базе данных.",
+                "description": "Возвращает пагинированный список всех киносеансов с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить все киносеансы (guest | user | admin)",
+                "summary": "Получить список киносеансов",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по ID фильма (можно указать несколько через запятую)",
+                        "name": "movie_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по ID зала (можно указать несколько через запятую)",
+                        "name": "hall_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по языкам показа (можно указать несколько через запятую)",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по дате (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по времени начала (от)",
+                        "name": "start_time_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по времени начала (до)",
+                        "name": "start_time_to",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список киносеансов",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.MovieShow"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedMovieShowResponse"
                         }
                     },
                     "404": {
-                        "description": "Киносеансы не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -783,7 +823,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый киносеанс (а также билеты на него)",
+                "description": "Создает новый киносеанс (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -793,7 +833,7 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Создать киносеанс (admin)",
+                "summary": "Создать киносеанс",
                 "parameters": [
                     {
                         "description": "Данные киносеанса",
@@ -801,126 +841,27 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowAdmin"
+                            "$ref": "#/definitions/dto.CreateMovieShowRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного киносеанса",
+                        "description": "Киносеанс создан",
                         "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "Ошибка сервера",
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/movie-shows/by-date/{date}": {
-            "get": {
-                "description": "Возвращает сеансы, начинающиеся в указанный день.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Киносеансы"
-                ],
-                "summary": "Получить сеансы на указанную дату (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Дата (YYYY-MM-DD)",
-                        "name": "date",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Данные о киносеансах",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.MovieShow"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат даты",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Киносеансы в указанную дату не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/movie-shows/upcoming": {
-            "get": {
-                "description": "Возвращает сеансы, начинающиеся в ближайшие N часов.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Киносеансы"
-                ],
-                "summary": "Получить ближайшие сеансы (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Период в часах (по умолчанию 24)",
-                        "name": "hours",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Данные о киносеансах",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.MovieShow"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат даты",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Киносеансы в указанную дату не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -928,18 +869,18 @@ const docTemplate = `{
         },
         "/movie-shows/{id}": {
             "get": {
-                "description": "Возвращает даныне о киносеансе по ID.",
+                "description": "Возвращает информацию о киносеансе по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Получить киносеанс по ID (guest | user | admin)",
+                "summary": "Получить киносеанс по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID киносеанса фильма",
+                        "description": "UUID киносеанса",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -947,27 +888,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные киносеанса",
+                        "description": "Информация о киносеансе",
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShow"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.MovieShowResponse"
                         }
                     },
                     "404": {
-                        "description": "Киносеанс не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -978,7 +907,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет данные о киносеансе.",
+                "description": "Обновляет информацию о киносеансе (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -988,11 +917,11 @@ const docTemplate = `{
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Обновить киносеанс (admin)",
+                "summary": "Обновить киносеанс",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID киносеанса",
+                        "description": "UUID киносеанса",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1003,42 +932,30 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieShowData"
+                            "$ref": "#/definitions/dto.UpdateMovieShowRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные киносеанса обновлены"
+                        "description": "Киносеанс обновлен"
                     },
                     "400": {
-                        "description": "Неверные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Киносеанс не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при обновлении киносеанса",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1049,15 +966,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет данные о киносеансе.",
+                "description": "Удаляет киносеанс по идентификатору (только для администраторов)",
                 "tags": [
                     "Киносеансы"
                 ],
-                "summary": "Удалить киносеанс фильма (admin)",
+                "summary": "Удалить киносеанс",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID киносеанса",
+                        "description": "UUID киносеанса",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1065,36 +982,76 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о киносеансе удалёны"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Киносеанс удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Киносеанс не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/movie-shows/{movie_show_id}/tickets": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый билет для указанного киносеанса (только для авторизованных пользователей)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Билеты"
+                ],
+                "summary": "Создать билет на сеанс",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID киносеанса",
+                        "name": "movie_show_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные билета",
+                        "name": "ticket",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Билет создан",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
-                    "409": {
-                        "description": "Конфликт при удалении киносеанса",
+                    "400": {
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "Ошибка сервера",
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1102,34 +1059,56 @@ const docTemplate = `{
         },
         "/movies": {
             "get": {
-                "description": "Возвращает список всех фильмов, содержащихся в базе данных.",
+                "description": "Возвращает пагинированный список всех фильмов",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Получить все фильмы (guest | user | admin)",
+                "summary": "Получить список фильмов",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по жанру",
+                        "name": "genre",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по названию",
+                        "name": "title",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список фильмов",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Movie"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedMovieResponse"
                         }
                     },
                     "404": {
-                        "description": "Фильмы не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1140,7 +1119,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый фильм.",
+                "description": "Создаёт новый фильм (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1150,7 +1129,7 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Создать фильм (admin)",
+                "summary": "Создать новый фильм",
                 "parameters": [
                     {
                         "description": "Данные фильма",
@@ -1158,137 +1137,27 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieData"
+                            "$ref": "#/definitions/dto.CreateMovieRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного фильма",
+                        "description": "Фильм создан",
                         "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/movies/by-genres/search": {
-            "get": {
-                "description": "Возвращает фильмы, относящиеся ко всем указанным жанрам.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Фильмы"
-                ],
-                "summary": "Получить фильмы по списку жанров (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "multi",
-                        "description": "Список ID жанров",
-                        "name": "genre_ids",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Найденные фильмы",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Movie"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Жанры не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/movies/by-title/search": {
-            "get": {
-                "description": "Возвращает фильмы, в названии которых содержится заданная строка.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Фильмы"
-                ],
-                "summary": "Поиск фильмов по названию (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Поисковый запрос",
-                        "name": "query",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Найденные фильмы",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Movie"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Строка поиска пуста",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Данные не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1296,18 +1165,18 @@ const docTemplate = `{
         },
         "/movies/{id}": {
             "get": {
-                "description": "Возвращает фильм по ID.",
+                "description": "Возвращает информацию о фильме по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Получить фильм по ID (guest | user | admin)",
+                "summary": "Получить фильм по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID фильма",
+                        "description": "UUID фильма",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1315,27 +1184,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Фильм",
+                        "description": "Информация о фильме",
                         "schema": {
-                            "$ref": "#/definitions/main.Movie"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.MovieResponse"
                         }
                     },
                     "404": {
-                        "description": "Фильм не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1346,7 +1203,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий фильм.",
+                "description": "Полностью обновляет информацию о фильме (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1356,11 +1213,11 @@ const docTemplate = `{
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Обновить фильм (admin)",
+                "summary": "Обновить фильм",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID фильма",
+                        "description": "UUID фильма",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1371,36 +1228,30 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MovieData"
+                            "$ref": "#/definitions/dto.UpdateMovieRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о фильме успешно обновлены"
+                        "description": "Фильм обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Фильм не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1411,15 +1262,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет фильм по ID.",
+                "description": "Удаляет фильм по идентификатору (только для администраторов)",
                 "tags": [
                     "Фильмы"
                 ],
-                "summary": "Удалить фильм (admin)",
+                "summary": "Удалить фильм",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID фильма",
+                        "description": "UUID фильма",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1427,142 +1278,76 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о фильме успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Фильм удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Фильм не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Конфликт при удалении фильма",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             }
         },
         "/movies/{movie_id}/reviews": {
-            "get": {
-                "description": "Возвращает все отзывы для указанного фильма.",
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый отзыв для указанного фильма (только для авторизованных пользователей)",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить отзывы по ID фильма (guest | user | admin)",
+                "summary": "Создать отзыв к фильму",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID фильма",
-                        "name": "movie_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список отзывов",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Review"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID фильма",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Отзывы не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/movies/{movie_id}/shows": {
-            "get": {
-                "description": "Возвращает киносеансы для указанного фильма в ближайшие N часов.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Киносеансы"
-                ],
-                "summary": "Получить киносеансы по ID фильма (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID фильма",
+                        "description": "UUID фильма",
                         "name": "movie_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Период в часах (по умолчанию 24)",
-                        "name": "hours",
-                        "in": "query"
+                        "description": "Данные отзыва",
+                        "name": "review",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateReviewRequest"
+                        }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Данные о найденных киносеансах",
+                    "201": {
+                        "description": "Отзыв создан",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.MovieShow"
-                            }
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный формат ID фильма или параметра hours",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
-                    "404": {
-                        "description": "Киносеансы для данного фильма не найдены",
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1570,152 +1355,91 @@ const docTemplate = `{
         },
         "/reviews": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает список всех отзывов, хранящихся в базе данных.",
+                "description": "Возвращает пагинированный список отзывов с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Получить все отзывы (admin)",
+                "summary": "Получить отзывы",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по фильму",
+                        "name": "movie_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по пользователю",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Минимальный рейтинг",
+                        "name": "rating_min",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Максимальный рейтинг",
+                        "name": "rating_max",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по тексту отзыва (регистронезависимый поиск вхождений)",
+                        "name": "comment",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список отзывов",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Review"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedReviewResponse"
                         }
                     },
                     "404": {
-                        "description": "Отзывы не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Создаёт новый отзыв.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Отзывы"
-                ],
-                "summary": "Создать отзыв (user* | admin)",
-                "parameters": [
-                    {
-                        "description": "Данные отзыва",
-                        "name": "review",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.ReviewData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "ID созданного отзыва",
-                        "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/reviews/{id}": {
-            "get": {
-                "description": "Возвращает отзыв по ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Отзывы"
-                ],
-                "summary": "Получить отзыв по ID (guset | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID отзыва",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Отзыв",
-                        "schema": {
-                            "$ref": "#/definitions/main.Review"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Отзыв не найден",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            },
+        "/reviews/{review_id}": {
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий отзыв.",
+                "description": "Полностью обновляет информацию об отзыве (только автор отзыва или администратор)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1725,12 +1449,12 @@ const docTemplate = `{
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Обновить отзыв (user* | admin)",
+                "summary": "Обновить отзыв",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID отзыва",
-                        "name": "id",
+                        "description": "UUID отзыва",
+                        "name": "review_id",
                         "in": "path",
                         "required": true
                     },
@@ -1740,36 +1464,30 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ReviewData"
+                            "$ref": "#/definitions/dto.UpdateReviewRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные отзыва успешно обновлены"
+                        "description": "Отзыв обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Отзыв не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1780,46 +1498,34 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет отзыв по ID.",
+                "description": "Удаляет отзыв по идентификатору (только автор отзыва или администратор)",
                 "tags": [
                     "Отзывы"
                 ],
-                "summary": "Удалить отзыв (user* | admin)",
+                "summary": "Удалить отзыв",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID отзыва",
-                        "name": "id",
+                        "description": "UUID отзыва",
+                        "name": "review_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные отзыва успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Отзыв удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Отзыв не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1827,34 +1533,56 @@ const docTemplate = `{
         },
         "/screen-types": {
             "get": {
-                "description": "Возвращает список всех типов экранов, содержащихся в базе данных.",
+                "description": "Возвращает пагинированный список всех типов экранов с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Получить все типы экранов (guest | user | admin)",
+                "summary": "Получить список типов экранов",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по названию типа экрана (регистронезависимый поиск вхождений)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по описанию типа экрана (регистронезависимый поиск вхождений)",
+                        "name": "description",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список типов экранов",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.ScreenType"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedScreenTypeResponse"
                         }
                     },
                     "404": {
-                        "description": "Типы экранов не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1865,7 +1593,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый тип экрана.",
+                "description": "Создает новый тип экрана (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1875,7 +1603,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Создать тип экрана (admin)",
+                "summary": "Создать тип экрана",
                 "parameters": [
                     {
                         "description": "Данные типа экрана",
@@ -1883,83 +1611,27 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenTypeAdmin"
+                            "$ref": "#/definitions/dto.CreateScreenTypeRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного типа экрана",
+                        "description": "Тип экрана создан",
                         "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/screen-types/search": {
-            "get": {
-                "description": "Возвращает типы экранов, название которых содержит указанную строку.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Типы экранов"
-                ],
-                "summary": "Поиск типов экранов по названию (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Поисковый запрос",
-                        "name": "query",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список типов экранов",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.ScreenType"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Строка поиска пуста",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Типы экранов не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1967,18 +1639,18 @@ const docTemplate = `{
         },
         "/screen-types/{id}": {
             "get": {
-                "description": "Возвращает тип экрана по ID.",
+                "description": "Возвращает информацию о типе экрана по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Получить тип экрана по ID (guest | user | admin)",
+                "summary": "Получить тип экрана по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа экрана",
+                        "description": "UUID типа экрана",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1986,27 +1658,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Тип экрана",
+                        "description": "Информация о типе экрана",
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenType"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ScreenTypeResponse"
                         }
                     },
                     "404": {
-                        "description": "Тип экрана не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2017,7 +1677,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий тип экрана.",
+                "description": "Полностью обновляет информацию о типе экрана (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2027,51 +1687,45 @@ const docTemplate = `{
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Обновить тип экрана (admin)",
+                "summary": "Обновить тип экрана",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа экрана",
+                        "description": "UUID типа экрана",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные типа экрана",
+                        "description": "Новые данные типа экрана",
                         "name": "screen_type",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ScreenTypeAdmin"
+                            "$ref": "#/definitions/dto.UpdateScreenTypeRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о типе экрана успешно обновлены"
+                        "description": "Тип экрана обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Тип экранов не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2082,15 +1736,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип экрана по ID.",
+                "description": "Удаляет тип экрана по идентификатору (только для администраторов)",
                 "tags": [
                     "Типы экранов"
                 ],
-                "summary": "Удалить тип экрана (admin)",
+                "summary": "Удалить тип экрана",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа экрана",
+                        "description": "UUID типа экрана",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2098,30 +1752,18 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о типе экрана успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Тип экрана удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Тип экрана не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2129,34 +1771,56 @@ const docTemplate = `{
         },
         "/seat-types": {
             "get": {
-                "description": "Возвращает список всех типов мест, содержащихся в базе данных.",
+                "description": "Возвращает пагинированный список всех типов мест с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Получить все типы мест (guest | user | admin)",
+                "summary": "Получить список типов мест",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по названию типа места (регистронезависимый поиск вхождений)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по описанию типа места (регистронезависимый поиск вхождений)",
+                        "name": "description",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список типов мест",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.SeatType"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedSeatTypeResponse"
                         }
                     },
                     "404": {
-                        "description": "Типы мест не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2167,7 +1831,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создаёт новый тип места.",
+                "description": "Создает новый тип места (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2177,7 +1841,7 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Создать тип места (admin)",
+                "summary": "Создать тип места",
                 "parameters": [
                     {
                         "description": "Данные типа места",
@@ -2185,83 +1849,27 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatTypeAdmin"
+                            "$ref": "#/definitions/dto.CreateSeatTypeRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "ID созданного типа места",
+                        "description": "Тип места создан",
                         "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
+                            "$ref": "#/definitions/dto.CreateResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/seat-types/search": {
-            "get": {
-                "description": "Возвращает типы места, название которых содержит указанную строку.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Типы мест"
-                ],
-                "summary": "Поиск типов места по названию (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Поисковый запрос",
-                        "name": "query",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список типов мест",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.SeatType"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Строка поиска пуста",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Типы мест не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2269,18 +1877,18 @@ const docTemplate = `{
         },
         "/seat-types/{id}": {
             "get": {
-                "description": "Возвращает тип места по ID.",
+                "description": "Возвращает информацию о типе места по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Получить тип места по ID (guest | user | admin)",
+                "summary": "Получить тип места по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа места",
+                        "description": "UUID типа места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2288,27 +1896,15 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Тип места",
+                        "description": "Информация о типе места",
                         "schema": {
-                            "$ref": "#/definitions/main.SeatType"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.SeatTypeResponse"
                         }
                     },
                     "404": {
-                        "description": "Тип места не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2319,7 +1915,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующий тип места.",
+                "description": "Полностью обновляет информацию о типе места (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2329,51 +1925,45 @@ const docTemplate = `{
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Обновить тип места (admin)",
+                "summary": "Обновить тип места",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа места",
+                        "description": "UUID типа места",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные типа места",
+                        "description": "Новые данные типа места",
                         "name": "seat_type",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatTypeAdmin"
+                            "$ref": "#/definitions/dto.UpdateSeatTypeRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о типе места успешно обновлены"
+                        "description": "Тип места обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Тип места не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2384,15 +1974,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет тип места по ID.",
+                "description": "Удаляет тип места по идентификатору (только для администраторов)",
                 "tags": [
                     "Типы мест"
                 ],
-                "summary": "Удалить тип места (admin)",
+                "summary": "Удалить тип места",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID типа места",
+                        "description": "UUID типа места",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2400,178 +1990,53 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о типе места успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Тип места удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Тип места не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/seats": {
+        "/seats/{seat_id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает список всех мест, содержащихся в базе данных.",
+                "description": "Возвращает информацию о месте по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Места"
                 ],
-                "summary": "Получить все места (admin)",
-                "responses": {
-                    "200": {
-                        "description": "Список мест",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Seat"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Места не найдены",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Создаёт новое место.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Места"
-                ],
-                "summary": "Создать место (admin)",
-                "parameters": [
-                    {
-                        "description": "Данные места",
-                        "name": "seat",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.SeatData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "ID созданного места",
-                        "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/seats/{id}": {
-            "get": {
-                "description": "Возвращает место по ID.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Места"
-                ],
-                "summary": "Получить место по ID (guest | user | admin)",
+                "summary": "Получить место по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID места",
-                        "name": "id",
+                        "description": "UUID места",
+                        "name": "seat_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Место",
+                        "description": "Информация о месте",
                         "schema": {
-                            "$ref": "#/definitions/main.Seat"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.SeatResponse"
                         }
                     },
                     "404": {
-                        "description": "Место не найдено",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2582,7 +2047,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет существующее место.",
+                "description": "Полностью обновляет информацию о месте (только для администраторов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2592,51 +2057,45 @@ const docTemplate = `{
                 "tags": [
                     "Места"
                 ],
-                "summary": "Обновить место (admin)",
+                "summary": "Обновить место",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID места",
-                        "name": "id",
+                        "description": "UUID места",
+                        "name": "seat_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Обновлённые данные места",
+                        "description": "Новые данные места",
                         "name": "seat",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SeatData"
+                            "$ref": "#/definitions/dto.UpdateSeatRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о месте успешно обновлены"
+                        "description": "Место обновлено"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Место не найдено",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2647,408 +2106,150 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет место по ID.",
+                "description": "Удаляет место по идентификатору (только для администраторов)",
                 "tags": [
                     "Места"
                 ],
-                "summary": "Удалить место (admin)",
+                "summary": "Удалить место",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID места",
-                        "name": "id",
+                        "description": "UUID места",
+                        "name": "seat_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о месте успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Место удалено"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Место не найдено",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             }
         },
         "/tickets": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Создаёт новый билет.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Билеты"
-                ],
-                "summary": "Создать билет (admin)",
-                "parameters": [
-                    {
-                        "description": "Билет",
-                        "name": "ticket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "ID созданного билета",
-                        "schema": {
-                            "$ref": "#/definitions/main.CreateResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tickets/available-movie-show/{movie_show_id}": {
             "get": {
-                "description": "Возвращает список свободные билетов по ID сеанса, содержащихся в базе данных.",
+                "description": "Возвращает пагинированный список билетов с фильтрацией",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Получить свободные билеты для сеанса фильма по ID (guest | user | admin)",
+                "summary": "Получить билеты",
                 "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
-                        "description": "ID показа фильма",
+                        "description": "Фильтр по статусу билета (можно указать несколько через запятую)",
+                        "name": "ticket_Status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID сеанса",
                         "name": "movie_show_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Ticket"
-                            }
-                        }
+                        "in": "query"
                     },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Билеты не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tickets/movie-show/{movie_show_id}": {
-            "get": {
-                "security": [
                     {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает список всех билетов по ID сеанаса, содержащихся в базе данных.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Билеты"
-                ],
-                "summary": "Получить все билеты для сеанса фильма по ID (admin)",
-                "parameters": [
+                        "type": "number",
+                        "description": "Минимальная цена билета",
+                        "name": "price_min",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Максимальная цена билета",
+                        "name": "price_max",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
-                        "description": "ID показа фильма",
-                        "name": "movie_show_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Ticket"
-                            }
-                        }
+                        "description": "Фильтр по ID места (можно указать несколько через запятую)",
+                        "name": "seat_id",
+                        "in": "query"
                     },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Билеты не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tickets/reserve/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Бронирует или возвращает билет по ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Билеты"
-                ],
-                "summary": "Изменить статус бронирования билета билет (user* | admin)",
-                "parameters": [
                     {
                         "type": "string",
-                        "description": "ID билета",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Данные для бронирования билета",
-                        "name": "ticket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketStatusData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Билет успешно забронирован"
-                    },
-                    "400": {
-                        "description": "Неверный формат JSON",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Билет не найден",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tickets/user/{user_id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Билеты"
-                ],
-                "summary": "Получить билеты пользователя (user* | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID пользователя",
+                        "description": "Фильтр по ID пользователя (можно указать несколько через запятую)",
                         "name": "user_id",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список билетов",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Ticket"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedTicketResponse"
                         }
                     },
-                    "400": {
-                        "description": "Неверный формат ID",
+                    "404": {
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             }
         },
         "/tickets/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Обновляет существующий билет.",
-                "consumes": [
-                    "application/json"
-                ],
+            "get": {
+                "description": "Возвращает информацию о билете по его идентификатору",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Обновить билет (admin)",
+                "summary": "Получить билет по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID билета",
+                        "description": "UUID билета",
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "description": "Обновлённые данные билета",
-                        "name": "ticket",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.TicketData"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные о билете успешно обновлены"
-                    },
-                    "400": {
-                        "description": "Неверный формат JSON",
+                        "description": "Информация о билете",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.TicketResponse"
                         }
                     },
                     "404": {
-                        "description": "Билет не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3059,15 +2260,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет билет по ID.",
+                "description": "Удаляет билет по идентификатору (только для администраторов или владельца)",
                 "tags": [
                     "Билеты"
                 ],
-                "summary": "Удалить билет (admin)",
+                "summary": "Удалить билет",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID билета",
+                        "description": "UUID билета",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3075,102 +2276,29 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Данные о билете успешно удалены"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Билет удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Билет не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/admin-status/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает статус администратора для пользователя по ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Пользователи"
-                ],
-                "summary": "Получить статус администратора для пользователя (admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID пользователя",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Статус администрации для пользователя",
-                        "schema": {
-                            "$ref": "#/definitions/main.UserAdmin"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Доступ запрещён",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Пользователь не найден",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             },
-            "put": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Изменяет статус администратора для пользователя по ID.",
+                "description": "Обновляет статус билета (бронирование/покупка)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3178,204 +2306,47 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Пользователи"
+                    "Билеты"
                 ],
-                "summary": "Изменить статус администратора для пользователя (admin)",
+                "summary": "Обновить статус билета",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID пользователя",
+                        "description": "UUID билета",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Статус администратора",
-                        "name": "user",
+                        "description": "Данные статуса билета",
+                        "name": "Status",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.UserAdmin"
+                            "$ref": "#/definitions/dto.UpdateStatusRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Статус администрации для пользователя успешно обновлён"
+                        "description": "Статус билета обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Пользователь не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/login": {
-            "post": {
-                "description": "Аутентифицирует пользователя и возвращает JWT-токен.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Пользователи"
-                ],
-                "summary": "Вход пользователя (guest | user | admin)",
-                "parameters": [
-                    {
-                        "description": "Данные для входа",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.UserLogin"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Данные авторизации",
-                        "schema": {
-                            "$ref": "#/definitions/main.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Неверный email или пароль",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/register": {
-            "post": {
-                "description": "Регистрирует нового пользователя в системе.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Пользователи"
-                ],
-                "summary": "Зарегистрировать нового пользователя (guest | user | admin)",
-                "parameters": [
-                    {
-                        "description": "Данные для регистрации",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.UserRegister"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Пользователь успешно зарегистрирован в системе"
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Пользователь с таким email уже существует",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/{id}": {
-            "get": {
-                "description": "Возвращает nickname по ID пользователя.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Пользователи"
-                ],
-                "summary": "Получить nickname по ID пользователя (guest | user | admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID пользователя",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Nickname пользователя",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректные данные",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Пользователь не найден",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3388,40 +2359,62 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех пользователей.",
+                "description": "Возвращает пагинированный список пользователей с фильтрацией (только для администраторов)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Получить всех пользователей (admin)",
+                "summary": "Получить список пользователей",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по имени (регистронезависимый поиск)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по email (регистронезависимый поиск)",
+                        "name": "email",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Фильтр по статусу администратора",
+                        "name": "is_admin",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список пользователей",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.User"
-                            }
+                            "$ref": "#/definitions/dto.PaginatedUserResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Пользователи не найдены",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3434,18 +2427,18 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает пользователя по ID.",
+                "description": "Возвращает информацию о пользователе (доступно самому пользователю или администратору)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Получить пользователя по ID (user* | admin)",
+                "summary": "Получить пользователя по ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID пользователя",
+                        "description": "UUID пользователя",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3453,27 +2446,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Пользователь",
+                        "description": "Информация о пользователе",
                         "schema": {
-                            "$ref": "#/definitions/main.User"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
-                    "400": {
-                        "description": "Неверный формат ID",
+                    "403": {
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Пользователь не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3484,7 +2471,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет данные пользователя.",
+                "description": "Обновляет информацию о пользователе (доступно самому пользователю или администратору)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3494,11 +2481,11 @@ const docTemplate = `{
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Обновить пользователя (user* | admin)",
+                "summary": "Обновить пользователя",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID пользователя",
+                        "description": "UUID пользователя",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3509,36 +2496,30 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.UserData"
+                            "$ref": "#/definitions/dto.UpdateUserRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Данные пользователя успешно обновлены"
+                        "description": "Пользователь обновлен"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Пользователь не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3549,15 +2530,15 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет пользователя по ID.",
+                "description": "Удаляет пользователя (только для администраторов)",
                 "tags": [
                     "Пользователи"
                 ],
-                "summary": "Удалить пользователя (admin)",
+                "summary": "Удалить пользователя",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID пользователя",
+                        "description": "UUID пользователя",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3565,85 +2546,79 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Пользователь успешно удалён"
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
+                        "description": "Пользователь удален"
                     },
                     "403": {
-                        "description": "Доступ запрещён",
+                        "description": "Доступ запрещен",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Пользователь не найден",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/users/{user_id}/reviews": {
-            "get": {
+        "/users/{id}/role": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает все отзывы указанного пользователя.",
+                "description": "Изменяет статус администратора пользователя (только для администраторов)",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Отзывы"
+                    "Пользователи"
                 ],
-                "summary": "Получить отзывы пользователя (user* | admin)",
+                "summary": "Изменить статус администратора",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID пользователя",
-                        "name": "user_id",
+                        "description": "UUID пользователя",
+                        "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Статус администратора",
+                        "name": "admin",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateAdminStatusRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Список отзывов",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/main.Review"
-                            }
-                        }
+                        "description": "Статус администратора обновлен"
                     },
                     "400": {
-                        "description": "Неверный формат ID пользователя",
+                        "description": "Неверный запрос",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Отзывы не найдены",
+                        "description": "Ресурс не найден",
                         "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/main.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3651,77 +2626,375 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.AuthResponse": {
+        "dto.AuthResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiaXNfYWRtaW4iOmZhbHNlLCJleHAiOjE3MDAwMDAwMDB9"
                 },
                 "user_id": {
                     "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
-        "main.CreateResponse": {
+        "dto.CreateGenreRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Фильмы о будущем, технологиях и космосе"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Фантастика"
+                }
+            }
+        },
+        "dto.CreateHallRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "screen_type_id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Зал с системой IMAX для полного погружения в фильм"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "Зал IMAX"
+                },
+                "screen_type_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "dto.CreateMovieRequest": {
+            "type": "object",
+            "required": [
+                "age_limit",
+                "description",
+                "duration",
+                "release_date",
+                "title"
+            ],
+            "properties": {
+                "age_limit": {
+                    "type": "integer",
+                    "maximum": 21,
+                    "minimum": 0,
+                    "example": 12
+                },
+                "box_office_revenue": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 836836967
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "example": "Триллер о проникновении в сны с целью кражи идей"
+                },
+                "duration": {
+                    "type": "string",
+                    "example": "02:28:00"
+                },
+                "genre_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "550e8400-e29b-41d4-a716-446655440001"
+                    ]
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "2010-07-08"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "example": "Начало"
+                }
+            }
+        },
+        "dto.CreateMovieShowRequest": {
+            "type": "object",
+            "required": [
+                "hall_id",
+                "language",
+                "movie_id",
+                "start_time"
+            ],
+            "properties": {
+                "base_price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 400
+                },
+                "hall_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "language": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "example": "English"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-01-15T19:30:00Z"
+                }
+            }
+        },
+        "dto.CreateResponse": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "string",
-                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
-        "main.ErrorResponse": {
+        "dto.CreateReviewRequest": {
+            "type": "object",
+            "required": [
+                "movie_id",
+                "rating",
+                "user_id"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Очень понравилась операторская работа и саундтрек"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "example": 8
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
+        },
+        "dto.CreateScreenTypeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "price_modifier"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "example": "Технология с движущимися креслами и спецэффектами"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "4DX"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0.1,
+                    "example": 2
+                }
+            }
+        },
+        "dto.CreateSeatRequest": {
+            "type": "object",
+            "required": [
+                "hall_id",
+                "row_number",
+                "seat_number",
+                "seat_type_id"
+            ],
+            "properties": {
+                "hall_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "row_number": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 3
+                },
+                "seat_number": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 8
+                },
+                "seat_type_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
+        },
+        "dto.CreateSeatTypeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "price_modifier"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "example": "Стандартные комфортабельные кресла"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "Стандарт"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0.1,
+                    "example": 1
+                }
+            }
+        },
+        "dto.CreateTicketRequest": {
+            "type": "object",
+            "required": [
+                "movie_show_id",
+                "price",
+                "seat_id",
+                "ticket_Status"
+            ],
+            "properties": {
+                "movie_show_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 500
+                },
+                "seat_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "ticket_Status": {
+                    "type": "string",
+                    "enum": [
+                        "Available",
+                        "Reserved",
+                        "Sold",
+                        "Used",
+                        "Cancelled"
+                    ],
+                    "example": "Available"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                }
+            }
+        },
+        "dto.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "birth_date",
+                "email",
+                "name",
+                "password_hash"
+            ],
+            "properties": {
+                "birth_date": {
+                    "type": "string",
+                    "example": "1985-08-20"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "maria@example.com"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "example": "Мария Петрова"
+                },
+                "password_hash": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "securepassword123"
+                }
+            }
+        },
+        "dto.ErrorResponse": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "Описание ошибки"
+                    "example": "Произошла ошибка при обработке запроса"
                 }
             }
         },
-        "main.Genre": {
+        "dto.GenreResponse": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string",
-                    "example": "Жанр игрового кинематографа, повествующий о той или иной эпохе, людях и событиях прошлых лет"
+                    "example": "Фильмы о будущем, технологиях и космосе"
                 },
                 "id": {
                     "type": "string",
-                    "example": "ad2805ab-bf4c-4f93-ac68-2e0a854022f8"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "name": {
                     "type": "string",
-                    "example": "Исторический"
+                    "example": "Фантастика"
                 }
             }
         },
-        "main.GenreData": {
+        "dto.HallResponse": {
             "type": "object",
             "properties": {
                 "description": {
                     "type": "string",
-                    "example": "Жанр игрового кинематографа, повествующий о той или иной эпохе, людях и событиях прошлых лет"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Исторический"
-                }
-            }
-        },
-        "main.Hall": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Комфортабельный зал с современным оборудованием"
+                    "example": "Основной кинозал с комфортными креслами"
                 },
                 "id": {
                     "type": "string",
-                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "name": {
                     "type": "string",
@@ -3729,47 +3002,28 @@ const docTemplate = `{
                 },
                 "screen_type_id": {
                     "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
-        "main.HallData": {
+        "dto.LoginRequest": {
             "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Комфортабельный зал с современным оборудованием"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Зал 1"
-                },
-                "screen_type_id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                }
-            }
-        },
-        "main.LanguageEnumType": {
-            "type": "string",
-            "enum": [
-                "English",
-                "Spanish",
-                "French",
-                "German",
-                "Italian",
-                "Русский"
+            "required": [
+                "email",
+                "password_hash"
             ],
-            "x-enum-varnames": [
-                "English",
-                "Spanish",
-                "French",
-                "German",
-                "Italian",
-                "Russian"
-            ]
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password_hash": {
+                    "type": "string",
+                    "example": "$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C"
+                }
+            }
         },
-        "main.Movie": {
+        "dto.MovieResponse": {
             "type": "object",
             "properties": {
                 "age_limit": {
@@ -3778,54 +3032,512 @@ const docTemplate = `{
                 },
                 "box_office_revenue": {
                     "type": "number",
-                    "example": 300000000
+                    "example": 677471339
                 },
                 "description": {
                     "type": "string",
-                    "example": "Эпическая история о кольце власти."
+                    "example": "Фантастический эпос о путешествии через червоточину в поисках нового дома для человечества"
                 },
                 "duration": {
                     "type": "string",
-                    "example": "02:58:00"
+                    "example": "02:49:00"
                 },
                 "genres": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.Genre"
+                        "$ref": "#/definitions/dto.GenreResponse"
                     }
                 },
                 "id": {
                     "type": "string",
-                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "rating": {
                     "type": "number",
-                    "example": 8.8
+                    "example": 8.6
                 },
                 "release_date": {
                     "type": "string",
-                    "example": "2001-12-19"
+                    "example": "2014-10-26"
                 },
                 "title": {
                     "type": "string",
-                    "example": "Властелин колец"
+                    "example": "Интерстеллар"
                 }
             }
         },
-        "main.MovieData": {
+        "dto.MovieShowResponse": {
             "type": "object",
             "properties": {
-                "age_limit": {
+                "base_price": {
+                    "type": "number",
+                    "example": 350.5
+                },
+                "hall_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "language": {
+                    "type": "string",
+                    "example": "Русский"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-01-15T20:00:00Z"
+                }
+            }
+        },
+        "dto.PaginatedGenreResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GenreResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedHallResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.HallResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedMovieResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MovieResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedMovieShowResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MovieShowResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedReviewResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ReviewResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedScreenTypeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ScreenTypeResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedSeatResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SeatResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedSeatTypeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SeatTypeResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedTicketResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TicketResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.PaginatedUserResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 150
+                }
+            }
+        },
+        "dto.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "dto.ReviewResponse": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "example": "Отличный фильм с захватывающим сюжетом и великолепной актерской игрой!"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "rating": {
+                    "type": "integer",
+                    "example": 9
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
+        },
+        "dto.ScreenTypeResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Технология кинопоказа с увеличенным разрешением и улучшенным звуком"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "IMAX"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "example": 1.5
+                }
+            }
+        },
+        "dto.SeatResponse": {
+            "type": "object",
+            "properties": {
+                "hall_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "row_number": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "seat_number": {
                     "type": "integer",
                     "example": 12
                 },
+                "seat_type_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                }
+            }
+        },
+        "dto.SeatTypeResponse": {
+            "type": "object",
+            "properties": {
                 "description": {
                     "type": "string",
-                    "example": "Эпическая история о кольце власти."
+                    "example": "Премиальные кресла с увеличенным пространством и дополнительным сервисом"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "VIP"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "example": 1.8
+                }
+            }
+        },
+        "dto.TicketResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "movie_show_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 450.5
+                },
+                "seat_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "ticket_Status": {
+                    "type": "string",
+                    "example": "Reserved"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440003"
+                }
+            }
+        },
+        "dto.UpdateAdminStatusRequest": {
+            "type": "object",
+            "required": [
+                "is_admin"
+            ],
+            "properties": {
+                "is_admin": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.UpdateGenreRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Фильмы, основанные на научных концепциях и технологиях будущего"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Научная фантастика"
+                }
+            }
+        },
+        "dto.UpdateHallRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "screen_type_id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Обновленный зал IMAX с улучшенной акустикой"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "Зал IMAX Premium"
+                },
+                "screen_type_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "dto.UpdateMovieRequest": {
+            "type": "object",
+            "required": [
+                "age_limit",
+                "description",
+                "duration",
+                "release_date",
+                "title"
+            ],
+            "properties": {
+                "age_limit": {
+                    "type": "integer",
+                    "maximum": 21,
+                    "minimum": 0,
+                    "example": 16
+                },
+                "box_office_revenue": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 900000000
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "example": "Расширенная версия триллера о проникновении в сны"
                 },
                 "duration": {
                     "type": "string",
-                    "example": "02:58:00"
+                    "example": "02:48:00"
                 },
                 "genre_ids": {
                     "type": "array",
@@ -3833,357 +3545,223 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"f297eeaf-e784-43bf-a068-eef84f75baa4\"",
-                        " \"c5c8e037-a073-4105-9941-21e1cb4e79dd\"]"
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "550e8400-e29b-41d4-a716-446655440002"
                     ]
                 },
                 "release_date": {
                     "type": "string",
-                    "example": "2001-12-19"
+                    "example": "2010-07-16"
                 },
                 "title": {
                     "type": "string",
-                    "example": "Властелин колец"
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "example": "Начало (режиссерская версия)"
                 }
             }
         },
-        "main.MovieShow": {
+        "dto.UpdateMovieShowRequest": {
             "type": "object",
-            "properties": {
-                "hall_id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
-                },
-                "language": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/main.LanguageEnumType"
-                        }
-                    ],
-                    "example": "Русский"
-                },
-                "movie_id": {
-                    "type": "string",
-                    "example": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"
-                },
-                "start_time": {
-                    "type": "string",
-                    "example": "2023-10-01T14:30:00Z"
-                }
-            }
-        },
-        "main.MovieShowAdmin": {
-            "type": "object",
+            "required": [
+                "hall_id",
+                "language",
+                "movie_id",
+                "start_time"
+            ],
             "properties": {
                 "base_price": {
                     "type": "number",
-                    "example": 300
+                    "minimum": 0,
+                    "example": 450
                 },
                 "hall_id": {
                     "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
                 },
                 "language": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/main.LanguageEnumType"
-                        }
-                    ],
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1,
                     "example": "Русский"
                 },
                 "movie_id": {
                     "type": "string",
-                    "example": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "start_time": {
                     "type": "string",
-                    "example": "2023-10-01T14:30:00Z"
+                    "example": "2024-01-15T21:00:00Z"
                 }
             }
         },
-        "main.MovieShowData": {
+        "dto.UpdateReviewRequest": {
             "type": "object",
-            "properties": {
-                "hall_id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                },
-                "language": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/main.LanguageEnumType"
-                        }
-                    ],
-                    "example": "Русский"
-                },
-                "movie_id": {
-                    "type": "string",
-                    "example": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6"
-                },
-                "start_time": {
-                    "type": "string",
-                    "example": "2023-10-01T14:30:00Z"
-                }
-            }
-        },
-        "main.Review": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                },
-                "movie_id": {
-                    "type": "string",
-                    "example": "2002d9d0-80fa-4bc3-ab85-8525d1e9674c"
-                },
-                "rating": {
-                    "type": "integer",
-                    "example": 8
-                },
-                "review_comment": {
-                    "type": "string",
-                    "example": "Отличный фильм!"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                }
-            }
-        },
-        "main.ReviewData": {
-            "type": "object",
-            "properties": {
-                "movie_id": {
-                    "type": "string",
-                    "example": "2002d9d0-80fa-4bc3-ab85-8525d1e9674c"
-                },
-                "rating": {
-                    "type": "integer",
-                    "example": 8
-                },
-                "review_comment": {
-                    "type": "string",
-                    "example": "Отличный фильм!"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                }
-            }
-        },
-        "main.ScreenType": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Экран с технологией IMAX для максимального погружения"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "IMAX"
-                }
-            }
-        },
-        "main.ScreenTypeAdmin": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Экран с технологией IMAX для максимального погружения"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "IMAX"
-                },
-                "price_modifier": {
-                    "type": "number",
-                    "example": 1
-                }
-            }
-        },
-        "main.Seat": {
-            "type": "object",
-            "properties": {
-                "hall_id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                },
-                "row_number": {
-                    "type": "integer",
-                    "example": 5
-                },
-                "seat_number": {
-                    "type": "integer",
-                    "example": 12
-                },
-                "seat_type_id": {
-                    "type": "string",
-                    "example": "premium"
-                }
-            }
-        },
-        "main.SeatData": {
-            "type": "object",
-            "properties": {
-                "hall_id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                },
-                "row_number": {
-                    "type": "integer",
-                    "example": 5
-                },
-                "seat_number": {
-                    "type": "integer",
-                    "example": 12
-                },
-                "seat_type_id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                }
-            }
-        },
-        "main.SeatType": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Комфортабельные места с дополнительным пространством и удобствами"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "de01f085-dffa-4347-88da-168560207511"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Премиум"
-                }
-            }
-        },
-        "main.SeatTypeAdmin": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Комфортабельные места с дополнительным пространством и удобствами"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Премиум"
-                },
-                "price_modifier": {
-                    "type": "number",
-                    "example": 1
-                }
-            }
-        },
-        "main.Ticket": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                },
-                "movie_show_id": {
-                    "type": "string",
-                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
-                },
-                "price": {
-                    "type": "number",
-                    "example": 800
-                },
-                "seat_id": {
-                    "type": "string",
-                    "example": "c1bf35fb-4e5f-46cb-914b-bc8d76aaca23"
-                },
-                "ticket_status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/main.TicketStatusEnumType"
-                        }
-                    ],
-                    "example": "Purchased"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                }
-            }
-        },
-        "main.TicketData": {
-            "type": "object",
-            "properties": {
-                "movie_show_id": {
-                    "type": "string",
-                    "example": "9b165097-1c9f-4ea3-bef0-e505baa4ff63"
-                },
-                "price": {
-                    "type": "number",
-                    "example": 800
-                },
-                "seat_id": {
-                    "type": "string",
-                    "example": "c1bf35fb-4e5f-46cb-914b-bc8d76aaca23"
-                },
-                "ticket_status": {
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/main.TicketStatusEnumType"
-                        }
-                    ],
-                    "example": "Available"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                }
-            }
-        },
-        "main.TicketStatusData": {
-            "type": "object",
-            "properties": {
-                "reserve": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
-                }
-            }
-        },
-        "main.TicketStatusEnumType": {
-            "type": "string",
-            "enum": [
-                "Purchased",
-                "Reserved",
-                "Available"
+            "required": [
+                "movie_id",
+                "rating",
+                "user_id"
             ],
-            "x-enum-varnames": [
-                "Purchased",
-                "Reserved",
-                "Available"
-            ]
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "После повторного просмотра повышаю оценку - фильм стал еще лучше!"
+                },
+                "movie_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "rating": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1,
+                    "example": 9
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
         },
-        "main.User": {
+        "dto.UpdateScreenTypeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "price_modifier"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "example": "Улучшенная версия 4DX с дополнительными эффектами"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "4DX Premium"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0.1,
+                    "example": 2.2
+                }
+            }
+        },
+        "dto.UpdateSeatRequest": {
+            "type": "object",
+            "required": [
+                "hall_id",
+                "row_number",
+                "seat_number",
+                "seat_type_id"
+            ],
+            "properties": {
+                "hall_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "row_number": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 4
+                },
+                "seat_number": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 10
+                },
+                "seat_type_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                }
+            }
+        },
+        "dto.UpdateSeatTypeRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "price_modifier"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "example": "Улучшенные стандартные кресла с дополнительным комфортом"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "Стандарт Плюс"
+                },
+                "price_modifier": {
+                    "type": "number",
+                    "maximum": 10,
+                    "minimum": 0.1,
+                    "example": 1.2
+                }
+            }
+        },
+        "dto.UpdateStatusRequest": {
+            "type": "object",
+            "required": [
+                "ticket_Status"
+            ],
+            "properties": {
+                "ticket_Status": {
+                    "type": "string",
+                    "enum": [
+                        "Available",
+                        "Reserved",
+                        "Sold",
+                        "Used",
+                        "Cancelled"
+                    ],
+                    "example": "Sold"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "dto.UpdateUserRequest": {
+            "type": "object",
+            "required": [
+                "birth_date",
+                "email",
+                "name"
+            ],
+            "properties": {
+                "birth_date": {
+                    "type": "string",
+                    "example": "1985-08-20"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "maria.sidorova@example.com"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "example": "Мария Сидорова"
+                }
+            }
+        },
+        "dto.UserResponse": {
             "type": "object",
             "properties": {
                 "birth_date": {
                     "type": "string",
-                    "example": "1990-01-01"
+                    "example": "1990-05-15"
                 },
                 "email": {
                     "type": "string",
@@ -4191,89 +3769,22 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string",
-                    "example": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "is_admin": {
                     "type": "boolean",
-                    "example": true
+                    "example": false
                 },
                 "name": {
                     "type": "string",
                     "example": "Иван Иванов"
-                },
-                "password_hash": {
-                    "type": "string",
-                    "example": "93652657623450"
-                }
-            }
-        },
-        "main.UserAdmin": {
-            "type": "object",
-            "properties": {
-                "is_admin": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "main.UserData": {
-            "type": "object",
-            "properties": {
-                "birth_date": {
-                    "type": "string",
-                    "example": "1990-01-01"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "ivan@example.com"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Иван Иванов"
-                },
-                "password_hash": {
-                    "type": "string",
-                    "example": "93652657623450"
-                }
-            }
-        },
-        "main.UserLogin": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "admin@admin.com"
-                },
-                "password_hash": {
-                    "type": "string",
-                    "example": "$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C"
-                }
-            }
-        },
-        "main.UserRegister": {
-            "type": "object",
-            "properties": {
-                "birth_date": {
-                    "type": "string",
-                    "example": "1990-01-01"
-                },
-                "email": {
-                    "type": "string",
-                    "example": "ivan@example.com"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Иван Иванов"
-                },
-                "password_hash": {
-                    "type": "string",
-                    "example": "hashed_password"
                 }
             }
         }
     },
     "securityDefinitions": {
         "BearerAuth": {
+            "description": "JWT токен в формате: Bearer \u003ctoken\u003e",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
@@ -4284,10 +3795,10 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "",
-	BasePath:         "",
+	Host:             "localhost:8080",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Курсовая работа по базам данных",
+	Title:            "Курсовая работа по базам данных - API управления кинотеатром",
 	Description:      "Разработка базы данных для управления кинотеатром",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
