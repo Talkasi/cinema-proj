@@ -11,9 +11,17 @@ import (
 )
 
 func NewDatabase() (*pgxpool.Pool, error) {
-	dsn := "host=localhost user=postgres password=postgres dbname=cinema port=5432 sslmode=disable"
+	dbHost := getEnv("DB_HOST", "localhost")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbUser := getEnv("DB_USER", "postgres")
+	dbPass := getEnv("DB_PASS", "postgres")
+	dbName := getEnv("DB_NAME", "cinema")
+	dbSSL := getEnv("DB_SSL", "disable")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		dbHost, dbUser, dbPass, dbName, dbPort, dbSSL)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	db, err := pgxpool.New(ctx, dsn)
@@ -25,14 +33,22 @@ func NewDatabase() (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Println("Database connected successfully with connection pool")
+	log.Printf("Database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
 	return db, nil
 }
 
 func NewTestDatabase() (*pgxpool.Pool, error) {
-	dsn := "host=localhost user=postgres password=postgres dbname=cinema_test port=5432 sslmode=disable"
+	dbHost := getEnv("DB_HOST", "localhost")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbUser := getEnv("DB_USER", "postgres")
+	dbPass := getEnv("DB_PASS", "postgres")
+	dbName := getEnv("TEST_DB_NAME", "cinema_test")
+	dbSSL := getEnv("DB_SSL", "disable")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		dbHost, dbUser, dbPass, dbName, dbPort, dbSSL)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	db, err := pgxpool.New(ctx, dsn)
@@ -44,8 +60,15 @@ func NewTestDatabase() (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to ping test database: %w", err)
 	}
 
-	log.Println("Test database connected successfully with connection pool")
+	log.Printf("Test database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
 	return db, nil
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
 
 func CleanTestDatabase(db *pgxpool.Pool) error {

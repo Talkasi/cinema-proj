@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	postgresDb "cw/internal/dataAccess/config"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	_ "cw/docs"
@@ -28,17 +29,22 @@ import (
 // @name Authorization
 // @description JWT токен в формате: Bearer <token>
 func main() {
-	addr := flag.String("addr", ":8080", "address for http server")
-	jwtSecret := flag.String("jwt-secret", "your-secret-key", "JWT secret key")
-	tokenDuration := flag.Duration("token-duration", 24*time.Hour, "JWT token duration")
-	flag.Parse()
+	addr := getEnv("ADDR", ":8080")
+	jwtSecret := getEnv("JWT_SECRET", "secret-key")
+	tokenDurationStr := getEnv("TOKEN_DURATION", "24h")
+
+	tokenDuration, err := time.ParseDuration(tokenDurationStr)
+	if err != nil {
+		log.Printf("Invalid token duration, using default 24h: %v", err)
+		tokenDuration = 24 * time.Hour
+	}
 
 	db, err := postgresDb.NewDatabase()
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	userRepo := repository.NewUserRepository(db, *jwtSecret, *tokenDuration)
+	userRepo := repository.NewUserRepository(db, jwtSecret, tokenDuration)
 	genreRepo := repository.NewGenreRepository(db)
 	hallRepo := repository.NewHallRepository(db)
 	movieShowRepo := repository.NewMovieShowRepository(db)
@@ -85,6 +91,8 @@ func main() {
 		http.ServeFile(w, r, "./docs/swagger.json")
 	})
 
+	r.Mount("/metrics", promhttp.Handler())
+
 	r.Route("/api/v1", func(r chi.Router) {
 		userHandler.RegisterRoutes(r)
 		genreHandler.RegisterRoutes(r)
@@ -98,8 +106,15 @@ func main() {
 		reviewHandler.RegisterRoutes(r)
 	})
 
-	log.Printf("Starting server on %s", *addr)
-	if err := http.ListenAndServe(*addr, r); err != nil {
+	log.Printf("Starting server on %s", addr)
+	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
