@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
     container_name: postgres_db
+    cpuset: "3-7"
+    mem_limit: 8g
     environment:
       POSTGRES_DB: cinema
       POSTGRES_USER: postgres
@@ -29,6 +29,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    cpuset: "8-9"
+    mem_limit: 4g
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -42,16 +44,18 @@ services:
     networks:
       - app-net
 
-  k6:
-    image: grafana/k6:latest
-    container_name: k6_runner
-    entrypoint: ["sleep", "infinity"]
-    volumes:
-      - ./scripts:/scripts
-    networks:
-      - app-net
-    depends_on:
-      - app
+  # k6:
+  #   image: grafana/k6:latest
+  #   container_name: k6_runner
+  #   cpuset: "8-9"
+  #   mem_limit: 4g
+  #   user: root
+  #   volumes:
+  #     - ./scripts:/scripts
+  #   networks:
+  #     - app-net
+  #   depends_on:
+  #     - app
 
 volumes:
   postgres_data:

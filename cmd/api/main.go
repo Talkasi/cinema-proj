@@ -83,11 +83,11 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 
-	r.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("/swagger/doc.json"),
+	r.Get("/api/v1/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/api/v1/swagger/doc.json"),
 	))
 
-	r.Get("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/api/v1/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./docs/swagger.json")
 	})
 

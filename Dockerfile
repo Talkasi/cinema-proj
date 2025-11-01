@@ -24,6 +24,8 @@ COPY --from=builder /app/sql ./sql
 COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/scripts ./scripts
 
+RUN chmod -R 777 ./scripts/k6/*.js
+
 COPY docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
 
