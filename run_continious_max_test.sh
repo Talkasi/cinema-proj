@@ -1,14 +1,14 @@
 #!/bin/bash
-# run_degradation_find.sh
+# run_continious_max_test.sh
 
-echo "--- Поиск точки деградации системы ---"
+echo "--- Непрерывный тест максимальной нагрузки ---"
 
-RESULTS_DIR="degradation_point_$(date +%Y%m%d_%H%M%S)"
+RESULTS_DIR="continious_max_test_$(date +%Y%m%d_%H%M%S)"
 mkdir -p $RESULTS_DIR
 
 echo "Результаты будут сохранены в: ${RESULTS_DIR}"
 
-# Поднимаем окружение БЕЗ k6
+# Поднимаем окружение
 echo "Запуск Docker окружения..."
 docker compose up -d --build
 
@@ -39,7 +39,7 @@ echo "timestamp,container,cpu_percent,mem_usage,mem_percent,net_io,block_io,pids
 done) &
 STATS_PID=$!
 
-echo "Запуск теста на поиск точки деградации..."
+echo "Запуск непрерывного теста максимальной нагрузки..."
 
 # Создаем контейнер (не запускаем)
 CONTAINER_ID=$(docker create \
@@ -51,7 +51,7 @@ CONTAINER_ID=$(docker create \
   --out csv=/tmp/k6_results.csv)
 
 # Копируем скрипт в контейнер
-docker cp scripts/k6/degradation_test.js $CONTAINER_ID:/test.js
+docker cp scripts/k6/continius_max_test.js $CONTAINER_ID:/test.js
 
 # Запускаем контейнер
 echo "Запуск теста..."
@@ -73,7 +73,7 @@ wait $STATS_PID 2>/dev/null
 
 if [ -f "${RESULTS_DIR}/k6_results.json" ] && [ $K6_EXIT_CODE -eq 0 ]; then
     echo ">>>>>>>>>>>>>> Тест выполнен успешно"
-    echo "Анализ точки деградации..."
+    echo "Анализ результатов..."
     if [ -f "analyze_copy.py" ]; then
         python3 analyze_copy.py "${RESULTS_DIR}"
     else
@@ -95,7 +95,7 @@ fi
 echo "Остановка Docker окружения..."
 docker compose down
 
-echo "--- Поиск точки деградации завершен ---"
+echo "--- Непрерывный тест максимальной нагрузки завершен ---"
 if [ -f "${RESULTS_DIR}/k6_results.json" ]; then
     echo ">>>>>>>>>>> Результаты в: ${RESULTS_DIR}"
     ls -la ${RESULTS_DIR}/

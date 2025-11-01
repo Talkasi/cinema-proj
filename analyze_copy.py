@@ -307,6 +307,13 @@ def create_degradation_analysis(results_dir, csv_data):
     bars = ax3.bar(stats_df['time_seconds'], stats_df['requests'], 
             width=25, alpha=0.7, color='green', label='Запросов за 30сек')
 
+    # Добавляем значения поверх столбцов
+    for bar, req_count in zip(bars, stats_df['requests']):
+        height = bar.get_height()
+        ax3.text(bar.get_x() + bar.get_width()/2., height,
+                f'{int(req_count)}',
+                ha='center', va='bottom', fontsize=8, fontweight='bold')
+
     # Отмечаем точки деградации на графике нагрузки
     if not degraded_time_windows.empty:
         first_degradation = degraded_time_windows.iloc[0]
@@ -463,12 +470,12 @@ def create_percentiles_chart(results_dir, csv_data):
     duration_data = duration_data.sort_values('timestamp')
     duration_data['time_interval'] = (duration_data['timestamp'] - duration_data['timestamp'].min())
     
-    # Ограничиваем время тестирования до 600 секунд (0.6 от 1000)
-    max_time = 600
-    duration_data = duration_data[duration_data['time_interval'] <= max_time]
+    # Используем все доступное время, убираем ограничение на 600 секунд
+    max_time = duration_data['time_interval'].max()
+    # duration_data = duration_data[duration_data['time_interval'] <= max_time]  # теперь используем все данные
     
-    # Разбиваем на временные интервалы до 600 секунд
-    time_intervals = np.linspace(0, min(duration_data['time_interval'].max(), max_time), 50)
+    # Разбиваем на временные интервалы до max_time
+    time_intervals = np.linspace(0, max_time, min(100, int(max_time) + 1))  # используем min(100, max_time+1) для адаптивности
     percentiles = [50, 75, 90, 95, 99]
     colors = ['green', 'blue', 'orange', 'red', 'purple']
     labels = ['P50', 'P75', 'P90', 'P95', 'P99']
@@ -506,14 +513,15 @@ def create_percentiles_chart(results_dir, csv_data):
     # Настройка графика с правильными подписями
     ax.set_xlabel('Время тестирования (секунды)', fontsize=12, fontweight='bold')
     ax.set_ylabel('Время ответа (миллисекунды)', fontsize=12, fontweight='bold')
-    ax.set_title('Динамика перцентилей времени ответа во время тестирования (0-600 сек)', 
+    ax.set_title('Динамика перцентилей времени ответа во время тестирования', 
                 fontsize=14, fontweight='bold')
     
     # Устанавливаем правильные пределы по оси X
     ax.set_xlim(0, max_time)
     
-    # Правильные подписи тиков на оси X (каждые 100 секунд)
-    x_ticks = np.arange(0, max_time + 1, 100)
+    # Адаптивные подписи тиков на оси X (каждые 100 секунд или другое значение в зависимости от общего времени)
+    tick_interval = max(1, int(max_time / 10))  # определяем интервал тиков в зависимости от продолжительности теста
+    x_ticks = np.arange(0, max_time + tick_interval, tick_interval)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels([f'{int(x)}' for x in x_ticks])
     
@@ -557,12 +565,12 @@ def create_cumulative_percentiles_chart(results_dir, csv_data):
     duration_data = duration_data.sort_values('timestamp')
     duration_data['time_interval'] = (duration_data['timestamp'] - duration_data['timestamp'].min())
     
-    # Ограничиваем время тестирования до 600 секунд (0.6 от 1000)
-    max_time = 600
-    duration_data = duration_data[duration_data['time_interval'] <= max_time]
+    # Используем все доступное время, убираем ограничение на 600 секунд
+    max_time = duration_data['time_interval'].max()
+    # duration_data = duration_data[duration_data['time_interval'] <= max_time]  # теперь используем все данные
     
-    # Разбиваем на временные интервалы до 600 секунд (точно как в рабочем примере)
-    time_intervals = np.linspace(0, min(duration_data['time_interval'].max(), max_time), 50)
+    # Разбиваем на временные интервалы до max_time (увеличиваем точность для большего количества точек)
+    time_intervals = np.linspace(0, max_time, min(100, int(max_time) + 1))  # адаптивное количество точек
     percentiles = [50, 75, 90, 95, 99]
     colors = ['green', 'blue', 'orange', 'red', 'purple']
     labels = ['P50', 'P75', 'P90', 'P95', 'P99']
@@ -602,8 +610,9 @@ def create_cumulative_percentiles_chart(results_dir, csv_data):
     # Устанавливаем правильные пределы по оси X
     ax.set_xlim(0, max_time)
     
-    # Правильные подписи тиков на оси X (каждые 100 секунд)
-    x_ticks = np.arange(0, max_time + 1, 100)
+    # Адаптивные подписи тиков на оси X (каждые 100 секунд или другое значение в зависимости от общего времени)
+    tick_interval = max(1, int(max_time / 10))  # определяем интервал тиков в зависимости от продолжительности теста
+    x_ticks = np.arange(0, max_time + tick_interval, tick_interval)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels([f'{int(x)}' for x in x_ticks])
     

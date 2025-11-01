@@ -75,15 +75,15 @@ export const options = {
   scenarios: {
     high_load: {
       executor: 'constant-arrival-rate',
-      rate: 350, // 10500 запросов / 30 секунд = 350 RPS
+      rate: 1600, // 49369 запросов / 30 секунд = 1645 RPS
       timeUnit: '1s',
-      duration: '30s',
+      duration: '1m',
       preAllocatedVUs: 500,
-      maxVUs: 2000,
+      // maxVUs: 2000,
     },
   },
   thresholds: {
-    'http_req_failed': ['rate<0.005'], // Допускаем до 2% ошибок при пиковой нагрузке
+    'http_req_failed': ['rate<0.005'], // Допускаем до 0.5% ошибок при пиковой нагрузке
     'http_req_duration': ['p(95)<500'],
   },
   discardResponseBodies: false,
@@ -96,65 +96,68 @@ export default function (data) {
     'Authorization': `Bearer ${authToken}`,
   } : { 'Content-Type': 'application/json' };
 
-  // Оптимизированное распределение операций для высокой нагрузки
-  const operationType = Math.random();
-  let success = false;
+  // СЦЕНАРИЙ 1: Просмотр фильмов (всегда работает без авторизации)
+  group('Movie Browsing Flow', function () {
+    const getMoviesRes = http.get(`${BASE_URL}/movies?limit=10`);
+    check(getMoviesRes, { 
+      'GET /movies status is 200': (r) => r.status === 200
+    });
+    
+    trends.getMoviesList.add(getMoviesRes.timings.duration);
 
-  if (operationType < 0.8) {
-    // 80% - Самый легкий сценарий (только список фильмов)
-    group('Light - Movies List Only', function () {
+    const movies = getMoviesRes.json('data');
+    
+    if (movies && movies.length > 0) {
+      const randomMovie = randomItem(movies);
+      
+      // Детали фильма
+      const getMovieDetailRes = http.get(`${BASE_URL}/movies/${randomMovie.id}`);
+      check(getMovieDetailRes, { 'GET /movies/{id} status is 200': (r) => r.status === 200 });
+      trends.getMovieDetails.add(getMovieDetailRes.timings.duration);
+
+      // Расписание сеансов
+      const getShowsRes = http.get(`${BASE_URL}/movie-shows?movie_id=${randomMovie.id}`);
+      check(getShowsRes, { 'GET /movie-shows status is 200': (r) => r.status === 200 });
+      trends.getMovieShows.add(getShowsRes.timings.duration);
+    }
+
+    sleep(Math.random() * 2 + 1);
+  });
+
+  // СЦЕНАРИЙ 2: Написание отзыва (только если есть токен)
+  if (authToken && Math.random() < 0.3) {
+    group('Review Writing Flow', function () {
       const getMoviesRes = http.get(`${BASE_URL}/movies?limit=5`);
-      requestCount.add(1);
-      
-      const checkResult = check(getMoviesRes, { 
-        'GET /movies status is 200': (r) => r.status === 200
-      });
-      
-      if (checkResult) {
-        success = true;
-        trends.getMoviesList.add(getMoviesRes.timings.duration);
-      } else {
-        errorCount.add(1);
+      const movies = getMoviesRes.json('data');
+
+      if (movies && movies.length > 0) {
+        const movieToReview = randomItem(movies);
+        const reviewPayload = JSON.stringify({
+          movie_id: movieToReview.id,
+          rating: Math.floor(Math.random() * 10) + 1,
+          comment: `Тестовый отзыв под нагрузкой. VU: ${__VU}, Iter: ${__ITER}`
+        });
+        
+        const postReviewRes = http.post(`${BASE_URL}/movies/${movieToReview.id}/reviews`, reviewPayload, { 
+          headers: authHeaders 
+        });
+        
+        check(postReviewRes, { 
+          'POST /reviews status is 201': (r) => r.status === 201 
+        });
+        
+        trends.postReview.add(postReviewRes.timings.duration);
       }
+      sleep(2);
     });
-    
-  } else if (operationType < 0.95 && authToken) {
-    // 15% - Средний сценарий (список + детали фильма)
-    group('Medium - Movies List + Details', function () {
-      const getMoviesRes = http.get(`${BASE_URL}/movies?limit=3`);
-      requestCount.add(1);
-      
-      if (getMoviesRes.status === 200) {
-        const movies = getMoviesRes.json('data');
-        if (movies && movies.length > 0) {
-          const randomMovie = randomItem(movies);
-          
-          // Детали фильма
-          const getMovieDetailRes = http.get(`${BASE_URL}/movies/${randomMovie.id}`);
-          requestCount.add(1);
-          
-          const checkResult = check(getMovieDetailRes, { 
-            'GET /movies status is 200': (r) => r.status === 200,
-            'GET /movies/{id} status is 200': (r) => r.status === 200
-          });
-          
-          if (checkResult) {
-            success = true;
-            trends.getMoviesList.add(getMoviesRes.timings.duration);
-            trends.getMovieDetails.add(getMovieDetailRes.timings.duration);
-          } else {
-            errorCount.add(1);
-          }
-        }
-      }
-    });
-    
-  } else {
-    // 5% - Тяжелый сценарий (регистрация)
-    group('Heavy - Registration Only', function () {
-      const userEmail = `load_user_${__VU}_${__ITER}_${Date.now()}@test.com`;
+  }
+
+  // СЦЕНАРИЙ 3: Регистрация и логин новых пользователей
+  if (Math.random() < 0.1) {
+    group('Authentication Flow', function () {
+      const userEmail = `stress_user_${__VU}_${__ITER}_${Date.now()}@test.com`;
       const registerPayload = JSON.stringify({
-        name: `Load User ${__VU} ${__ITER}`,
+        name: `Stress User ${__VU} ${__ITER}`,
         email: userEmail,
         password: USER_PASSWORD,
         birth_date: "1995-05-15",
@@ -163,24 +166,23 @@ export default function (data) {
       const registerRes = http.post(`${BASE_URL}/auth/register`, registerPayload, { 
         headers: { 'Content-Type': 'application/json' } 
       });
-      requestCount.add(1);
       
-      const checkResult = check(registerRes, { 
-        'POST /register status is 201': (r) => r.status === 201 || r.status === 200 
+      check(registerRes, { 'POST /register status is 201': (r) => r.status === 201 || r.status === 200 });
+      trends.register.add(registerRes.timings.duration);
+
+      sleep(1);
+
+      const loginPayload = JSON.stringify({
+        email: userEmail,
+        password: USER_PASSWORD
+      });
+
+      const loginRes = http.post(`${BASE_URL}/auth/login`, loginPayload, { 
+        headers: { 'Content-Type': 'application/json' } 
       });
       
-      if (checkResult) {
-        success = true;
-        trends.register.add(registerRes.timings.duration);
-      } else {
-        errorCount.add(1);
-      }
+      check(loginRes, { 'POST /login status is 200': (r) => r.status === 200 });
+      trends.login.add(loginRes.timings.duration);
     });
   }
-
-  // Обновляем метрику успешности
-  successRate.add(success);
-
-  // Минимальная пауза для снижения нагрузки на систему
-  sleep(0.05);
 }

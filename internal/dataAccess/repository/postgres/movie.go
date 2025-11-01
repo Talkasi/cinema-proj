@@ -184,27 +184,40 @@ func (r *MovieRepository) GetAll(ctx context.Context, filters domain.MovieFilter
 }
 
 func (r *MovieRepository) GetByID(ctx context.Context, id string) (domain.Movie, *utils.Error) {
+	// First, get the basic movie data without joins
 	query := `
 		SELECT m.id, m.title, m.duration, m.description, m.age_limit, 
-		       m.box_office_revenue, m.release_date,
-		       COALESCE(AVG(r.rating), 0) as rating,
-		       ARRAY_AGG(DISTINCT mg.genre_id) FILTER (WHERE mg.genre_id IS NOT NULL) as genre_ids
+		       m.box_office_revenue, m.release_date
 		FROM movies m
-		LEFT JOIN reviews r ON m.id = r.movie_id
-		LEFT JOIN movies_genres mg ON m.id = mg.movie_id
 		WHERE m.id = $1
-		GROUP BY m.id
 	`
 
 	var movieEntity entity.Movie
-	var genreIDs []string
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&movieEntity.ID, &movieEntity.Title, &movieEntity.Duration, &movieEntity.Description,
 		&movieEntity.AgeLimit, &movieEntity.BoxOfficeRevenue, &movieEntity.ReleaseDate,
-		&movieEntity.Rating, &genreIDs,
 	)
 	if err != nil {
 		return domain.Movie{}, utils.ConvertError(err)
+	}
+
+	// Get the rating separately to avoid expensive JOIN
+	ratingQuery := `SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE movie_id = $1`
+	var rating float64
+	err = r.db.QueryRow(ctx, ratingQuery, id).Scan(&rating)
+	if err != nil {
+		// If no reviews exist, rating will be 0, which is fine
+		rating = 0
+	}
+	movieEntity.Rating = rating
+
+	// Get genre IDs separately to avoid expensive JOIN
+	genreQuery := `SELECT ARRAY_AGG(genre_id) FROM movies_genres WHERE movie_id = $1`
+	var genreIDs []string
+	err = r.db.QueryRow(ctx, genreQuery, id).Scan(&genreIDs)
+	if err != nil || genreIDs == nil {
+		// If no genres exist, set empty array
+		genreIDs = []string{}
 	}
 	movieEntity.GenreIDs = genreIDs
 
