@@ -22,78 +22,162 @@ func NewMovieRepository(db *pgxpool.Pool) *MovieRepository {
 
 func (r *MovieRepository) GetAll(ctx context.Context, filters domain.MovieFilters, page, limit int) ([]domain.Movie, int, *utils.Error) {
 	var whereClauses []string
-	var countArgs []interface{}
+	var args []interface{}
 	argPos := 1
 
-	baseQuery := `
-		SELECT m.id, m.title, m.duration, m.description, m.age_limit, 
-		       m.box_office_revenue, m.release_date,
-		       COALESCE(AVG(r.rating), 0) as rating,
-		       ARRAY_AGG(DISTINCT mg.genre_id) FILTER (WHERE mg.genre_id IS NOT NULL) as genre_ids
-		FROM movies m
-		LEFT JOIN reviews r ON m.id = r.movie_id
-		LEFT JOIN movies_genres mg ON m.id = mg.movie_id
-	`
+	// Build a single query using window functions to get both data and total count
+	query := `
+		WITH filtered_movies AS (
+			SELECT 
+				m.id, 
+				m.title, 
+				m.duration, 
+				m.description, 
+				m.age_limit, 
+				m.box_office_revenue, 
+				m.release_date,
+				COUNT(*) OVER() AS total_count
+			FROM movies m`
 
+	// Add filters to the query
 	if filters.Title != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("m.title ILIKE $%d", argPos))
-		countArgs = append(countArgs, "%"+filters.Title+"%")
+		whereClause := fmt.Sprintf("m.title ILIKE $%d", argPos)
+		whereClauses = append(whereClauses, whereClause)
+		args = append(args, "%"+filters.Title+"%")
 		argPos++
 	}
 	if filters.Genre != "" {
-		baseQuery += " JOIN movies_genres mg2 ON m.id = mg2.movie_id JOIN genres g ON mg2.genre_id = g.id"
-		whereClauses = append(whereClauses, fmt.Sprintf("g.name ILIKE $%d", argPos))
-		countArgs = append(countArgs, "%"+filters.Genre+"%")
+		query += " JOIN movies_genres mg2 ON m.id = mg2.movie_id JOIN genres g ON mg2.genre_id = g.id"
+		whereClause := fmt.Sprintf("g.name ILIKE $%d", argPos)
+		whereClauses = append(whereClauses, whereClause)
+		args = append(args, "%"+filters.Genre+"%")
 		argPos++
 	}
 
+	// Apply WHERE clause
 	if len(whereClauses) > 0 {
-		baseQuery += " WHERE " + strings.Join(whereClauses, " AND ")
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
-	baseQuery += " GROUP BY m.id"
-
-	countQuery := "SELECT COUNT(*) FROM (" + baseQuery + ") as counted"
-	var total int
-	err := r.db.QueryRow(ctx, countQuery, countArgs...).Scan(&total)
-	if err != nil {
-		return nil, 0, utils.ConvertError(err)
-	}
-
-	dataArgs := make([]interface{}, len(countArgs))
-	copy(dataArgs, countArgs)
-
-	dataQuery := baseQuery + " ORDER BY m.title"
+	query += " ORDER BY m.title"
 
 	if limit > 0 && page > 0 {
-		dataQuery += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(dataArgs)+1, len(dataArgs)+2)
-		dataArgs = append(dataArgs, limit, (page-1)*limit)
+		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argPos, argPos+1)
+		args = append(args, limit, (page-1)*limit)
 	}
 
-	rows, err := r.db.Query(ctx, dataQuery, dataArgs...)
+	query += ") SELECT id, title, duration, description, age_limit, box_office_revenue, release_date, total_count FROM filtered_movies"
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
+	var movieIDs []string
 	var movieEntities []entity.Movie
+	var total int
+
 	for rows.Next() {
 		var movieEntity entity.Movie
-		var genreIDs []string
+		var rowCount int
 		err := rows.Scan(
-			&movieEntity.ID, &movieEntity.Title, &movieEntity.Duration, &movieEntity.Description,
-			&movieEntity.AgeLimit, &movieEntity.BoxOfficeRevenue, &movieEntity.ReleaseDate,
-			&movieEntity.Rating, &genreIDs,
+			&movieEntity.ID, 
+			&movieEntity.Title, 
+			&movieEntity.Duration, 
+			&movieEntity.Description,
+			&movieEntity.AgeLimit, 
+			&movieEntity.BoxOfficeRevenue, 
+			&movieEntity.ReleaseDate,
+			&rowCount,
 		)
 		if err != nil {
 			return nil, 0, utils.ConvertError(err)
 		}
-		movieEntity.GenreIDs = genreIDs
+		// Only set the total once from the first row
+		if total == 0 {
+			total = rowCount
+		}
+		movieIDs = append(movieIDs, movieEntity.ID)
 		movieEntities = append(movieEntities, movieEntity)
 	}
+	rows.Close()
 
 	if err := rows.Err(); err != nil {
 		return nil, 0, utils.ConvertError(err)
+	}
+
+	// If no movies found, return with total 0
+	if len(movieEntities) == 0 {
+		return []domain.Movie{}, 0, nil
+	}
+
+	// If we have movies to return, fetch ratings and genre IDs separately
+	if len(movieIDs) > 0 {
+		// Fetch ratings for the returned movies
+		ratingQuery := fmt.Sprintf(`
+			SELECT movie_id, COALESCE(AVG(rating), 0)
+			FROM reviews
+			WHERE movie_id = ANY($1)
+			GROUP BY movie_id`)
+		
+		ratingRows, err := r.db.Query(ctx, ratingQuery, movieIDs)
+		if err != nil {
+			return nil, 0, utils.ConvertError(err)
+		}
+		defer ratingRows.Close()
+
+		ratingMap := make(map[string]float64)
+		for ratingRows.Next() {
+			var movieID string
+			var rating float64
+			if err := ratingRows.Scan(&movieID, &rating); err != nil {
+				return nil, 0, utils.ConvertError(err)
+			}
+			ratingMap[movieID] = rating
+		}
+		ratingRows.Close()
+
+		// Fetch genre IDs for the returned movies
+		genreQuery := fmt.Sprintf(`
+			SELECT movie_id, ARRAY_AGG(genre_id) as genre_ids
+			FROM movies_genres
+			WHERE movie_id = ANY($1)
+			GROUP BY movie_id`)
+		
+		genreRows, err := r.db.Query(ctx, genreQuery, movieIDs)
+		if err != nil {
+			return nil, 0, utils.ConvertError(err)
+		}
+		defer genreRows.Close()
+
+		genreMap := make(map[string][]string)
+		for genreRows.Next() {
+			var movieID string
+			var genreIDs []string
+			if err := genreRows.Scan(&movieID, &genreIDs); err != nil {
+				return nil, 0, utils.ConvertError(err)
+			}
+			genreMap[movieID] = genreIDs
+		}
+		genreRows.Close()
+
+		// Combine the data in the correct order
+		for i := range movieEntities {
+			movieID := movieEntities[i].ID
+			// Set rating
+			if rating, exists := ratingMap[movieID]; exists {
+				movieEntities[i].Rating = rating
+			} else {
+				movieEntities[i].Rating = 0
+			}
+			// Set genre IDs
+			if genreIDs, exists := genreMap[movieID]; exists {
+				movieEntities[i].GenreIDs = genreIDs
+			} else {
+				movieEntities[i].GenreIDs = []string{}
+			}
+		}
 	}
 
 	return entity.MoviesToDomain(movieEntities), total, nil

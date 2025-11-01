@@ -17,7 +17,7 @@ This is a Go-based cinema management system that provides a REST API for managin
 - Performance testing with K6
 
 ### Architecture
-- **Data Access Layer**: PostgreSQL database with pgx driver and GORM ORM
+- **Data Access Layer**: PostgreSQL database with pgx driver
 - **Domain Layer**: Business logic services
 - **DTO Layer**: HTTP handlers using Chi router
 - **API Documentation**: Swagger integration
@@ -27,7 +27,6 @@ This is a Go-based cinema management system that provides a REST API for managin
 - **Backend**: Go 1.24.0
 - **Database**: PostgreSQL
 - **Web Framework**: Chi router
-- **ORM**: GORM
 - **Authentication**: JWT (golang-jwt)
 - **Documentation**: Swagger
 - **Monitoring**: Prometheus
