@@ -1,2 +1,5 @@
 degradation_*/
 continious_max_test_*/
+__pycache__
+.vscode
+QWEN.md
