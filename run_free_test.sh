@@ -51,7 +51,7 @@ CONTAINER_ID=$(docker create \
   --out csv=/tmp/k6_results.csv)
 
 # Копируем скрипт в контейнер
-docker cp scripts/k6/continious_max_test_get.js $CONTAINER_ID:/test.js
+docker cp scripts/k6/free_after_max_test_get.js $CONTAINER_ID:/test.js
 
 # Запускаем контейнер
 echo "Запуск теста..."

@@ -1,9 +1,9 @@
 #!/bin/bash
-# run_continious_max_test.sh
+# run_degradation_get_test.sh
 
-echo "--- Непрерывный тест максимальной нагрузки ---"
+echo "--- Тест деградации с GET запросами ---"
 
-RESULTS_DIR="continious_max_test_$(date +%Y%m%d_%H%M%S)"
+RESULTS_DIR="degradation_get_test_$(date +%Y%m%d_%H%M%S)"
 mkdir -p $RESULTS_DIR
 
 echo "Результаты будут сохранены в: ${RESULTS_DIR}"
@@ -39,7 +39,7 @@ echo "timestamp,container,cpu_percent,mem_usage,mem_percent,net_io,block_io,pids
 done) &
 STATS_PID=$!
 
-echo "Запуск непрерывного теста максимальной нагрузки..."
+echo "Запуск теста деградации с GET запросами..."
 
 # Создаем контейнер (не запускаем)
 CONTAINER_ID=$(docker create \
@@ -51,7 +51,7 @@ CONTAINER_ID=$(docker create \
   --out csv=/tmp/k6_results.csv)
 
 # Копируем скрипт в контейнер
-docker cp scripts/k6/continious_max_test_get.js $CONTAINER_ID:/test.js
+docker cp scripts/k6/degradation_test_get.js $CONTAINER_ID:/test.js
 
 # Запускаем контейнер
 echo "Запуск теста..."
@@ -79,12 +79,6 @@ if [ -f "${RESULTS_DIR}/k6_results.json" ] && [ $K6_EXIT_CODE -eq 0 ]; then
     else
         echo ">>>>>>>>>>>>>>>>  Скрипт анализа не найден"
     fi
-
-    if [ -f "analyze_degradation.py" ]; then
-        python3 analyze_degradation.py "${RESULTS_DIR}"
-    else
-        echo ">>>>>>>>>>>>>>>>  Скрипт анализа не найден"
-    fi
 else
     echo ">>>>>>>>>>>>>>>>>>> Тест завершился с ошибкой (код: $K6_EXIT_CODE)"
     
@@ -95,7 +89,7 @@ fi
 echo "Остановка Docker окружения..."
 docker compose down
 
-echo "--- Непрерывный тест максимальной нагрузки завершен ---"
+echo "--- Тест деградации с GET запросами завершен ---"
 if [ -f "${RESULTS_DIR}/k6_results.json" ]; then
     echo ">>>>>>>>>>> Результаты в: ${RESULTS_DIR}"
     ls -la ${RESULTS_DIR}/
