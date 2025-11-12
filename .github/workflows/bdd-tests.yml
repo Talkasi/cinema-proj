@@ -70,6 +70,12 @@ jobs:
         DB_USER: postgres
         DB_PASS: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
         DB_SSL: disable
+        SMTP_HOST: ${{ secrets.SMTP_HOST || 'postgres' }}
+        SMTP_PORT: 587
+        SMTP_USER: ${{ secrets.SMTP_USER }}
+        SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+
       run: |
         cd tests/bdd
         go test -v
