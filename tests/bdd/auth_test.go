@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,7 +31,9 @@ type testContext struct {
 	currentUser     *dto.UserResponse
 	userEmail       string
 	userPassword    string
+	userID          string
 	jwtToken        string
+	emailReader     *utils.IMAPEmailReader
 }
 
 func InitializeTestContext() *testContext {
@@ -47,17 +48,26 @@ func InitializeTestContext() *testContext {
 	userRepo := postgres.NewUserRepository(db, jwtSecret, 24*time.Hour)
 	userService := service.NewUserService(userRepo)
 
+	emailConfig := utils.EmailConfig{
+		SMTPHost:     utils.GetEnv("SMTP_HOST"),
+		SMTPPort:     utils.GetEnv("SMTP_PORT"),
+		SMTPUser:     utils.GetEnv("SMTP_USER"),
+		SMTPPassword: utils.GetEnv("SMTP_PASS"),
+		FromEmail:    utils.GetEnv("FROM_EMAIL"),
+	}
+	emailReader := utils.NewIMAPEmailReader(emailConfig)
+
 	return &testContext{
 		userHandler:  handler.NewUserHandler(userService),
 		userService:  userService,
 		dbPool:       db,
 		userEmail:    userEmail,
 		userPassword: userPassword,
+		emailReader:  emailReader,
 	}
 }
 
 func (ctx *testContext) cleanupDatabase() error {
-
 	_, err := ctx.dbPool.Exec(context.Background(), "DELETE FROM users")
 	if err != nil {
 		return fmt.Errorf("failed to clean up database: %v", err)
@@ -66,7 +76,6 @@ func (ctx *testContext) cleanupDatabase() error {
 }
 
 func (ctx *testContext) aUserWithValidCredentialsExists() error {
-
 	if err := ctx.cleanupDatabase(); err != nil {
 		return err
 	}
@@ -84,10 +93,13 @@ func (ctx *testContext) aUserWithValidCredentialsExists() error {
 		PasswordHash: dtoUser.PasswordHash,
 		BirthDate:    dtoUser.BirthDate,
 	}
-	_, err := ctx.userService.Register(context.Background(), domainUser)
+	registeredUser, err := ctx.userService.Register(context.Background(), domainUser)
 	if err != nil {
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
+
+	// Store the user ID for later use
+	ctx.userID = registeredUser.ID
 
 	return nil
 }
@@ -115,6 +127,9 @@ func (ctx *testContext) aUserWithValidCredentialsAndEmail2FAEnabledExists() erro
 	if err != nil {
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
+
+	// Store the user ID for later use
+	ctx.userID = registeredUser.ID
 
 	err = ctx.userService.Enable2FA(context.Background(), registeredUser.ID)
 	if err != nil {
@@ -169,31 +184,52 @@ func (ctx *testContext) shouldReceiveAValidJWTToken() error {
 }
 
 func (ctx *testContext) theUserShouldReceiveATemporaryAuthenticationStatus() error {
+	if ctx.currentResponse.Code != http.StatusOK {
+		return fmt.Errorf("expected status code %d for temporary authentication status, got %d", http.StatusOK, ctx.currentResponse.Code)
+	}
+
+	var authResp dto.AuthResponse
+	err := json.Unmarshal(ctx.currentResponse.Body.Bytes(), &authResp)
+	if err != nil {
+		return fmt.Errorf("failed to parse authentication response: %v", err)
+	}
+
+	// Check that response indicates 2FA is needed (not a full authentication with token)
+	if authResp.Token == "" && authResp.Message != "" {
+		// Expected: no token but a message indicating 2FA is required
+	} else {
+		return fmt.Errorf("expected temporary authentication status with 2FA requirement message")
+	}
 
 	return nil
 }
 
 func (ctx *testContext) shouldBePromptedToEnterTheEmail2FACode() error {
+	var authResp dto.AuthResponse
+	err := json.Unmarshal(ctx.currentResponse.Body.Bytes(), &authResp)
+	if err != nil {
+		return fmt.Errorf("failed to parse authentication response: %v", err)
+	}
+
+	// Verify that the response includes a message about 2FA requirement
+	if !strings.Contains(strings.ToLower(authResp.Message), "2fa") &&
+		!strings.Contains(strings.ToLower(authResp.Message), "verification") &&
+		!strings.Contains(strings.ToLower(authResp.Message), "code") {
+		return fmt.Errorf("expected response to contain 2FA prompt message, got: %s", authResp.Message)
+	}
 
 	return nil
 }
 
 func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
+	// The 2FA code has already been sent via email when the user logs in with 2FA enabled
+	// We just need to wait a moment for the email to be sent and verify it was sent
+	time.Sleep(3 * time.Second)
 
-	query := "SELECT id FROM users WHERE email = $1"
-	var userID string
-	err := ctx.dbPool.QueryRow(context.Background(), query, ctx.userEmail).Scan(&userID)
+	// Try to read an email with the 2FA subject to verify it was sent
+	_, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
 	if err != nil {
-		return fmt.Errorf("failed to find user by email: %v", err)
-	}
-
-	code := fmt.Sprintf("%06d", rand.Intn(1000000))
-
-	query = "UPDATE users SET email_2fa_code = $1, email_2fa_expires = $2 WHERE id = $3"
-	expiration := time.Now().Add(5 * time.Minute)
-	_, err = ctx.dbPool.Exec(context.Background(), query, code, expiration, userID)
-	if err != nil {
-		return fmt.Errorf("failed to store email 2FA code: %v", err)
+		return fmt.Errorf("failed to verify 2FA email was sent: %v", err)
 	}
 
 	ctx.currentResponse = &httptest.ResponseRecorder{}
@@ -202,33 +238,45 @@ func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
 }
 
 func (ctx *testContext) theUserProvidesTheCorrect2FACode() error {
-	query := "SELECT id, email_2fa_code FROM users WHERE email = $1"
-	var userID string
-	var code string
-	err := ctx.dbPool.QueryRow(context.Background(), query, ctx.userEmail).Scan(&userID, &code)
+	emailBody, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
 	if err != nil {
-		return fmt.Errorf("failed to find user by email: %v", err)
+		return fmt.Errorf("failed to read 2FA email: %v", err)
+	}
+
+	code, err := ctx.emailReader.Extract2FACode(emailBody)
+	if err != nil {
+		return fmt.Errorf("failed to extract 2FA code from email: %v", err)
+	}
+
+	// Verify that the code from the email matches what's stored in the database for this user
+	// This verification is important to confirm the email and database are in sync
+	var dbCode string
+	query := "SELECT email_2fa_code FROM users WHERE id = $1"
+	err = ctx.dbPool.QueryRow(context.Background(), query, ctx.userID).Scan(&dbCode)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve 2FA code from database for user %s: %v", ctx.userID, err)
+	}
+
+	if code != dbCode {
+		return fmt.Errorf("2FA code from email (%s) does not match code in database (%s)", code, dbCode)
 	}
 
 	verifyRequest := dto.Verify2FARequest{
 		Code:   code,
-		UserID: userID,
+		UserID: ctx.userID, // Use the stored user ID
 	}
 
 	requestBody, _ := json.Marshal(verifyRequest)
 	req := httptest.NewRequest("POST", "/auth/2fa/verify", strings.NewReader(string(requestBody)))
 	req.Header.Set("Content-Type", "application/json")
 
-	ctxWithUser := context.WithValue(req.Context(), "userID", userID)
-	req = req.WithContext(ctxWithUser)
-
 	ctx.currentResponse = httptest.NewRecorder()
 
 	ctx.userHandler.Verify2FA(ctx.currentResponse, req)
 
 	if ctx.currentResponse.Code != http.StatusOK {
-		fmt.Printf("Verify2FA failed with status: %d, body: %s\n",
-			ctx.currentResponse.Code, ctx.currentResponse.Body.String())
+		fmt.Printf("Verify2FA failed with status: %d, body: %s, %s\n",
+			ctx.currentResponse.Code, ctx.currentResponse.Body.String(), code)
 	}
 
 	return nil
@@ -244,24 +292,14 @@ func (ctx *testContext) theUserShouldBeFullyAuthenticated() error {
 
 func (ctx *testContext) theUserProvidesAnIncorrect2FACode() error {
 
-	query := "SELECT id FROM users WHERE email = $1"
-	var userID string
-	err := ctx.dbPool.QueryRow(context.Background(), query, ctx.userEmail).Scan(&userID)
-	if err != nil {
-		return fmt.Errorf("failed to find user by email: %v", err)
-	}
-
 	verifyRequest := dto.Verify2FARequest{
-		Code:   "000000", // Invalid code
-		UserID: userID,
+		Code:   "000000",   // Invalid code
+		UserID: ctx.userID, // Use the stored user ID
 	}
 
 	requestBody, _ := json.Marshal(verifyRequest)
 	req := httptest.NewRequest("POST", "/auth/2fa/verify", strings.NewReader(string(requestBody)))
 	req.Header.Set("Content-Type", "application/json")
-
-	ctxWithUser := context.WithValue(req.Context(), "userID", userID)
-	req = req.WithContext(ctxWithUser)
 
 	ctx.currentResponse = httptest.NewRecorder()
 
@@ -329,6 +367,24 @@ func (ctx *testContext) theUserAccountShouldBeTemporarilyLocked() error {
 }
 
 func (ctx *testContext) subsequentLoginAttemptsShouldFailWithAccountLockedMessage() error {
+	// Try to login again after account is locked to verify it fails
+	loginRequest := dto.LoginRequest{
+		Email:        ctx.userEmail,
+		PasswordHash: ctx.userPassword, // correct password, but account should be locked
+	}
+
+	requestBody, _ := json.Marshal(loginRequest)
+	req := httptest.NewRequest("POST", "/auth/login", strings.NewReader(string(requestBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx.currentResponse = httptest.NewRecorder()
+
+	ctx.userHandler.Login(ctx.currentResponse, req)
+
+	// Should fail with forbidden status due to account lock
+	if ctx.currentResponse.Code != http.StatusForbidden {
+		return fmt.Errorf("expected forbidden status for locked account, got %d", ctx.currentResponse.Code)
+	}
 
 	return nil
 }
@@ -352,10 +408,13 @@ func (ctx *testContext) theUsersAccountIsLockedDueToFailedLoginAttempts() error 
 		PasswordHash: dtoUser.PasswordHash,
 		BirthDate:    dtoUser.BirthDate,
 	}
-	_, err := ctx.userService.Register(context.Background(), domainUser)
+	registeredUser, err := ctx.userService.Register(context.Background(), domainUser)
 	if err != nil {
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
+
+	// Store the user ID for later use
+	ctx.userID = registeredUser.ID
 
 	for i := 0; i < 5; i++ {
 		loginRequest := dto.LoginRequest{
@@ -408,65 +467,54 @@ func (ctx *testContext) theUserShouldBeAbleToLogInWithCorrectCredentials() error
 
 func (ctx *testContext) theUserEnablesEmailTwoFactorAuthentication() error {
 
-	query := "SELECT id FROM users WHERE email = $1"
-	var userID string
-	err := ctx.dbPool.QueryRow(context.Background(), query, ctx.userEmail).Scan(&userID)
-	if err != nil {
-		return fmt.Errorf("failed to find user by email: %v", err)
-	}
-
 	req := httptest.NewRequest("POST", "/auth/2fa/enable-email", nil)
 	ctx.currentResponse = httptest.NewRecorder()
 
-	ctxWithUser := context.WithValue(req.Context(), "userID", userID)
+	ctxWithUser := context.WithValue(req.Context(), "userID", ctx.userID)
 	req = req.WithContext(ctxWithUser)
 
-	curErr := ctx.userService.Enable2FA(context.Background(), userID)
+	curErr := ctx.userService.Enable2FA(context.Background(), ctx.userID)
 	if curErr != nil {
-		return fmt.Errorf("failed to enable email 2FA: %v", err)
+		return fmt.Errorf("failed to enable email 2FA: %v", curErr)
 	}
 
 	return nil
 }
 
 func (ctx *testContext) the2FAShouldBeEnabledInTheUserAccount() error {
+	enabled, curErr := ctx.userService.Get2FAInfo(context.Background(), ctx.userID)
+	if curErr != nil {
+		return fmt.Errorf("failed to get 2FA info: %v", curErr)
+	}
+
+	if !enabled {
+		return fmt.Errorf("2FA should be enabled")
+	}
+
 	return nil
 }
 
 func (ctx *testContext) theUserDisablesTwoFactorAuthentication() error {
 
-	query := "SELECT id FROM users WHERE email = $1"
-	var userID string
-	err := ctx.dbPool.QueryRow(context.Background(), query, ctx.userEmail).Scan(&userID)
-	if err != nil {
-		return fmt.Errorf("failed to find user by email: %v", err)
-	}
-
 	req := httptest.NewRequest("POST", "/auth/2fa/disable", nil)
 	ctx.currentResponse = httptest.NewRecorder()
 
-	ctxWithUser := context.WithValue(req.Context(), "userID", userID)
+	ctxWithUser := context.WithValue(req.Context(), "userID", ctx.userID)
 	req = req.WithContext(ctxWithUser)
 
-	curErr := ctx.userService.Disable2FA(context.Background(), userID)
+	curErr := ctx.userService.Disable2FA(context.Background(), ctx.userID)
 	if curErr != nil {
-		return fmt.Errorf("failed to enable email 2FA: %v", err)
+		return fmt.Errorf("failed to disable email 2FA: %v", curErr)
 	}
 
 	return nil
 }
 
 func (ctx *testContext) the2FAShouldBeDisabledInTheUserAccount() error {
-	query := "SELECT id FROM users WHERE email = $1"
-	var userID string
-	err := ctx.dbPool.QueryRow(context.Background(), query, ctx.userEmail).Scan(&userID)
-	if err != nil {
-		return fmt.Errorf("failed to find user by email: %v", err)
-	}
 
-	enabled, curErr := ctx.userService.Get2FAInfo(context.Background(), userID)
+	enabled, curErr := ctx.userService.Get2FAInfo(context.Background(), ctx.userID)
 	if curErr != nil {
-		return fmt.Errorf("failed to enable email 2FA: %v", err)
+		return fmt.Errorf("failed to get 2FA info: %v", curErr)
 	}
 
 	if enabled {
@@ -499,6 +547,9 @@ func (ctx *testContext) aUserWithValidCredentialsAnd2FAEnabledExists() error {
 	if err != nil {
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
+
+	// Store the user ID for later use
+	ctx.userID = registeredUser.ID
 
 	err = ctx.userService.Enable2FA(context.Background(), registeredUser.ID)
 	if err != nil {

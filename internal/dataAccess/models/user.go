@@ -12,7 +12,7 @@ type User struct {
 	PasswordHash        string     `db:"password_hash"`
 	BirthDate           time.Time  `db:"birth_date"`
 	IsAdmin             bool       `db:"is_admin"`
-	TwoFAEnabled        bool       `db:"two_fa_enabled"`
+	TwoFANeeded         bool       `db:"two_fa_enabled"`
 	Email2FACode        *string    `db:"email_2fa_code"`
 	Email2FAExpires     *time.Time `db:"email_2fa_expires"`
 	FailedLoginAttempts int        `db:"failed_login_attempts"`
@@ -43,8 +43,8 @@ func UserToDomain(entity User) domain.User {
 		Email:        entity.Email,
 		BirthDate:    entity.BirthDate.Format("2006-01-02"),
 		PasswordHash: entity.PasswordHash,
-		IsAdmin:      entity.IsAdmin,
-		TwoFAEnabled: entity.TwoFAEnabled,
+		IsAdmin:     entity.IsAdmin,
+		TwoFANeeded: entity.TwoFANeeded,
 
 		Email2FACode:        email2FACode,
 		Email2FAExpires:     email2FAExpiresStr,
@@ -83,8 +83,8 @@ func UserFromDomain(domainUser domain.User) User {
 		Email:        domainUser.Email,
 		BirthDate:    birthDate,
 		PasswordHash: domainUser.PasswordHash,
-		IsAdmin:      domainUser.IsAdmin,
-		TwoFAEnabled: domainUser.TwoFAEnabled,
+		IsAdmin:     domainUser.IsAdmin,
+		TwoFANeeded: domainUser.TwoFANeeded,
 
 		Email2FACode:        email2FACode,
 		Email2FAExpires:     email2FAExpires,

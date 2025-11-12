@@ -11,7 +11,7 @@ type User struct {
 	BirthDate           string
 	PasswordHash        string
 	IsAdmin             bool
-	TwoFAEnabled        bool
+	TwoFANeeded         bool
 	Email2FACode        string
 	Email2FAExpires     *string
 	FailedLoginAttempts int
@@ -74,11 +74,11 @@ func UsersToDTO(domainUsers []User) []dto.UserResponse {
 	return dtos
 }
 
-func AuthToDTO(id string, token string, message string, twoFAEnabled bool) dto.AuthResponse {
+func AuthToDTO(id string, token string, message string, twoFANeeded bool) dto.AuthResponse {
 	return dto.AuthResponse{
-		UserID:       id,
-		Token:        token,
-		TwoFAEnabled: twoFAEnabled,
-		Message:      message,
+		UserID:      id,
+		Token:       token,
+		TwoFANeeded: twoFANeeded,
+		Message:     message,
 	}
 }

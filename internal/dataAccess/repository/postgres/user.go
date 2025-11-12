@@ -36,7 +36,7 @@ func (r *UserRepository) Login(ctx context.Context, credentials domain.User) (do
 	query := "SELECT id, name, email, password_hash, birth_date, is_admin, two_fa_enabled, email_2fa_code, email_2fa_expires, failed_login_attempts, locked_until FROM users WHERE email = $1"
 	err := r.db.QueryRow(ctx, query, credentials.Email).Scan(
 		&userEntity.ID, &userEntity.Name, &userEntity.Email, &userEntity.PasswordHash, &userEntity.BirthDate, &userEntity.IsAdmin,
-		&userEntity.TwoFAEnabled,
+		&userEntity.TwoFANeeded,
 		&userEntity.Email2FACode, &userEntity.Email2FAExpires, &userEntity.FailedLoginAttempts, &userEntity.LockedUntil,
 	)
 	if err != nil {
@@ -54,15 +54,15 @@ func (r *UserRepository) Login(ctx context.Context, credentials domain.User) (do
 
 	r.resetFailedLoginAttempts(ctx, userEntity.ID)
 
-	if userEntity.TwoFAEnabled {
+	if userEntity.TwoFANeeded {
 		_, err := r.generateEmail2FACode(ctx, userEntity.ID)
 		if err != nil {
 			return domain.AuthResponse{}, utils.NewInternal("failed to generate email 2FA code", err)
 		}
 		return domain.AuthResponse{
-			UserID:       userEntity.ID,
-			Message:      "Two-factor authentication required. Check your email for the verification code.",
-			TwoFAEnabled: true,
+			UserID:      userEntity.ID,
+			Message:     "Two-factor authentication required. Check your email for the verification code.",
+			TwoFANeeded: true,
 		}, nil
 	}
 
@@ -172,7 +172,7 @@ func (r *UserRepository) Update(ctx context.Context, id string, user domain.User
 	var updatedUser entity.User
 	err := r.db.QueryRow(ctx, query, userEntity.Name, userEntity.Email, userEntity.BirthDate, id).Scan(
 		&updatedUser.ID, &updatedUser.Name, &updatedUser.Email, &updatedUser.PasswordHash, &updatedUser.BirthDate, &updatedUser.IsAdmin,
-		&updatedUser.TwoFAEnabled, &updatedUser.Email2FACode, &updatedUser.Email2FAExpires, &updatedUser.FailedLoginAttempts, &updatedUser.LockedUntil,
+		&updatedUser.TwoFANeeded, &updatedUser.Email2FACode, &updatedUser.Email2FAExpires, &updatedUser.FailedLoginAttempts, &updatedUser.LockedUntil,
 	)
 	if err != nil {
 		return domain.User{}, utils.ConvertError(err)

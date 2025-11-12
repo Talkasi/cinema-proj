@@ -1,10 +1,10 @@
 package domain
 
 type AuthResponse struct {
-	Token        string
-	UserID       string
-	Message      string
-	TwoFAEnabled bool
+	Token       string
+	UserID      string
+	Message     string
+	TwoFANeeded bool
 }
 
 type PaginatedResponse[T any] struct {

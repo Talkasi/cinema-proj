@@ -315,9 +315,9 @@ func (uh *UserHandler) Verify2FA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := dto.AuthResponse{
-		Token:        token,
-		UserID:       req.UserID,
-		TwoFAEnabled: true,
+		Token:       token,
+		UserID:      req.UserID,
+		TwoFANeeded: false,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
