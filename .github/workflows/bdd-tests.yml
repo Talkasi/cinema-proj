@@ -58,7 +58,7 @@ jobs:
 
     - name: Build application
       run: |
-        go build -o app .
+        go build -o app ./cmd/api/main.go
 
     - name: Run BDD tests
       env:

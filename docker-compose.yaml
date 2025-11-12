@@ -17,17 +17,6 @@ services:
       retries: 20
       start_period: 30s
 
-  # mailhog:
-  #   image: mailhog/mailhog
-  #   container_name: mailhog
-  #   ports:
-  #     - "1025:1025"   # SMTP
-  #     - "8025:8025"   # Web UI
-  #   environment:
-  #     MH_STORAGE: maildir
-  #   networks:
-  #     - app-net
-
   app:
     build: .
     container_name: go_app
