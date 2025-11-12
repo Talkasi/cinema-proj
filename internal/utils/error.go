@@ -224,6 +224,10 @@ func ConvertError(err error) *Error {
 func WriteError(w http.ResponseWriter, err *Error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(err.Code)
-	message := err.Message + " " + err.Err.Error()
+
+	message := err.Message
+	if err.Err != nil {
+		message += " " + err.Err.Error()
+	}
 	json.NewEncoder(w).Encode(dto.ErrorResponse{Message: message})
 }

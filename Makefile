@@ -106,7 +106,10 @@ deps:
 	@go mod graph
 
 # Запуск BDD тестов
-bdd-test:
+bdd-test: db-clean
+	@$(PSQL_CONN) -q -f sql/prod_db_init/004_create_app_roles.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/005_create_main.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/006_set_app_roles_privileges.sql
 	@echo "Запуск BDD тестов..."
 	@cd tests/bdd && go test -v
 
