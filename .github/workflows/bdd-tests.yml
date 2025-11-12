@@ -66,7 +66,6 @@ jobs:
         JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
         DB_HOST: localhost
         DB_PORT: 5432
-        DB_NAME: cinema_test
         DB_USER: postgres
         DB_PASS: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
         DB_SSL: disable
@@ -75,12 +74,7 @@ jobs:
         SMTP_USER: ${{ secrets.SMTP_USER }}
         SMTP_PASS: ${{ secrets.SMTP_PASS }}
         FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
-        TEST_DB_HOST: localhost
-        TEST_DB_PORT: 5432
         TEST_DB_NAME: cinema_test
-        TEST_DB_USER: postgres
-        TEST_DB_PASS: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
-        TEST_DB_SSL: disable
 
       run: |
         cd tests/bdd
