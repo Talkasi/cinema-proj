@@ -1,8 +1,27 @@
 package dto
 
 type AuthResponse struct {
-	Token  string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiaXNfYWRtaW4iOmZhbHNlLCJleHAiOjE3MDAwMDAwMDB9"`
+	Token        string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiaXNfYWRtaW4iOmZhbHNlLCJleHAiOjE3MDAwMDAwMDB9"`
+	UserID       string `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Message      string `json:"message" example:"Two-factor authentication required. Check your email for the verification code."`
+	TwoFAEnabled bool   `json:"two_fa_enabled" example:"true"`
+}
+
+type FirstStepAuthResponse struct {
+	Message string `json:"message" example:"Two-factor authentication required. Check your email for the verification code."`
+}
+
+// type Enable2FARequest struct {
+// 	// This can be an empty struct just to enable email 2FA
+// }
+
+type Verify2FARequest struct {
+	Code   string `json:"code" validate:"required,len=6" example:"123456"`
 	UserID string `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+}
+
+type TwoFAInfoResponse struct {
+	Enabled bool `json:"enabled" example:"true"`
 }
 
 type CreateResponse struct {

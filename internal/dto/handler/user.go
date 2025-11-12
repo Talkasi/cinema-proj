@@ -6,6 +6,7 @@ import (
 	dto "cw/internal/dto/models"
 	"cw/internal/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -227,14 +228,156 @@ func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
-func (uh *UserHandler) RegisterRoutes(r chi.Router) {
+// @Summary Включить двухфакторную аутентификацию
+// @Description Включает двухфакторную аутентификацию для текущего пользователя
+// @Tags Аутентификация
+// @Produce json
+// @Security BearerAuth
+// @Success 200 "2FA включена"
+// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
+// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Router /auth/2fa/enable [post]
+func (uh *UserHandler) Enable2FA(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID").(string)
+	err := uh.userService.Enable2FA(r.Context(), userID)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary Выключить двухфакторную аутентификацию
+// @Description Выключает двухфакторную аутентификацию для текущего пользователя
+// @Tags Аутентификация
+// @Produce json
+// @Security BearerAuth
+// @Success 200 "2FA выключена"
+// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Router /auth/2fa/disable [post]
+func (uh *UserHandler) Disable2FA(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID").(string)
+	err := uh.userService.Disable2FA(r.Context(), userID)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary Получить информацию о 2FA
+// @Description Получает информацию о статусе двухфакторной аутентификации текущего пользователя
+// @Tags Аутентификация
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.TwoFAInfoResponse "Информация о 2FA"
+// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Router /auth/2fa/info [get]
+func (uh *UserHandler) Get2FAInfo(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID").(string)
+	enabled, err := uh.userService.Get2FAInfo(r.Context(), userID)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+
+	response := dto.TwoFAInfoResponse{
+		Enabled: enabled,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// @Summary Подтвердить код 2FA
+// @Description Подтверждает код двухфакторной аутентификации и возвращает токен
+// @Tags Аутентификация
+// @Accept json
+// @Produce json
+// @Param code body dto.Verify2FARequest true "Код 2FA"
+// @Success 200 {object} dto.AuthResponse "Токен аутентификации"
+// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
+// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Router /auth/verify [post]
+func (uh *UserHandler) Verify2FA(w http.ResponseWriter, r *http.Request) {
+	var req dto.Verify2FARequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+		return
+	}
+
+	token, err := uh.userService.Verify2FACode(r.Context(), req.UserID, req.Code)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+
+	response := dto.AuthResponse{
+		Token:        token,
+		UserID:       req.UserID,
+		TwoFAEnabled: true,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// @Summary Изменить пароль
+// @Description Позволяет пользователю изменить свой пароль
+// @Tags Пользователи
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param password body dto.UpdatePasswordRequest true "Текущий и новый пароли"
+// @Success 200 "Пароль успешно изменен"
+// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
+// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Router /users/password [patch]
+func (uh *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+	var req dto.UpdatePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+		return
+	}
+
+	userID := r.Context().Value("userID").(string)
+
+	err := uh.userService.VerifyCurrentPassword(r.Context(), userID, req.CurrentPassword)
+	if err != nil {
+		utils.WriteError(w, utils.NewForbidden("Текущий пароль неверен", nil))
+		return
+	}
+
+	err = uh.userService.UpdatePassword(r.Context(), userID, req.NewPassword)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "Password updated successfully")
+}
+
+func (uh *UserHandler) RegisterRoutesNoAuth(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/register", uh.Register)
 		r.Post("/login", uh.Login)
+		r.Post("/verify", uh.Verify2FA)
+	})
+}
+
+func (uh *UserHandler) RegisterRoutesWithAuth(r chi.Router) {
+	r.Route("/auth/2fa", func(r chi.Router) {
+		r.Post("/enable", uh.Enable2FA)
+		r.Post("/disable", uh.Disable2FA)
+		r.Get("/info", uh.Get2FAInfo)
 	})
 
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/", uh.GetUsers)
+		r.Patch("/password", uh.UpdatePassword)
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", uh.GetUserByID)
 			r.Put("/", uh.UpdateUser)

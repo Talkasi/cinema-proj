@@ -3,9 +3,7 @@
 .dockerignore
 README.md
 *.log
-.env
 bin/
 tmp/
 Dockerfile
 docker-compose.yml
-Makefile

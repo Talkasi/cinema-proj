@@ -32,10 +32,15 @@ type UpdateUserRequest struct {
 }
 
 type LoginRequest struct {
-	Email        string `json:"email" validate:"required,email" example:"user@example.com"`
-	PasswordHash string `json:"password_hash" validate:"required" example:"$2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C"`
+	Email        string `json:"email" validate:"required,email" example:"maria@example.com"`
+	PasswordHash string `json:"password_hash" validate:"required" example:"securepassword123"`
 }
 
 type UpdateAdminStatusRequest struct {
 	IsAdmin bool `json:"is_admin" validate:"required" example:"true"`
+}
+
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required" example:"oldpassword123"`
+	NewPassword     string `json:"new_password" validate:"required,min=6" example:"newpassword123"`
 }

@@ -2,9 +2,16 @@ basePath: /api/v1
 definitions:
   dto.AuthResponse:
     properties:
+      message:
+        example: Two-factor authentication required. Check your email for the verification
+          code.
+        type: string
       token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiaXNfYWRtaW4iOmZhbHNlLCJleHAiOjE3MDAwMDAwMDB9
         type: string
+      two_fa_enabled:
+        example: true
+        type: boolean
       user_id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
@@ -289,10 +296,10 @@ definitions:
   dto.LoginRequest:
     properties:
       email:
-        example: user@example.com
+        example: maria@example.com
         type: string
       password_hash:
-        example: $2a$10$xS.xH8z3bJ1J5hNtGvXZfez7v6JQY9W7kZf3JvYbW6cXrV1nYd2E3C
+        example: securepassword123
         type: string
     required:
     - email
@@ -604,6 +611,12 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440003
         type: string
     type: object
+  dto.TwoFAInfoResponse:
+    properties:
+      enabled:
+        example: true
+        type: boolean
+    type: object
   dto.UpdateAdminStatusRequest:
     properties:
       is_admin:
@@ -708,6 +721,19 @@ definitions:
     - language
     - movie_id
     - start_time
+    type: object
+  dto.UpdatePasswordRequest:
+    properties:
+      current_password:
+        example: oldpassword123
+        type: string
+      new_password:
+        example: newpassword123
+        minLength: 6
+        type: string
+    required:
+    - current_password
+    - new_password
     type: object
   dto.UpdateReviewRequest:
     properties:
@@ -850,6 +876,17 @@ definitions:
         example: Иван Иванов
         type: string
     type: object
+  dto.Verify2FARequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - code
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -857,6 +894,64 @@ info:
   title: Курсовая работа по базам данных - API управления кинотеатром
   version: "1.0"
 paths:
+  /auth/2fa/disable:
+    post:
+      description: Выключает двухфакторную аутентификацию для текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 2FA выключена
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выключить двухфакторную аутентификацию
+      tags:
+      - Аутентификация
+  /auth/2fa/enable:
+    post:
+      description: Включает двухфакторную аутентификацию для текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 2FA включена
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Включить двухфакторную аутентификацию
+      tags:
+      - Аутентификация
+  /auth/2fa/info:
+    get:
+      description: Получает информацию о статусе двухфакторной аутентификации текущего
+        пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о 2FA
+          schema:
+            $ref: '#/definitions/dto.TwoFAInfoResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить информацию о 2FA
+      tags:
+      - Аутентификация
   /auth/login:
     post:
       consumes:
@@ -915,6 +1010,36 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       summary: Регистрация нового пользователя
+      tags:
+      - Аутентификация
+  /auth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Подтверждает код двухфакторной аутентификации и возвращает токен
+      parameters:
+      - description: Код 2FA
+        in: body
+        name: code
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Verify2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токен аутентификации
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Подтвердить код 2FA
       tags:
       - Аутентификация
   /genres:
@@ -2566,9 +2691,39 @@ paths:
       summary: Изменить статус администратора
       tags:
       - Пользователи
+  /users/password:
+    patch:
+      consumes:
+      - application/json
+      description: Позволяет пользователю изменить свой пароль
+      parameters:
+      - description: Текущий и новый пароли
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пароль успешно изменен
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Изменить пароль
+      tags:
+      - Пользователи
 securityDefinitions:
   BearerAuth:
-    description: 'JWT токен в формате: Bearer <token>'
+    description: JWT токен
     in: header
     name: Authorization
     type: apiKey

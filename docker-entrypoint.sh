@@ -1,16 +1,6 @@
 #!/bin/sh
 set -e
 
-echo "Waiting for database to be ready..."
-
-DB_HOST=${DB_HOST:-localhost}
-DB_PORT=${DB_PORT:-5432}
-DB_NAME=${DB_NAME:-cinema}
-DB_USER=${DB_USER:-postgres}
-DB_PASS=${DB_PASS:-postgres}
-
-echo "Database is ready!"
-
 echo "Running database migrations..."
 
 PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -p "$DB_PORT" -d "$DB_NAME" -f sql/revoke_app_roles_privileges.sql

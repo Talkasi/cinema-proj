@@ -2,24 +2,31 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: postgres_db
-    cpuset: "3-7"
-    mem_limit: 8g
-    environment:
-      POSTGRES_DB: cinema
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+    env_file: ".env"
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./sql/prod_db_init:/docker-entrypoint-initdb.d
     networks:
       - app-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cinema"]
+      test: ["CMD-SHELL", "test -f /var/lib/postgresql/data/.initialized && pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 20
+      start_period: 30s
+
+  # mailhog:
+  #   image: mailhog/mailhog
+  #   container_name: mailhog
+  #   ports:
+  #     - "1025:1025"   # SMTP
+  #     - "8025:8025"   # Web UI
+  #   environment:
+  #     MH_STORAGE: maildir
+  #   networks:
+  #     - app-net
 
   app:
     build: .
@@ -29,33 +36,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    cpuset: "8-9"
-    mem_limit: 4g
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: cinema
-      DB_USER: postgres
-      DB_PASS: postgres
-      DB_SSL: disable
-      TEST_DB_NAME: cinema_test
-      JWT_SECRET: secret-key
-      TOKEN_DURATION: 24h
+    env_file: ".env"
     networks:
       - app-net
-
-  # k6:
-  #   image: grafana/k6:latest
-  #   container_name: k6_runner
-  #   cpuset: "8-9"
-  #   mem_limit: 4g
-  #   user: root
-  #   volumes:
-  #     - ./scripts:/scripts
-  #   networks:
-  #     - app-net
-  #   depends_on:
-  #     - app
 
 volumes:
   postgres_data:

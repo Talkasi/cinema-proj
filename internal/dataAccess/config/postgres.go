@@ -7,16 +7,18 @@ import (
 	"os"
 	"time"
 
+	"cw/internal/utils"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func NewDatabase() (*pgxpool.Pool, error) {
-	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "5432")
-	dbUser := getEnv("DB_USER", "postgres")
-	dbPass := getEnv("DB_PASS", "postgres")
-	dbName := getEnv("DB_NAME", "cinema")
-	dbSSL := getEnv("DB_SSL", "disable")
+	dbHost := utils.GetEnv("DB_HOST")
+	dbPort := utils.GetEnv("DB_PORT")
+	dbUser := utils.GetEnv("DB_USER")
+	dbPass := utils.GetEnv("DB_PASS")
+	dbName := utils.GetEnv("DB_NAME")
+	dbSSL := utils.GetEnv("DB_SSL")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		dbHost, dbUser, dbPass, dbName, dbPort, dbSSL)
@@ -38,12 +40,12 @@ func NewDatabase() (*pgxpool.Pool, error) {
 }
 
 func NewTestDatabase() (*pgxpool.Pool, error) {
-	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "5432")
-	dbUser := getEnv("DB_USER", "postgres")
-	dbPass := getEnv("DB_PASS", "postgres")
-	dbName := getEnv("TEST_DB_NAME", "cinema_test")
-	dbSSL := getEnv("DB_SSL", "disable")
+	dbHost := utils.GetEnv("DB_HOST")
+	dbPort := utils.GetEnv("DB_PORT")
+	dbUser := utils.GetEnv("DB_USER")
+	dbPass := utils.GetEnv("DB_PASS")
+	dbName := utils.GetEnv("TEST_DB_NAME")
+	dbSSL := utils.GetEnv("DB_SSL")
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		dbHost, dbUser, dbPass, dbName, dbPort, dbSSL)
@@ -62,13 +64,6 @@ func NewTestDatabase() (*pgxpool.Pool, error) {
 
 	log.Printf("Test database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
 	return db, nil
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
 
 func CleanTestDatabase(db *pgxpool.Pool) error {

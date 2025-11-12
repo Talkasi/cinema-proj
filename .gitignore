@@ -3,3 +3,10 @@ continious_max_test_*/
 __pycache__
 .vscode
 QWEN.md
+main
+bin
+.env
+api
+.github
+docs
+.env.local

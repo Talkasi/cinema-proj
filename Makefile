@@ -1,18 +1,5 @@
 export PGCLIENTENCODING = UTF-8
 
-# Настройки подключения к основной БД
-DB_NAME = cinema
-DB_USER = postgres
-DB_PASS = postgres
-DB_HOST = localhost
-DB_PORT = 5432
-DB_SSL = disable
-
-# Настройки тестовой БД
-TEST_DB_NAME = cinema_test
-TEST_DB_USER = postgres
-TEST_DB_PASS = postgres
-
 # Параметры подключения
 PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASS) dbname=$(DB_NAME) sslmode=$(DB_SSL)"
 TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) password=$(TEST_DB_PASS) dbname=$(TEST_DB_NAME) sslmode=$(DB_SSL)"
@@ -22,18 +9,18 @@ TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) pass
 # Инициализация основной БД
 db-init: db-clean
 	@echo "Инициализация основной БД..."
-	@$(PSQL_CONN) -q -f sql/001_create_app_roles.sql
-	@$(PSQL_CONN) -q -f sql/002_create_main.sql
-	@$(PSQL_CONN) -q -f sql/004_set_app_roles_privileges.sql
-	@$(PSQL_CONN) -q -f sql/006_seed_main.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/004_create_app_roles.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/005_create_main.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/006_set_app_roles_privileges.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/007_seed_main.sql
 	@echo "Основная БД готова!"
 
 # Очистка основной БД
 db-clean:
 	@echo "Очистка основной БД..."
-	@$(PSQL_CONN) -q -f sql/revoke_app_roles_privileges.sql || true
-	@$(PSQL_CONN) -q -f sql/drop_main.sql || true
-	@$(PSQL_CONN) -q -f sql/drop_app_roles.sql || true
+	@$(PSQL_CONN) -q -f sql/prod_db_clean/001_revoke_app_roles_privileges.sql || true
+	@$(PSQL_CONN) -q -f sql/prod_db_clean/002_drop_main.sql || true
+	@$(PSQL_CONN) -q -f sql/prod_db_clean/003_drop_app_roles.sql || true
 
 # Инициализация тестовой БД
 test-init: test-clean
@@ -51,14 +38,22 @@ test-clean:
 	@$(TEST_PSQL_CONN) -q -f sql/drop_test_roles.sql || true
 
 # Запуск приложения
-run: 
+run: swagger
 	@echo "Запуск приложения..."
 	@go run ./cmd/api/main.go
+
+docker-up: docker-down
+	@docker compose up
+
+docker-down:
+	@docker compose down -v
+	@docker image rm cinema-proj-app || true
 
 # Обновление документации Swagger
 swagger:
 	@echo "Обновление документации Swagger..."
-	@swag init -g cmd/api/main.go
+	@which swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
+	$$(go env GOPATH)/bin/swag init -g cmd/api/main.go --output docs
 
 # Анализ покрытия тестами
 cover:
@@ -110,12 +105,18 @@ deps:
 	@echo "Анализ зависимостей..."
 	@go mod graph
 
+# Запуск BDD тестов
+bdd-test:
+	@echo "Запуск BDD тестов..."
+	@cd tests/bdd && go test -v
+
 # Помощь
 help:
 	@echo "Доступные команды:"
 	@echo "  run     - Запуск приложения"
 	@echo "  test    - Запуск тестов"
 	@echo "  test-v  - Запуск тестов с детальным выводом"
+	@echo "  bdd-test - Запуск BDD тестов"
 	@echo "  swagger - Обновление Swagger документации"
 	@echo "  cover   - Анализ покрытия тестами"
 	@echo "  build   - Сборка приложения"
