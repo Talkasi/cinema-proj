@@ -7,7 +7,6 @@ import (
 type TestSecrets struct {
 	TestDBURL    string
 	SMTPHost     string
-	IMAPHost     string
 	SMTPPort     string
 	SMTPUser     string
 	SMTPPassword string
@@ -19,7 +18,6 @@ func GetTestSecretsFromEnv() TestSecrets {
 	return TestSecrets{
 		TestDBURL:    cwUtils.GetEnv("TEST_DATABASE_URL"),
 		SMTPHost:     cwUtils.GetEnv("SMTP_HOST"),
-		IMAPHost:     cwUtils.GetEnv("IMAP_HOST"),
 		SMTPPort:     cwUtils.GetEnv("SMTP_PORT"),
 		SMTPUser:     cwUtils.GetEnv("SMTP_USER"),
 		SMTPPassword: cwUtils.GetEnv("SMTP_PASS"),
