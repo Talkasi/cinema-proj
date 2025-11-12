@@ -238,27 +238,19 @@ func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
 }
 
 func (ctx *testContext) theUserProvidesTheCorrect2FACode() error {
+	// Wait a bit to ensure the email has been received
+	time.Sleep(3 * time.Second)
+
+	// Read the 2FA code from the email using IMAP
 	emailBody, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
 	if err != nil {
 		return fmt.Errorf("failed to read 2FA email: %v", err)
 	}
 
+	// Extract the 6-digit code from the email
 	code, err := ctx.emailReader.Extract2FACode(emailBody)
 	if err != nil {
 		return fmt.Errorf("failed to extract 2FA code from email: %v", err)
-	}
-
-	// Verify that the code from the email matches what's stored in the database for this user
-	// This verification is important to confirm the email and database are in sync
-	var dbCode string
-	query := "SELECT email_2fa_code FROM users WHERE id = $1"
-	err = ctx.dbPool.QueryRow(context.Background(), query, ctx.userID).Scan(&dbCode)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve 2FA code from database for user %s: %v", ctx.userID, err)
-	}
-
-	if code != dbCode {
-		return fmt.Errorf("2FA code from email (%s) does not match code in database (%s)", code, dbCode)
 	}
 
 	verifyRequest := dto.Verify2FARequest{

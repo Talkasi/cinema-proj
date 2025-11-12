@@ -17,7 +17,7 @@ Feature: Email 2FA Authentication
 
   Scenario: Successful email 2FA verification
     Given a user with valid credentials and email 2FA enabled exists
-    And a valid email 2FA code is generated
+    When the user logs in with correct email and password
     When the user provides the correct 2FA code
     Then the user should be fully authenticated
     And should receive a valid JWT token
