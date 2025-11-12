@@ -64,6 +64,12 @@ jobs:
       env:
         TEST_DATABASE_URL: "host=localhost port=5432 user=postgres password=${{ secrets.POSTGRES_PASSWORD || 'postgres' }} dbname=cinema_test sslmode=disable"
         JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: cinema_test
+        DB_USER: postgres
+        DB_PASS: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+        DB_SSL: disable
         SMTP_HOST: ${{ secrets.SMTP_HOST || 'postgres' }}
         SMTP_PORT: 587
         SMTP_USER: ${{ secrets.SMTP_USER }}
