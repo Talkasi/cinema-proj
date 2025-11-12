@@ -7,6 +7,5 @@ main
 bin
 .env
 api
-.github
 docs
 .env.local

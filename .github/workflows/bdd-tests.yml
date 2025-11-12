@@ -1,0 +1,88 @@
+name: BDD Authentication Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+          POSTGRES_DB: cinema_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Install dependencies
+      run: |
+        go mod download
+        go install github.com/cucumber/godog/cmd/godog@latest
+
+    - name: Run database migrations for test
+      run: |
+        # Create test database and run migrations
+        export DB_HOST=localhost
+        export DB_PORT=5432
+        export DB_NAME=cinema_test
+        export DB_USER=postgres
+        export DB_PASS=${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+        export DB_SSL=disable
+        
+        # Create roles and tables for testing
+        PGPASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }} psql -h localhost -U postgres -d cinema_test -f sql/001_create_app_roles.sql
+        PGPASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }} psql -h localhost -U postgres -d cinema_test -f sql/002_create_main.sql
+        PGPASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }} psql -h localhost -U postgres -d cinema_test -f sql/005_set_test_roles_privileges.sql
+
+    - name: Run BDD tests
+      env:
+        TEST_DATABASE_URL: "host=localhost port=5432 user=postgres password=${{ secrets.POSTGRES_PASSWORD || 'postgres' }} dbname=cinema_test sslmode=disable"
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
+      run: |
+        cd tests/bdd
+        go test -v
+
+    - name: Run unit tests
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: cinema_test
+        DB_USER: postgres
+        DB_PASS: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+        DB_SSL: disable
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
+      run: |
+        go test ./internal/... -v
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Security scan with Go
+      uses: securecodewarrior/actions-gosec@v1.0.0
+      with:
+        flags: "-no-fail -fmt sarif -out results.sarif ./..."
+    
+    - name: Upload security results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: results.sarif
