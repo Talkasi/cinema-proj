@@ -74,7 +74,10 @@ func (th *TicketHandler) GetTickets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Получить билет по ID
@@ -94,7 +97,10 @@ func (th *TicketHandler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ticket)
+	if err := json.NewEncoder(w).Encode(ticket); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Создать билет на сеанс
@@ -128,7 +134,10 @@ func (th *TicketHandler) CreateTicketForMovieShow(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID})
+	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Обновить статус билета

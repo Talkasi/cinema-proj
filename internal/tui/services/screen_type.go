@@ -6,6 +6,7 @@ import (
 	"cw/internal/tui/client"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -40,7 +41,11 @@ func (s *screenTypeService) GetAll(ctx context.Context, filters dto.ScreenTypeFi
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		var errorResp dto.ErrorResponse
@@ -65,7 +70,11 @@ func (s *screenTypeService) GetByID(ctx context.Context, id string) (*dto.Screen
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -91,7 +100,11 @@ func (s *screenTypeService) Create(ctx context.Context, screenType dto.CreateScr
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		var errorResp dto.ErrorResponse
@@ -116,7 +129,11 @@ func (s *screenTypeService) Update(ctx context.Context, id string, screenType dt
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -139,7 +156,11 @@ func (s *screenTypeService) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusNoContent {
 		if resp.StatusCode == http.StatusNotFound {

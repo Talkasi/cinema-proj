@@ -71,14 +71,14 @@ func (s *HallRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *HallRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testHalls {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 
 func (s *HallRepositoryIntegrationTestSuite) TearDownSuite() {
 
 	for _, id := range s.testScreenTypes {
-		s.screenTypeRepo.Delete(s.ctx, id)
+		_ = s.screenTypeRepo.Delete(s.ctx, id)
 	}
 }
 

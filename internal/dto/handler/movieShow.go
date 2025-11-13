@@ -65,7 +65,10 @@ func (ms *MovieShowHandler) GetMovieShows(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Получить киносеанс по ID
@@ -85,7 +88,10 @@ func (ms *MovieShowHandler) GetMovieShowByID(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(movieShow)
+	if err := json.NewEncoder(w).Encode(movieShow); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Создать киносеанс
@@ -116,7 +122,10 @@ func (ms *MovieShowHandler) CreateMovieShow(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID})
+	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Обновить киносеанс

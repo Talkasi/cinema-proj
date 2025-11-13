@@ -38,43 +38,9 @@ func NewSeatHandler(st *service.SeatService) *SeatHandler {
 func (s *SeatHandler) GetSeatsByHall(w http.ResponseWriter, r *http.Request) {
 	hallId := chi.URLParam(r, "hall_id")
 
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-
-	dtoFilters := dto.SeatFilters{
-		SeatTypeID: r.URL.Query().Get("seat_type_id"),
-	}
-
-	if rowMin := r.URL.Query().Get("row_number_min"); rowMin != "" {
-		if val, err := strconv.Atoi(rowMin); err == nil {
-			dtoFilters.RowNumberMin = val
-		}
-	}
-
-	if rowMax := r.URL.Query().Get("row_number_max"); rowMax != "" {
-		if val, err := strconv.Atoi(rowMax); err == nil {
-			dtoFilters.RowNumberMax = val
-		}
-	}
-
-	if seatMin := r.URL.Query().Get("seat_number_min"); seatMin != "" {
-		if val, err := strconv.Atoi(seatMin); err == nil {
-			dtoFilters.SeatNumberMin = val
-		}
-	}
-
-	if seatMax := r.URL.Query().Get("seat_number_max"); seatMax != "" {
-		if val, err := strconv.Atoi(seatMax); err == nil {
-			dtoFilters.SeatNumberMax = val
-		}
-	}
+	page := s.getPageParam(r)
+	limit := s.getLimitParam(r)
+	dtoFilters := s.parseSeatFilters(r)
 
 	domainFilters := domain.SeatFiltersFromDTO(dtoFilters)
 
@@ -85,7 +51,52 @@ func (s *SeatHandler) GetSeatsByHall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
+}
+
+// getPageParam extracts and validates the page parameter
+func (s *SeatHandler) getPageParam(r *http.Request) int {
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	return page
+}
+
+// getLimitParam extracts and validates the limit parameter
+func (s *SeatHandler) getLimitParam(r *http.Request) int {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	return limit
+}
+
+// parseSeatFilters extracts seat filters from the request
+func (s *SeatHandler) parseSeatFilters(r *http.Request) dto.SeatFilters {
+	dtoFilters := dto.SeatFilters{
+		SeatTypeID: r.URL.Query().Get("seat_type_id"),
+	}
+
+	dtoFilters.RowNumberMin = s.parseIntParam(r, "row_number_min")
+	dtoFilters.RowNumberMax = s.parseIntParam(r, "row_number_max")
+	dtoFilters.SeatNumberMin = s.parseIntParam(r, "seat_number_min")
+	dtoFilters.SeatNumberMax = s.parseIntParam(r, "seat_number_max")
+
+	return dtoFilters
+}
+
+// parseIntParam safely parses an integer parameter from the request
+func (s *SeatHandler) parseIntParam(r *http.Request, paramName string) int {
+	if paramValue := r.URL.Query().Get(paramName); paramValue != "" {
+		if val, err := strconv.Atoi(paramValue); err == nil {
+			return val
+		}
+	}
+	return 0
 }
 
 // @Summary Получить место по ID
@@ -105,7 +116,10 @@ func (s *SeatHandler) GetSeatByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(seat)
+	if err := json.NewEncoder(w).Encode(seat); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Создать место
@@ -141,7 +155,10 @@ func (s *SeatHandler) CreateSeat(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID})
+	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Обновить место

@@ -78,7 +78,7 @@ func (s *GenreRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *GenreRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testGenres {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 

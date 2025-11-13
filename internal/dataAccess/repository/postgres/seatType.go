@@ -21,6 +21,32 @@ func NewSeatTypeRepository(db *pgxpool.Pool) *SeatTypeRepository {
 }
 
 func (r *SeatTypeRepository) GetAll(ctx context.Context, filters domain.SeatTypeFilters, page, limit int) ([]domain.SeatType, int, *utils.Error) {
+
+	whereClauses, args, err := r.buildFilterClauses(filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.getCount(ctx, whereClauses, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if total == 0 {
+		return []domain.SeatType{}, 0, nil
+	}
+
+	query, queryArgs := r.buildGetAllQuery(whereClauses, args, page, limit)
+
+	seatTypeEntities, err := r.executeGetAllQuery(ctx, query, queryArgs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return entity.SeatTypesToDomain(seatTypeEntities), total, nil
+}
+
+func (r *SeatTypeRepository) buildFilterClauses(filters domain.SeatTypeFilters) ([]string, []interface{}, *utils.Error) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
@@ -30,12 +56,16 @@ func (r *SeatTypeRepository) GetAll(ctx context.Context, filters domain.SeatType
 		args = append(args, "%"+filters.Name+"%")
 		argPos++
 	}
+
 	if filters.Description != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("description ILIKE $%d", argPos))
 		args = append(args, "%"+filters.Description+"%")
-		argPos++
 	}
 
+	return whereClauses, args, nil
+}
+
+func (r *SeatTypeRepository) getCount(ctx context.Context, whereClauses []string, args []interface{}) (int, *utils.Error) {
 	countQuery := "SELECT COUNT(*) FROM seat_types"
 	if len(whereClauses) > 0 {
 		countQuery += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -44,13 +74,13 @@ func (r *SeatTypeRepository) GetAll(ctx context.Context, filters domain.SeatType
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return 0, utils.ConvertError(err)
 	}
 
-	if total == 0 {
-		return []domain.SeatType{}, 0, nil
-	}
+	return total, nil
+}
 
+func (r *SeatTypeRepository) buildGetAllQuery(whereClauses []string, args []interface{}, page, limit int) (string, []interface{}) {
 	query := "SELECT id, name, description, price_modifier FROM seat_types"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -65,9 +95,13 @@ func (r *SeatTypeRepository) GetAll(ctx context.Context, filters domain.SeatType
 
 	finalQuery := fmt.Sprintf(query, len(mainQueryArgs)-1, len(mainQueryArgs))
 
-	rows, err := r.db.Query(ctx, finalQuery, mainQueryArgs...)
+	return finalQuery, mainQueryArgs
+}
+
+func (r *SeatTypeRepository) executeGetAllQuery(ctx context.Context, query string, args []interface{}) ([]entity.SeatType, *utils.Error) {
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
@@ -75,16 +109,16 @@ func (r *SeatTypeRepository) GetAll(ctx context.Context, filters domain.SeatType
 	for rows.Next() {
 		var seatType entity.SeatType
 		if err := rows.Scan(&seatType.ID, &seatType.Name, &seatType.Description, &seatType.PriceModifier); err != nil {
-			return nil, 0, utils.ConvertError(err)
+			return nil, utils.ConvertError(err)
 		}
 		seatTypeEntities = append(seatTypeEntities, seatType)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 
-	return entity.SeatTypesToDomain(seatTypeEntities), total, nil
+	return seatTypeEntities, nil
 }
 
 func (r *SeatTypeRepository) GetByID(ctx context.Context, id string) (domain.SeatType, *utils.Error) {

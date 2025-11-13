@@ -6,6 +6,7 @@ import (
 	"cw/internal/tui/client"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,6 +21,23 @@ func NewTicketService(apiClient *client.APIClient) TicketService {
 }
 
 func (s *ticketService) GetAll(ctx context.Context, filters dto.TicketFilters, page, limit int) (*dto.PaginatedTicketResponse, error) {
+	path := s.buildGetAllPath(filters, page, limit)
+
+	resp, err := s.client.DoRequest("GET", path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
+
+	return s.handleGetAllResponse(resp)
+}
+
+// buildGetAllPath constructs the path with query parameters
+func (s *ticketService) buildGetAllPath(filters dto.TicketFilters, page, limit int) string {
 	params := url.Values{}
 	params.Add("page", strconv.Itoa(page))
 	params.Add("limit", strconv.Itoa(limit))
@@ -48,18 +66,13 @@ func (s *ticketService) GetAll(ctx context.Context, filters dto.TicketFilters, p
 		path += "?" + params.Encode()
 	}
 
-	resp, err := s.client.DoRequest("GET", path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
+	return path
+}
 
+// handleGetAllResponse processes the HTTP response
+func (s *ticketService) handleGetAllResponse(resp *http.Response) (*dto.PaginatedTicketResponse, error) {
 	if resp.StatusCode != http.StatusOK {
-		var errorResp dto.ErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
-			return nil, fmt.Errorf("API error: %s", errorResp.Message)
-		}
-		return nil, fmt.Errorf("API error: %s", resp.Status)
+		return s.handleErrorStatusCode(resp)
 	}
 
 	var result dto.PaginatedTicketResponse
@@ -70,6 +83,15 @@ func (s *ticketService) GetAll(ctx context.Context, filters dto.TicketFilters, p
 	return &result, nil
 }
 
+// handleErrorStatusCode handles non-200 status codes
+func (s *ticketService) handleErrorStatusCode(resp *http.Response) (*dto.PaginatedTicketResponse, error) {
+	var errorResp dto.ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
+		return nil, fmt.Errorf("API error: %s", errorResp.Message)
+	}
+	return nil, fmt.Errorf("API error: %s", resp.Status)
+}
+
 func (s *ticketService) GetByID(ctx context.Context, id string) (*dto.TicketResponse, error) {
 	path := fmt.Sprintf("/tickets/%s", id)
 
@@ -77,7 +99,11 @@ func (s *ticketService) GetByID(ctx context.Context, id string) (*dto.TicketResp
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -105,7 +131,11 @@ func (s *ticketService) Create(ctx context.Context, ticket dto.CreateTicketReque
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		var errorResp dto.ErrorResponse
@@ -123,14 +153,18 @@ func (s *ticketService) Create(ctx context.Context, ticket dto.CreateTicketReque
 	return result.ID, nil
 }
 
-func (s *ticketService) UpdateStatus(ctx context.Context, id string, Status dto.UpdateStatusRequest) error {
+func (s *ticketService) UpdateStatus(ctx context.Context, id string, status dto.UpdateStatusRequest) error {
 	path := fmt.Sprintf("/tickets/%s", id)
 
-	resp, err := s.client.DoRequest("PATCH", path, Status)
+	resp, err := s.client.DoRequest("PATCH", path, status)
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -153,7 +187,11 @@ func (s *ticketService) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusNoContent {
 		if resp.StatusCode == http.StatusNotFound {

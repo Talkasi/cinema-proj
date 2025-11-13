@@ -56,7 +56,10 @@ func (st *ScreenTypeHandler) GetScreenTypes(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Получить тип экрана по ID
@@ -76,7 +79,10 @@ func (st *ScreenTypeHandler) GetScreenTypeByID(w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(screenType)
+	if err := json.NewEncoder(w).Encode(screenType); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Создать тип экрана
@@ -107,7 +113,10 @@ func (st *ScreenTypeHandler) CreateScreenType(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID})
+	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Обновить тип экрана

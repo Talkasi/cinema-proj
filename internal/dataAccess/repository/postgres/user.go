@@ -48,11 +48,11 @@ func (r *UserRepository) Login(ctx context.Context, credentials domain.User) (do
 	}
 
 	if userEntity.PasswordHash != credentials.PasswordHash {
-		r.incrementFailedLoginAttempts(ctx, userEntity.ID)
+		_ = r.incrementFailedLoginAttempts(ctx, userEntity.ID)
 		return domain.AuthResponse{}, utils.NewForbidden("invalid credentials", nil)
 	}
 
-	r.resetFailedLoginAttempts(ctx, userEntity.ID)
+	_ = r.resetFailedLoginAttempts(ctx, userEntity.ID)
 
 	if userEntity.TwoFANeeded {
 		_, err := r.generateEmail2FACode(ctx, userEntity.ID)
@@ -90,6 +90,28 @@ func (r *UserRepository) Register(ctx context.Context, user domain.User) (domain
 }
 
 func (r *UserRepository) GetAll(ctx context.Context, filters domain.UserFilters, page, limit int) ([]domain.User, int, *utils.Error) {
+
+	whereClauses, args, err := r.buildFilterClauses(filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.getCount(ctx, whereClauses, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	query, queryArgs := r.buildGetAllQuery(whereClauses, args, page, limit)
+
+	userEntities, err := r.executeGetAllQuery(ctx, query, queryArgs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return entity.UsersToDomain(userEntities), total, nil
+}
+
+func (r *UserRepository) buildFilterClauses(filters domain.UserFilters) ([]string, []interface{}, *utils.Error) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
@@ -99,17 +121,22 @@ func (r *UserRepository) GetAll(ctx context.Context, filters domain.UserFilters,
 		args = append(args, "%"+filters.Name+"%")
 		argPos++
 	}
+
 	if filters.Email != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("email ILIKE $%d", argPos))
 		args = append(args, "%"+filters.Email+"%")
 		argPos++
 	}
+
 	if filters.IsAdmin != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf("is_admin = $%d", argPos))
 		args = append(args, *filters.IsAdmin)
-		argPos++
 	}
 
+	return whereClauses, args, nil
+}
+
+func (r *UserRepository) getCount(ctx context.Context, whereClauses []string, args []interface{}) (int, *utils.Error) {
 	countQuery := "SELECT COUNT(*) FROM users"
 	if len(whereClauses) > 0 {
 		countQuery += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -118,20 +145,28 @@ func (r *UserRepository) GetAll(ctx context.Context, filters domain.UserFilters,
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return 0, utils.ConvertError(err)
 	}
 
+	return total, nil
+}
+
+func (r *UserRepository) buildGetAllQuery(whereClauses []string, args []interface{}, page, limit int) (string, []interface{}) {
 	query := "SELECT id, name, email, password_hash, birth_date, is_admin FROM users"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
-	query += " ORDER BY name LIMIT $" + strconv.Itoa(argPos) + " OFFSET $" + strconv.Itoa(argPos+1)
+	query += " ORDER BY name LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
 
 	args = append(args, limit, (page-1)*limit)
 
+	return query, args
+}
+
+func (r *UserRepository) executeGetAllQuery(ctx context.Context, query string, args []interface{}) ([]entity.User, *utils.Error) {
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
@@ -139,16 +174,16 @@ func (r *UserRepository) GetAll(ctx context.Context, filters domain.UserFilters,
 	for rows.Next() {
 		var user entity.User
 		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.BirthDate, &user.IsAdmin); err != nil {
-			return nil, 0, utils.ConvertError(err)
+			return nil, utils.ConvertError(err)
 		}
 		userEntities = append(userEntities, user)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 
-	return entity.UsersToDomain(userEntities), total, nil
+	return userEntities, nil
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, *utils.Error) {

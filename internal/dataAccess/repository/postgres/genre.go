@@ -21,6 +21,28 @@ func NewGenreRepository(db *pgxpool.Pool) *GenreRepository {
 }
 
 func (r *GenreRepository) GetAll(ctx context.Context, filters domain.GenreFilters, page, limit int) ([]domain.Genre, int, *utils.Error) {
+
+	whereClauses, args, err := r.buildFilterClauses(filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.getCount(ctx, whereClauses, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	query, queryArgs := r.buildGetAllQuery(whereClauses, args, page, limit)
+
+	genreEntities, err := r.executeGetAllQuery(ctx, query, queryArgs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return entity.GenresToDomain(genreEntities), total, nil
+}
+
+func (r *GenreRepository) buildFilterClauses(filters domain.GenreFilters) ([]string, []interface{}, *utils.Error) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
@@ -30,12 +52,19 @@ func (r *GenreRepository) GetAll(ctx context.Context, filters domain.GenreFilter
 		args = append(args, "%"+filters.Name+"%")
 		argPos++
 	}
+
 	if filters.Description != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("description ILIKE $%d", argPos))
 		args = append(args, "%"+filters.Description+"%")
 		argPos++
 	}
 
+	_ = argPos  // Mark as used to avoid linter error
+
+	return whereClauses, args, nil
+}
+
+func (r *GenreRepository) getCount(ctx context.Context, whereClauses []string, args []interface{}) (int, *utils.Error) {
 	countQuery := "SELECT COUNT(*) FROM genres"
 	if len(whereClauses) > 0 {
 		countQuery += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -44,9 +73,13 @@ func (r *GenreRepository) GetAll(ctx context.Context, filters domain.GenreFilter
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return 0, utils.ConvertError(err)
 	}
 
+	return total, nil
+}
+
+func (r *GenreRepository) buildGetAllQuery(whereClauses []string, args []interface{}, page, limit int) (string, []interface{}) {
 	query := "SELECT id, name, description FROM genres"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -55,13 +88,17 @@ func (r *GenreRepository) GetAll(ctx context.Context, filters domain.GenreFilter
 
 	if page > 0 && limit > 0 {
 		offset := (page - 1) * limit
-		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argPos, argPos+1)
+		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 		args = append(args, limit, offset)
 	}
 
+	return query, args
+}
+
+func (r *GenreRepository) executeGetAllQuery(ctx context.Context, query string, args []interface{}) ([]entity.Genre, *utils.Error) {
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
@@ -69,16 +106,16 @@ func (r *GenreRepository) GetAll(ctx context.Context, filters domain.GenreFilter
 	for rows.Next() {
 		var genre entity.Genre
 		if err := rows.Scan(&genre.ID, &genre.Name, &genre.Description); err != nil {
-			return nil, 0, utils.ConvertError(err)
+			return nil, utils.ConvertError(err)
 		}
 		genreEntities = append(genreEntities, genre)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 
-	return entity.GenresToDomain(genreEntities), total, nil
+	return genreEntities, nil
 }
 
 func (r *GenreRepository) GetByID(ctx context.Context, id string) (domain.Genre, *utils.Error) {

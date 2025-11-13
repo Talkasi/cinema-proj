@@ -5,8 +5,23 @@ on:
     branches: '*'
 
 jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Run static analysis checks
+      run: |
+        bash ./scripts/pre-commit.sh
+
   test:
     runs-on: ubuntu-latest
+    needs: static-analysis
     services:
       postgres:
         image: postgres:15-alpine

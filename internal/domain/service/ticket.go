@@ -38,8 +38,8 @@ func (s *TicketService) CreateForMovieShow(ctx context.Context, movieShowId stri
 	return s.repo.CreateForMovieShow(ctx, movieShowId, ticket)
 }
 
-func (s *TicketService) UpdateStatus(ctx context.Context, id string, StatusData domain.Ticket) (domain.Ticket, *utils.Error) {
-	return s.repo.UpdateStatus(ctx, id, StatusData)
+func (s *TicketService) UpdateStatus(ctx context.Context, id string, statusData domain.Ticket) (domain.Ticket, *utils.Error) {
+	return s.repo.UpdateStatus(ctx, id, statusData)
 }
 
 func (s *TicketService) Delete(ctx context.Context, id string) *utils.Error {

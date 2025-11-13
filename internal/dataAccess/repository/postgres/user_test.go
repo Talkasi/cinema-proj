@@ -41,7 +41,7 @@ func (s *UserRepositoryIntegrationTestSuite) SetupSuite() {
 
 func (s *UserRepositoryIntegrationTestSuite) cleanDatabase() {
 	for _, id := range s.testUsers {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 	s.testUsers = []string{}
 }

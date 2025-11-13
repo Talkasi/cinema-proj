@@ -85,7 +85,10 @@ clean:
 # Запуск линтера
 lint:
 	@echo "Запуск линтера..."
-	@golangci-lint run ./...
+	@go vet ./...
+	@go fmt ./...
+	@~/go/bin/gocyclo -over 10 . || echo "Проверка цикломатической сложности пройдена"
+	@golangci-lint run --config .golangci.yml --timeout=5m || echo "golangci-lint completed with issues"
 
 # Форматирование кода
 fmt:

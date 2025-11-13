@@ -39,7 +39,7 @@ func (s *ScreenTypeRepositoryIntegrationTestSuite) SetupSuite() {
 
 func (s *ScreenTypeRepositoryIntegrationTestSuite) cleanDatabase() {
 	for _, id := range s.testScreenTypes {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 
@@ -49,7 +49,7 @@ func (s *ScreenTypeRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *ScreenTypeRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testScreenTypes {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"cw/internal/domain/service"
 	"cw/internal/dto/handler"
 	dto "cw/internal/dto/models"
+	"cw/internal/middleware"
 	"cw/internal/utils"
 
 	"github.com/cucumber/godog"
@@ -28,7 +30,6 @@ type testContext struct {
 	userService     *service.UserService
 	dbPool          *pgxpool.Pool
 	currentResponse *httptest.ResponseRecorder
-	currentUser     *dto.UserResponse
 	userEmail       string
 	userPassword    string
 	userID          string
@@ -445,13 +446,12 @@ func (ctx *testContext) theUserShouldBeAbleToLogInWithCorrectCredentials() error
 
 func (ctx *testContext) theUserEnablesEmailTwoFactorAuthentication() error {
 
-	req := httptest.NewRequest("POST", "/auth/2fa/enable-email", nil)
+	_ = httptest.NewRequest("POST", "/auth/2fa/enable-email", nil)
 	ctx.currentResponse = httptest.NewRecorder()
 
-	ctxWithUser := context.WithValue(req.Context(), "userID", ctx.userID)
-	req = req.WithContext(ctxWithUser)
+	ctxWithUser := context.WithValue(context.Background(), middleware.UserIDKey, ctx.userID)
 
-	curErr := ctx.userService.Enable2FA(context.Background(), ctx.userID)
+	curErr := ctx.userService.Enable2FA(ctxWithUser, ctx.userID)
 	if curErr != nil {
 		return fmt.Errorf("failed to enable email 2FA: %v", curErr)
 	}
@@ -477,8 +477,8 @@ func (ctx *testContext) theUserDisablesTwoFactorAuthentication() error {
 	req := httptest.NewRequest("POST", "/auth/2fa/disable", nil)
 	ctx.currentResponse = httptest.NewRecorder()
 
-	ctxWithUser := context.WithValue(req.Context(), "userID", ctx.userID)
-	req = req.WithContext(ctxWithUser)
+	ctxWithUser := context.WithValue(req.Context(), middleware.UserIDKey, ctx.userID)
+	_ = req.WithContext(ctxWithUser)
 
 	curErr := ctx.userService.Disable2FA(context.Background(), ctx.userID)
 	if curErr != nil {
@@ -569,7 +569,10 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 func TestFeatures(t *testing.T) {
 	secrets := GetTestSecretsFromEnv()
 	if os.Getenv("TEST_DATABASE_URL") == "" {
-		os.Setenv("TEST_DATABASE_URL", secrets.TestDBURL)
+		err := os.Setenv("TEST_DATABASE_URL", secrets.TestDBURL)
+		if err != nil {
+			log.Printf("Failed to setenv: %v", err)
+		}
 	}
 
 	opts := godog.Options{
@@ -584,6 +587,6 @@ func TestFeatures(t *testing.T) {
 	}.Run()
 
 	if status > 0 {
-		t.Skip(fmt.Sprintf("BDD tests failed with status: %d", status))
+		t.Skipf("BDD tests failed with status: %d", status)
 	}
 }

@@ -111,13 +111,13 @@ func (s *ReviewRepositoryIntegrationTestSuite) createTestUsers() {
 func (s *ReviewRepositoryIntegrationTestSuite) cleanDatabase() {
 
 	for _, id := range s.testReviews {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testMovies {
-		s.movieRepo.Delete(s.ctx, id)
+		_ = s.movieRepo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testUsers {
-		s.userRepo.Delete(s.ctx, id)
+		_ = s.userRepo.Delete(s.ctx, id)
 	}
 }
 
@@ -127,7 +127,7 @@ func (s *ReviewRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *ReviewRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testReviews {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 

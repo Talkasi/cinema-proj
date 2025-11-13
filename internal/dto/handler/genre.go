@@ -58,7 +58,10 @@ func (g *GenreHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Получить жанр по ID
@@ -78,7 +81,10 @@ func (g *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(genre)
+	if err := json.NewEncoder(w).Encode(genre); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Создать жанр
@@ -109,7 +115,10 @@ func (g *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID})
+	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Обновить жанр

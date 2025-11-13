@@ -43,8 +43,8 @@ func UserToDomain(entity User) domain.User {
 		Email:        entity.Email,
 		BirthDate:    entity.BirthDate.Format("2006-01-02"),
 		PasswordHash: entity.PasswordHash,
-		IsAdmin:     entity.IsAdmin,
-		TwoFANeeded: entity.TwoFANeeded,
+		IsAdmin:      entity.IsAdmin,
+		TwoFANeeded:  entity.TwoFANeeded,
 
 		Email2FACode:        email2FACode,
 		Email2FAExpires:     email2FAExpiresStr,
@@ -83,8 +83,8 @@ func UserFromDomain(domainUser domain.User) User {
 		Email:        domainUser.Email,
 		BirthDate:    birthDate,
 		PasswordHash: domainUser.PasswordHash,
-		IsAdmin:     domainUser.IsAdmin,
-		TwoFANeeded: domainUser.TwoFANeeded,
+		IsAdmin:      domainUser.IsAdmin,
+		TwoFANeeded:  domainUser.TwoFANeeded,
 
 		Email2FACode:        email2FACode,
 		Email2FAExpires:     email2FAExpires,

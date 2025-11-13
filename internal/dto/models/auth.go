@@ -11,8 +11,6 @@ type FirstStepAuthResponse struct {
 	Message string `json:"message" example:"Two-factor authentication required. Check your email for the verification code."`
 }
 
-
-
 type Verify2FARequest struct {
 	Code   string `json:"code" validate:"required,len=6" example:"123456"`
 	UserID string `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
