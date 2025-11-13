@@ -224,7 +224,7 @@ func (ctx *testContext) shouldBePromptedToEnterTheEmail2FACode() error {
 func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
 	// The 2FA code has already been sent via email when the user logs in with 2FA enabled
 	// We just need to wait a moment for the email to be sent and verify it was sent
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// Try to read an email with the 2FA subject to verify it was sent
 	_, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
@@ -239,7 +239,7 @@ func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
 
 func (ctx *testContext) theUserProvidesTheCorrect2FACode() error {
 	// Wait a bit to ensure the email has been received
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// Read the 2FA code from the email using IMAP
 	emailBody, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
