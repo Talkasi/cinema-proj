@@ -71,6 +71,8 @@ jobs:
         DB_SSL: disable
         SMTP_HOST: ${{ secrets.SMTP_HOST || 'postgres' }}
         SMTP_PORT: 587
+        IMAP_HOST: ${{ secrets.IMAP_HOST || 'postgres' }}
+        IMAP_PORT: 993
         SMTP_USER: ${{ secrets.SMTP_USER }}
         SMTP_PASS: ${{ secrets.SMTP_PASS }}
         FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
