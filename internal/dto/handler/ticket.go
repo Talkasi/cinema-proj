@@ -53,7 +53,6 @@ func (th *TicketHandler) GetTickets(w http.ResponseWriter, r *http.Request) {
 		UserID:      splitCommaSeparated(r.URL.Query().Get("user_id")),
 	}
 
-	// Парсинг числовых параметров
 	if priceMin := r.URL.Query().Get("price_min"); priceMin != "" {
 		if val, err := strconv.ParseFloat(priceMin, 64); err == nil {
 			dtoFilters.PriceMin = val

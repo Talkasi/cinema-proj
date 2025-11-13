@@ -10,7 +10,7 @@ type Movie struct {
 	ID               string
 	Title            string
 	Description      string
-	Duration         string // В формате "15:04:05" или "02:30:00"
+	Duration         string
 	AgeLimit         int
 	Rating           float64
 	BoxOfficeRevenue float64
@@ -35,7 +35,7 @@ func CreateMovieFromDTO(req dto.CreateMovieRequest) Movie {
 	return Movie{
 		Title:            req.Title,
 		Description:      req.Description,
-		Duration:         req.Duration, // Ожидается формат "02:30:00"
+		Duration:         req.Duration,
 		AgeLimit:         req.AgeLimit,
 		BoxOfficeRevenue: req.BoxOfficeRevenue,
 		ReleaseDate:      releaseDate,

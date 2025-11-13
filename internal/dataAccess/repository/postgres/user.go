@@ -248,7 +248,7 @@ func (r *UserRepository) generateJWTToken(userID string, isAdmin bool) (string, 
 }
 
 func (r *UserRepository) incrementFailedLoginAttempts(ctx context.Context, userID string) *utils.Error {
-	// Lock account after 5 failed attempts for 30 minutes
+
 	query := `
 		UPDATE users 
 		SET failed_login_attempts = failed_login_attempts + 1,
@@ -312,7 +312,6 @@ func (r *UserRepository) Get2FAInfo(ctx context.Context, userID string) (bool, *
 func (r *UserRepository) generateEmail2FACode(ctx context.Context, userID string) (string, *utils.Error) {
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
 
-	// Get user email to send the code
 	query := "SELECT email FROM users WHERE id = $1"
 	var userEmail string
 	err := r.db.QueryRow(ctx, query, userID).Scan(&userEmail)
@@ -328,7 +327,6 @@ func (r *UserRepository) generateEmail2FACode(ctx context.Context, userID string
 		return "", utils.ConvertError(err)
 	}
 
-	// Send the 2FA code via email
 	err2 := r.sendEmail2FACode(userEmail, code)
 	if err2 != nil {
 		return "", utils.NewInternal("failed to send 2FA code via email", err2)

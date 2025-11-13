@@ -76,7 +76,7 @@ func (s *HallRepositoryIntegrationTestSuite) TearDownTest() {
 }
 
 func (s *HallRepositoryIntegrationTestSuite) TearDownSuite() {
-	// Clean up screen types at the end
+
 	for _, id := range s.testScreenTypes {
 		s.screenTypeRepo.Delete(s.ctx, id)
 	}
@@ -97,7 +97,7 @@ func (s *HallRepositoryIntegrationTestSuite) assertErrorCode(utilsErr *utils.Err
 }
 
 func (s *HallRepositoryIntegrationTestSuite) TestCreateHall() {
-	// Use the first test screen type
+
 	screenTypeID := s.testScreenTypes[0]
 
 	hall := domain.Hall{

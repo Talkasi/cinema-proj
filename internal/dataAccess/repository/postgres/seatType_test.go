@@ -38,7 +38,7 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) SetupSuite() {
 }
 
 func (s *SeatTypeRepositoryIntegrationTestSuite) cleanDatabase() {
-	// Удаляем тестовые данные
+
 	for _, id := range s.testSeatTypes {
 		s.repo.Delete(s.ctx, id)
 	}
@@ -100,16 +100,14 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestCreateSeatTypeDuplicateName
 	s.assertNoError(utilsErr)
 	s.testSeatTypes = append(s.testSeatTypes, result1.ID)
 
-	// Пытаемся создать с тем же именем
 	seatType2 := domain.SeatType{
-		Name:          seatType.Name, // То же самое имя
+		Name:          seatType.Name,
 		Description:   "Different description",
 		PriceModifier: 1.5,
 	}
 
 	_, utilsErr = s.repo.Create(s.ctx, seatType2)
 
-	// Должна быть ошибка уникальности
 	s.assertErrorCode(utilsErr, 409)
 }
 
@@ -192,7 +190,6 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestDeleteSeatType() {
 	utilsErr = s.repo.Delete(s.ctx, created.ID)
 	s.assertNoError(utilsErr)
 
-	// Проверяем, что больше не можем получить
 	_, utilsErr = s.repo.GetByID(s.ctx, created.ID)
 	s.assertErrorCode(utilsErr, 404)
 }
@@ -205,7 +202,7 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestDeleteSeatType_NotFound() {
 }
 
 func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllSeatTypes() {
-	// Создаем несколько типов мест
+
 	seatTypes := []domain.SeatType{
 		{
 			Name:          "Standard " + strconv.FormatInt(time.Now().Unix(), 10),
@@ -230,14 +227,12 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllSeatTypes() {
 		s.testSeatTypes = append(s.testSeatTypes, created.ID)
 	}
 
-	// Получаем все типы мест
 	result, total, utilsErr := s.repo.GetAll(s.ctx, domain.SeatTypeFilters{}, 1, 10)
 
 	s.assertNoError(utilsErr)
 	assert.GreaterOrEqual(s.T(), total, len(seatTypes))
 	assert.GreaterOrEqual(s.T(), len(result), len(seatTypes))
 
-	// Проверяем, что все созданные типы присутствуют в результате
 	foundCount := 0
 	for _, createdType := range seatTypes {
 		for _, resultType := range result {
@@ -251,7 +246,7 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllSeatTypes() {
 }
 
 func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllWithNameFilter() {
-	// Создаем тестовые данные с разными именами
+
 	seatTypes := []domain.SeatType{
 		{
 			Name:          "Standard Test " + strconv.FormatInt(time.Now().Unix(), 10),
@@ -276,7 +271,6 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllWithNameFilter() {
 		s.testSeatTypes = append(s.testSeatTypes, created.ID)
 	}
 
-	// Фильтруем по имени "Premium"
 	filters := domain.SeatTypeFilters{
 		Name: "Premium",
 	}
@@ -316,7 +310,6 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllWithDescriptionFilter
 		s.testSeatTypes = append(s.testSeatTypes, created.ID)
 	}
 
-	// Фильтруем по описанию "luxury"
 	filters := domain.SeatTypeFilters{
 		Description: "luxury",
 	}
@@ -332,7 +325,7 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllWithDescriptionFilter
 }
 
 func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllWithPagination() {
-	// Создаем несколько типов мест для тестирования пагинации
+
 	for i := 1; i <= 5; i++ {
 		seatType := domain.SeatType{
 			Name:          fmt.Sprintf("Seat Type %d ", i) + strconv.FormatInt(time.Now().Unix(), 10),
@@ -344,25 +337,22 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllWithPagination() {
 		s.testSeatTypes = append(s.testSeatTypes, created.ID)
 	}
 
-	// Первая страница с 2 элементами
 	page1, total, utilsErr := s.repo.GetAll(s.ctx, domain.SeatTypeFilters{}, 1, 2)
 	s.assertNoError(utilsErr)
 	assert.GreaterOrEqual(s.T(), total, 5)
 	assert.Len(s.T(), page1, 2)
 
-	// Вторая страница с 2 элементами
 	page2, _, utilsErr := s.repo.GetAll(s.ctx, domain.SeatTypeFilters{}, 2, 2)
 	s.assertNoError(utilsErr)
 	assert.Len(s.T(), page2, 2)
 
-	// Третья страница с оставшимися элементами
 	page3, _, utilsErr := s.repo.GetAll(s.ctx, domain.SeatTypeFilters{}, 3, 2)
 	s.assertNoError(utilsErr)
 	assert.GreaterOrEqual(s.T(), len(page3), 1)
 }
 
 func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllOrderByName() {
-	// Создаем типы мест в разном порядке
+
 	seatTypes := []domain.SeatType{
 		{
 			Name:          "Zebra " + strconv.FormatInt(time.Now().Unix(), 10),
@@ -392,7 +382,6 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) TestGetAllOrderByName() {
 	s.assertNoError(utilsErr)
 	assert.GreaterOrEqual(s.T(), total, len(seatTypes))
 
-	// Проверяем, что результаты отсортированы по имени
 	if len(result) >= len(seatTypes) {
 		for i := 1; i < len(result); i++ {
 			assert.True(s.T(), result[i-1].Name <= result[i].Name,

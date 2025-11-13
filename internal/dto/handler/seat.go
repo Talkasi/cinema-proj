@@ -52,7 +52,6 @@ func (s *SeatHandler) GetSeatsByHall(w http.ResponseWriter, r *http.Request) {
 		SeatTypeID: r.URL.Query().Get("seat_type_id"),
 	}
 
-	// Парсинг числовых параметров
 	if rowMin := r.URL.Query().Get("row_number_min"); rowMin != "" {
 		if val, err := strconv.Atoi(rowMin); err == nil {
 			dtoFilters.RowNumberMin = val

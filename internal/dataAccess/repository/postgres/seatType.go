@@ -47,27 +47,22 @@ func (r *SeatTypeRepository) GetAll(ctx context.Context, filters domain.SeatType
 		return nil, 0, utils.ConvertError(err)
 	}
 
-	// Если нет результатов, возвращаем пустой список
 	if total == 0 {
 		return []domain.SeatType{}, 0, nil
 	}
 
-	// Build the main query
 	query := "SELECT id, name, description, price_modifier FROM seat_types"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 	query += " ORDER BY name LIMIT $%d OFFSET $%d"
 
-	// Calculate offset for pagination
 	offset := (page - 1) * limit
 
-	// Create new args slice for the main query that includes LIMIT and OFFSET
 	mainQueryArgs := make([]interface{}, len(args))
 	copy(mainQueryArgs, args)
 	mainQueryArgs = append(mainQueryArgs, limit, offset)
 
-	// Update the query with correct parameter positions
 	finalQuery := fmt.Sprintf(query, len(mainQueryArgs)-1, len(mainQueryArgs))
 
 	rows, err := r.db.Query(ctx, finalQuery, mainQueryArgs...)

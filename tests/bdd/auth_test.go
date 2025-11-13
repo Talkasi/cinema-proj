@@ -98,7 +98,6 @@ func (ctx *testContext) aUserWithValidCredentialsExists() error {
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
 
-	// Store the user ID for later use
 	ctx.userID = registeredUser.ID
 
 	return nil
@@ -128,7 +127,6 @@ func (ctx *testContext) aUserWithValidCredentialsAndEmail2FAEnabledExists() erro
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
 
-	// Store the user ID for later use
 	ctx.userID = registeredUser.ID
 
 	err = ctx.userService.Enable2FA(context.Background(), registeredUser.ID)
@@ -194,9 +192,7 @@ func (ctx *testContext) theUserShouldReceiveATemporaryAuthenticationStatus() err
 		return fmt.Errorf("failed to parse authentication response: %v", err)
 	}
 
-	// Check that response indicates 2FA is needed (not a full authentication with token)
 	if authResp.Token == "" && authResp.Message != "" {
-		// Expected: no token but a message indicating 2FA is required
 	} else {
 		return fmt.Errorf("expected temporary authentication status with 2FA requirement message")
 	}
@@ -211,7 +207,6 @@ func (ctx *testContext) shouldBePromptedToEnterTheEmail2FACode() error {
 		return fmt.Errorf("failed to parse authentication response: %v", err)
 	}
 
-	// Verify that the response includes a message about 2FA requirement
 	if !strings.Contains(strings.ToLower(authResp.Message), "2fa") &&
 		!strings.Contains(strings.ToLower(authResp.Message), "verification") &&
 		!strings.Contains(strings.ToLower(authResp.Message), "code") {
@@ -222,11 +217,8 @@ func (ctx *testContext) shouldBePromptedToEnterTheEmail2FACode() error {
 }
 
 func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
-	// The 2FA code has already been sent via email when the user logs in with 2FA enabled
-	// We just need to wait a moment for the email to be sent and verify it was sent
 	time.Sleep(5 * time.Second)
 
-	// Try to read an email with the 2FA subject to verify it was sent
 	_, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
 	if err != nil {
 		return fmt.Errorf("failed to verify 2FA email was sent: %v", err)
@@ -238,16 +230,13 @@ func (ctx *testContext) aValidEmail2FACodeIsGenerated() error {
 }
 
 func (ctx *testContext) theUserProvidesTheCorrect2FACode() error {
-	// Wait a bit to ensure the email has been received
 	time.Sleep(5 * time.Second)
 
-	// Read the 2FA code from the email using IMAP
 	emailBody, err := ctx.emailReader.ReadRecentEmailWithSubject(ctx.userEmail, "Your 2FA Code for Cinema Management System")
 	if err != nil {
 		return fmt.Errorf("failed to read 2FA email: %v", err)
 	}
 
-	// Extract the 6-digit code from the email
 	code, err := ctx.emailReader.Extract2FACode(emailBody)
 	if err != nil {
 		return fmt.Errorf("failed to extract 2FA code from email: %v", err)
@@ -255,7 +244,7 @@ func (ctx *testContext) theUserProvidesTheCorrect2FACode() error {
 
 	verifyRequest := dto.Verify2FARequest{
 		Code:   code,
-		UserID: ctx.userID, // Use the stored user ID
+		UserID: ctx.userID,
 	}
 
 	requestBody, _ := json.Marshal(verifyRequest)
@@ -285,8 +274,8 @@ func (ctx *testContext) theUserShouldBeFullyAuthenticated() error {
 func (ctx *testContext) theUserProvidesAnIncorrect2FACode() error {
 
 	verifyRequest := dto.Verify2FARequest{
-		Code:   "000000",   // Invalid code
-		UserID: ctx.userID, // Use the stored user ID
+		Code:   "000000",
+		UserID: ctx.userID,
 	}
 
 	requestBody, _ := json.Marshal(verifyRequest)
@@ -321,7 +310,7 @@ func (ctx *testContext) theUserAttemptsToLogInWithIncorrectPassword5Times() erro
 	for i := 0; i < 5; i++ {
 		loginRequest := dto.LoginRequest{
 			Email:        ctx.userEmail,
-			PasswordHash: "wrongpassword", // Wrong password
+			PasswordHash: "wrongpassword",
 		}
 
 		requestBody, _ := json.Marshal(loginRequest)
@@ -340,7 +329,7 @@ func (ctx *testContext) theUserAccountShouldBeTemporarilyLocked() error {
 
 	loginRequest := dto.LoginRequest{
 		Email:        ctx.userEmail,
-		PasswordHash: ctx.userPassword, // Correct password but account should be locked
+		PasswordHash: ctx.userPassword,
 	}
 
 	requestBody, _ := json.Marshal(loginRequest)
@@ -359,10 +348,9 @@ func (ctx *testContext) theUserAccountShouldBeTemporarilyLocked() error {
 }
 
 func (ctx *testContext) subsequentLoginAttemptsShouldFailWithAccountLockedMessage() error {
-	// Try to login again after account is locked to verify it fails
 	loginRequest := dto.LoginRequest{
 		Email:        ctx.userEmail,
-		PasswordHash: ctx.userPassword, // correct password, but account should be locked
+		PasswordHash: ctx.userPassword,
 	}
 
 	requestBody, _ := json.Marshal(loginRequest)
@@ -373,7 +361,6 @@ func (ctx *testContext) subsequentLoginAttemptsShouldFailWithAccountLockedMessag
 
 	ctx.userHandler.Login(ctx.currentResponse, req)
 
-	// Should fail with forbidden status due to account lock
 	if ctx.currentResponse.Code != http.StatusForbidden {
 		return fmt.Errorf("expected forbidden status for locked account, got %d", ctx.currentResponse.Code)
 	}
@@ -405,7 +392,6 @@ func (ctx *testContext) theUsersAccountIsLockedDueToFailedLoginAttempts() error 
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
 
-	// Store the user ID for later use
 	ctx.userID = registeredUser.ID
 
 	for i := 0; i < 5; i++ {
@@ -540,7 +526,6 @@ func (ctx *testContext) aUserWithValidCredentialsAnd2FAEnabledExists() error {
 		return fmt.Errorf("failed to create test user: %v", err)
 	}
 
-	// Store the user ID for later use
 	ctx.userID = registeredUser.ID
 
 	err = ctx.userService.Enable2FA(context.Background(), registeredUser.ID)

@@ -29,12 +29,11 @@ func NewSMTPSender(config EmailConfig) *SMTPSender {
 }
 func (s *SMTPSender) SendEmail(to, subject, body string) error {
 	auth := smtp.PlainAuth("", s.config.SMTPUser, s.config.SMTPPassword, s.config.SMTPHost)
-	to = s.config.SMTPUser // tmp
+	to = s.config.SMTPUser
 
 	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s\r\n",
 		s.config.FromEmail, to, subject, body)
 
-	// Пробуем разные подходы в зависимости от порта
 	switch s.config.SMTPPort {
 	case "465":
 		return s.sendSMTPS(auth, to, msg)

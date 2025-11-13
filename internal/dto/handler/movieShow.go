@@ -169,7 +169,6 @@ func (ms *MovieShowHandler) DeleteMovieShow(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Вспомогательная функция для разделения строк через запятую
 func splitCommaSeparated(s string) []string {
 	if s == "" {
 		return nil

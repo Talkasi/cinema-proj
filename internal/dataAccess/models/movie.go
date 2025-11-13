@@ -19,7 +19,7 @@ type Movie struct {
 }
 
 func MovieToDomain(entity Movie) domain.Movie {
-	// Обрезаем микросекунды из времени
+
 	duration := entity.Duration
 	if strings.Contains(duration, ".") {
 		duration = strings.Split(duration, ".")[0]
