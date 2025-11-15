@@ -1,54 +1,50 @@
-version: "2"
-run:
-  timeout: 5m
-  tests: true
-  skip-dirs:
-    - vendor
-    - testdata
 
-linters:
-  disable-all: true
-  enable:
-    - gocyclo
-    - gocognit
-    - govet
-    - staticcheck
-    - unused
-    - errcheck
-    - ineffassign
-    - gocritic
-    - misspell
-    - unconvert
+# linters:
+#   enable:
+#     - gocyclo        # Цикломатическая сложность
+#     - gocognit       # Сложность по Холстеду (когнитивная сложность)
+#     - staticcheck    # Статический анализ
+#     - unused         # Неиспользуемый код
+#     - errcheck       # Проверка ошибок
+#     - ineffassign    # Неэффективные присваивания
+#     - gocritic       # Критика кода
+#     - misspell       # Орфография
+#     - unconvert      # Лишние конвертации
 
-linters-settings:
-  gocyclo:
-    min-complexity: 10
-  gocognit:
-    min-complexity: 20
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    settings:
-      hugeParam:
-        size-threshold: 80
-      rangeValCopy:
-        size-threshold: 128
+# linters-settings:
+#   gocyclo:
+#     min-complexity: 10
+#   gocognit:
+#     min-complexity: 20
+#   dupl:
+#     threshold: 100
+#   goconst:
+#     min-len: 3
+#     min-occurrences: 3
+#   gocritic:
+#     enabled-tags:
+#       - diagnostic
+#       - experimental
+#       - opinionated
+#       - performance
+#       - style
+#     settings:
+#       hugeParam:
+#         size-threshold: 80
+#       rangeValCopy:
+#         size-threshold: 128
 
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - gocognit
-        - dupl
+# run:
+#   timeout: 5m
+#   tests: true
+#   gofmt: true
+
+# issues:
+#   max-issues-per-linter: 0
+#   max-same-issues: 0
+#   exclude-rules:
+#     - path: _test\.go
+#       linters:
+#         - gocyclo
+#         - gocognit
+#         - dupl

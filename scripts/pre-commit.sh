@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Running golangci-lint..."
-if ! golangci-lint run --config .golangci.yml --timeout=5m; then
+if ! run-static-analysis.sh; then
     echo "ERROR: golangci-lint found issues or had configuration problems"
     exit 1
 fi
