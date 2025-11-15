@@ -1,16 +1,23 @@
-version: "2"
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - vendor
+    - testdata
+
 linters:
+  disable-all: true
   enable:
-    - gocyclo        # Цикломатическая сложность
-    - gocognit       # Сложность по Холстеду (когнитивная сложность)
-    - govet          # Проверка типов и ошибок
-    - staticcheck    # Статический анализ
-    - unused         # Неиспользуемый код
-    - errcheck       # Проверка ошибок
-    - ineffassign    # Неэффективные присваивания
-    - gocritic       # Критика кода
-    - misspell       # Орфография
-    - unconvert      # Лишние конвертации
+    - gocyclo
+    - gocognit
+    - govet
+    - staticcheck
+    - unused
+    - errcheck
+    - ineffassign
+    - gocritic
+    - misspell
+    - unconvert
 
 linters-settings:
   gocyclo:
@@ -34,14 +41,6 @@ linters-settings:
         size-threshold: 80
       rangeValCopy:
         size-threshold: 128
-
-run:
-  timeout: 5m
-  tests: true
-  gofmt: true
-  skip-dirs:
-    - vendor
-    - testdata
 
 issues:
   max-issues-per-linter: 0
