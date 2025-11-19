@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"cw/internal/observability"
 	"cw/internal/utils"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,17 +27,23 @@ func NewDatabase() (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	db, err := pgxpool.New(ctx, dsn)
+	poolConfig, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
+	}
+	observability.ConfigurePgxTracing(poolConfig.ConnConfig)
+
+	dbPool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}
 
-	if err := db.Ping(ctx); err != nil {
+	if err := dbPool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Printf("Database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
-	return db, nil
+	observability.Infof("Database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
+	return dbPool, nil
 }
 
 func NewTestDatabase() (*pgxpool.Pool, error) {
@@ -53,17 +60,23 @@ func NewTestDatabase() (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	db, err := pgxpool.New(ctx, dsn)
+	poolConfig, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create test connection pool: %w", err)
+	}
+	observability.ConfigurePgxTracing(poolConfig.ConnConfig)
+
+	dbPool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create test connection pool: %w", err)
 	}
 
-	if err := db.Ping(ctx); err != nil {
+	if err := dbPool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping test database: %w", err)
 	}
 
-	log.Printf("Test database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
-	return db, nil
+	observability.Infof("Test database connected successfully to %s:%s/%s", dbHost, dbPort, dbName)
+	return dbPool, nil
 }
 
 func CleanTestDatabase(db *pgxpool.Pool) error {

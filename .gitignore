@@ -9,3 +9,4 @@ bin
 api
 docs
 .env.local
+artifacts/
