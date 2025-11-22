@@ -123,14 +123,19 @@ jobs:
       run: |
         go mod download
 
-    - name: Run observability benchmark matrix
+    - name: Run HTTP observability benchmarks (20 runs each)
       env:
         OUT_DIR: artifacts/observability
-        OTEL_TRACES_ENABLED: "true"
-        OTEL_EXPORTER: stdout
+        BENCH_COUNT: 20
       run: |
-        chmod +x scripts/run_observability_report.sh
-        ./scripts/run_observability_report.sh
+        chmod +x scripts/run_all_http_benchmarks.sh scripts/analyze_observability_benchmarks.py
+        chmod +x scripts/run_bench_http_tracing_*  # ensure executable in CI
+        ./scripts/run_all_http_benchmarks.sh
+
+    - name: Build aggregated observability report
+      run: |
+        mkdir -p artifacts/observability
+        ./scripts/analyze_observability_benchmarks.py artifacts/observability --out "artifacts/observability/observability-report-$(date +%Y%m%d-%H%M%S).md"
 
     - name: Upload observability artifacts
       uses: actions/upload-artifact@v4
