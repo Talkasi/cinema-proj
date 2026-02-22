@@ -73,11 +73,30 @@ docker-down:
 # CI: генерирует Swagger и проверяет запуск приложения в Docker
 ci-docker: swagger
 	@echo "Проверка запуска приложения в Docker..."
-	@set -e; \
-	trap 'docker compose down -v' EXIT; \
-	POSTGRES_CPUSET=0-1 APP_CPUSET=2-3 docker compose up --build -d; \
+	@set -eu; \
+	export COMPOSE_PROJECT_NAME=ci-check; \
+	export POSTGRES_CPUSET=0-1 APP_CPUSET=2-3; \
+	export HOST_POSTGRES_PORT=15433 HOST_APP_PORT=18080; \
+	export POSTGRES_CONTAINER_NAME=ci_postgres_db APP_CONTAINER_NAME=ci_go_app; \
+	trap 'docker compose logs --no-color --tail=200 app postgres >/dev/null 2>&1 || true; docker compose down -v --remove-orphans >/dev/null 2>&1 || true' EXIT; \
+	docker compose down -v --remove-orphans >/dev/null 2>&1 || true; \
+	docker rm -f ci_postgres_db ci_go_app >/dev/null 2>&1 || true; \
+	docker compose up --build -d; \
 	docker compose ps; \
-	curl --fail --retry 20 --retry-delay 2 http://localhost:8080/metrics >/dev/null; \
+	ok=0; \
+	for i in $$(seq 1 30); do \
+		if curl --fail --silent --show-error http://localhost:18080/metrics >/dev/null; then \
+			ok=1; \
+			break; \
+		fi; \
+		sleep 2; \
+	done; \
+	if [ "$$ok" -ne 1 ]; then \
+		echo "Приложение не стало доступно по /metrics"; \
+		docker compose ps; \
+		docker compose logs --no-color --tail=200 app postgres; \
+		exit 1; \
+	fi; \
 	echo "Приложение доступно по /metrics"
 
 # Анализ покрытия тестами
