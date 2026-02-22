@@ -234,7 +234,7 @@ BEGIN
     RETURN v_show_id;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE EXCEPTION 'Message', SQLERRM;
+        RAISE EXCEPTION 'Message: %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
 
