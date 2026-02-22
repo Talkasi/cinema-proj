@@ -17,7 +17,7 @@ TEST_DB_PASS = postgres
 PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASS) dbname=$(DB_NAME) sslmode=$(DB_SSL)"
 TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) password=$(TEST_DB_PASS) dbname=$(TEST_DB_NAME) sslmode=$(DB_SSL)"
 
-.PHONY: db-init db-clean test-init test-clean run test test-v swagger cover
+.PHONY: db-init db-clean test-init test-clean run test test-v swagger cover docker-up docker-down ci-docker
 
 # Инициализация основной БД
 db-init: db-clean
@@ -58,7 +58,27 @@ run:
 # Обновление документации Swagger
 swagger:
 	@echo "Обновление документации Swagger..."
-	@swag init -g cmd/api/main.go
+	@go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/api/main.go
+
+# Сборка и запуск в Docker
+docker-up:
+	@echo "Сборка и запуск контейнеров..."
+	@docker compose up --build -d
+
+# Остановка Docker окружения
+docker-down:
+	@echo "Остановка контейнеров..."
+	@docker compose down -v
+
+# CI: генерирует Swagger и проверяет запуск приложения в Docker
+ci-docker: swagger
+	@echo "Проверка запуска приложения в Docker..."
+	@set -e; \
+	trap 'docker compose down -v' EXIT; \
+	docker compose up --build -d; \
+	docker compose ps; \
+	curl --fail --retry 20 --retry-delay 2 http://localhost:8080/metrics >/dev/null; \
+	echo "Приложение доступно по /metrics"
 
 # Анализ покрытия тестами
 cover:
@@ -117,6 +137,9 @@ help:
 	@echo "  test    - Запуск тестов"
 	@echo "  test-v  - Запуск тестов с детальным выводом"
 	@echo "  swagger - Обновление Swagger документации"
+	@echo "  docker-up - Сборка и запуск Docker окружения"
+	@echo "  docker-down - Остановка Docker окружения"
+	@echo "  ci-docker - Swagger + проверка запуска в Docker (для CI)"
 	@echo "  cover   - Анализ покрытия тестами"
 	@echo "  build   - Сборка приложения"
 	@echo "  clean   - Очистка билдов"
