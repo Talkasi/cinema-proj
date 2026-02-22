@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: postgres_db
-    cpuset: "3-7"
+    cpuset: "${POSTGRES_CPUSET:-3-7}"
     mem_limit: 8g
     environment:
       POSTGRES_DB: cinema
@@ -29,7 +29,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    cpuset: "8-9"
+    cpuset: "${APP_CPUSET:-8-9}"
     mem_limit: 4g
     environment:
       DB_HOST: postgres

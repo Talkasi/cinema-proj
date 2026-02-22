@@ -75,7 +75,7 @@ ci-docker: swagger
 	@echo "Проверка запуска приложения в Docker..."
 	@set -e; \
 	trap 'docker compose down -v' EXIT; \
-	docker compose up --build -d; \
+	POSTGRES_CPUSET=0-1 APP_CPUSET=2-3 docker compose up --build -d; \
 	docker compose ps; \
 	curl --fail --retry 20 --retry-delay 2 http://localhost:8080/metrics >/dev/null; \
 	echo "Приложение доступно по /metrics"
