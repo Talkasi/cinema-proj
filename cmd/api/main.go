@@ -3,20 +3,20 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	postgresDb "cw/internal/dataAccess/config"
 	repository "cw/internal/dataAccess/repository/postgres"
 	"cw/internal/domain/service"
 	"cw/internal/dto/handler"
+	"cw/internal/utils"
+
+	authMiddleware "cw/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger"
-
-	_ "cw/docs"
 )
 
 // @title Курсовая работа по базам данных - API управления кинотеатром
@@ -27,11 +27,11 @@ import (
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description JWT токен в формате: Bearer <token>
+// @description JWT токен
 func main() {
-	addr := getEnv("ADDR", ":8080")
-	jwtSecret := getEnv("JWT_SECRET", "secret-key")
-	tokenDurationStr := getEnv("TOKEN_DURATION", "24h")
+	addr := utils.GetEnv("ADDR")
+	jwtSecret := utils.GetEnv("JWT_SECRET")
+	tokenDurationStr := utils.GetEnv("TOKEN_DURATION")
 
 	tokenDuration, err := time.ParseDuration(tokenDurationStr)
 	if err != nil {
@@ -94,7 +94,7 @@ func main() {
 	r.Mount("/metrics", promhttp.Handler())
 
 	r.Route("/api/v1", func(r chi.Router) {
-		userHandler.RegisterRoutes(r)
+		userHandler.RegisterRoutesNoAuth(r)
 		genreHandler.RegisterRoutes(r)
 		hallHandler.RegisterRoutes(r)
 		movieShowHandler.RegisterRoutes(r)
@@ -104,17 +104,16 @@ func main() {
 		seatHandler.RegisterRoutes(r)
 		ticketHandler.RegisterRoutes(r)
 		reviewHandler.RegisterRoutes(r)
+
+		r.Group(func(r chi.Router) {
+			r.Use(authMiddleware.JWTMiddleware(jwtSecret))
+
+			userHandler.RegisterRoutesWithAuth(r)
+		})
 	})
 
 	log.Printf("Starting server on %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }

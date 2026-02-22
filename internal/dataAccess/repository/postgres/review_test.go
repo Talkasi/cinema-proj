@@ -36,7 +36,6 @@ func (s *ReviewRepositoryIntegrationTestSuite) SetupSuite() {
 	s.repo = NewReviewRepository(db)
 	s.movieRepo = NewMovieRepository(db)
 
-	// Инициализация UserRepository с JWT параметрами
 	jwtSecret := "test-secret-key"
 	tokenDuration := 24 * time.Hour
 	s.userRepo = NewUserRepository(db, jwtSecret, tokenDuration)
@@ -49,7 +48,7 @@ func (s *ReviewRepositoryIntegrationTestSuite) SetupSuite() {
 }
 
 func (s *ReviewRepositoryIntegrationTestSuite) createTestMovies() {
-	// Создаем тестовые фильмы с уникальными названиями чтобы избежать конфликтов
+
 	movies := []domain.Movie{
 		{
 			Title:            "Test Action Movie " + time.Now().Format("150405"),
@@ -81,7 +80,7 @@ func (s *ReviewRepositoryIntegrationTestSuite) createTestMovies() {
 }
 
 func (s *ReviewRepositoryIntegrationTestSuite) createTestUsers() {
-	// Создаем тестовых пользователей с уникальными email чтобы избежать конфликтов
+
 	timestamp := time.Now().Format("150405")
 	users := []domain.User{
 		{
@@ -110,7 +109,7 @@ func (s *ReviewRepositoryIntegrationTestSuite) createTestUsers() {
 }
 
 func (s *ReviewRepositoryIntegrationTestSuite) cleanDatabase() {
-	// Удаляем только тестовые данные, которые мы создали
+
 	for _, id := range s.testReviews {
 		s.repo.Delete(s.ctx, id)
 	}
@@ -173,7 +172,7 @@ func (s *ReviewRepositoryIntegrationTestSuite) TestCreateForMovieWithEmptyCommen
 	review := domain.Review{
 		UserID:  s.testUsers[1],
 		Rating:  7,
-		Comment: "Good", // Минимальный комментарий, проходящий проверку
+		Comment: "Good",
 	}
 
 	result, utilsErr := s.repo.CreateForMovie(s.ctx, s.testMovies[0], review)
@@ -470,7 +469,6 @@ func (s *ReviewRepositoryIntegrationTestSuite) TestCreateReviewWithMaxRating() {
 	s.testReviews = append(s.testReviews, result.ID)
 }
 
-// Упрощенный тест для пагинации - создаем только 2 отзыва
 func (s *ReviewRepositoryIntegrationTestSuite) TestGetAllReviewsWithPagination() {
 	reviews := []domain.Review{
 		{
@@ -497,7 +495,6 @@ func (s *ReviewRepositoryIntegrationTestSuite) TestGetAllReviewsWithPagination()
 	assert.Len(s.T(), reviewsPage1, 1)
 }
 
-// Упрощенный тест для диапазона рейтингов
 func (s *ReviewRepositoryIntegrationTestSuite) TestGetAllReviewsWithRatingRangeFilter() {
 	reviews := []domain.Review{
 		{
@@ -512,7 +509,6 @@ func (s *ReviewRepositoryIntegrationTestSuite) TestGetAllReviewsWithRatingRangeF
 		},
 	}
 
-	// Создаем отзывы для разных фильмов чтобы избежать конфликтов уникальности
 	for i, review := range reviews {
 		created, utilsErr := s.repo.CreateForMovie(s.ctx, s.testMovies[i], review)
 		s.assertNoError(utilsErr)

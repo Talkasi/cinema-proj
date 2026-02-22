@@ -49,7 +49,7 @@ func (s *SeatRepositoryIntegrationTestSuite) SetupSuite() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) createTestScreenTypes() {
-	// Создаем тестовые типы экранов
+
 	screenTypes := []domain.ScreenType{
 		{
 			Name:          "Test Screen Type 1 " + strconv.FormatInt(time.Now().Unix(), 10),
@@ -73,7 +73,7 @@ func (s *SeatRepositoryIntegrationTestSuite) createTestScreenTypes() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) createTestHalls() {
-	// Создаем тестовые залы с нашими screen types
+
 	halls := []domain.Hall{
 		{
 			Name:         "Test Hall 1 " + strconv.FormatInt(time.Now().Unix(), 10),
@@ -97,7 +97,7 @@ func (s *SeatRepositoryIntegrationTestSuite) createTestHalls() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) createTestSeatTypes() {
-	// Создаем тестовые типы мест
+
 	seatTypes := []domain.SeatType{
 		{
 			Name:          "Test Standard " + strconv.FormatInt(time.Now().Unix(), 10),
@@ -121,7 +121,7 @@ func (s *SeatRepositoryIntegrationTestSuite) createTestSeatTypes() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) cleanDatabase() {
-	// Удаляем только тестовые данные в правильном порядке
+
 	for _, id := range s.testSeats {
 		s.repo.Delete(s.ctx, id)
 	}
@@ -306,7 +306,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestDeleteSeat_NotFound() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) TestGetByHall() {
-	// Создаем несколько мест в одном зале
+
 	seats := []domain.Seat{
 		{
 			HallID:     s.testHalls[0],
@@ -346,7 +346,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestGetByHall() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithSeatTypeFilter() {
-	// Создаем места разных типов
+
 	seats := []domain.Seat{
 		{
 			HallID:     s.testHalls[0],
@@ -383,7 +383,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithSeatTypeFilter() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithRowNumberFilter() {
-	// Создаем места в разных рядах
+
 	seats := []domain.Seat{
 		{
 			HallID:     s.testHalls[0],
@@ -428,7 +428,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithRowNumberFilter() 
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithSeatNumberFilter() {
-	// Создаем места с разными номерами
+
 	seats := []domain.Seat{
 		{
 			HallID:     s.testHalls[0],
@@ -473,7 +473,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithSeatNumberFilter()
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallOrderByRowAndSeat() {
-	// Создаем места в разном порядке
+
 	seats := []domain.Seat{
 		{
 			HallID:     s.testHalls[0],
@@ -507,7 +507,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallOrderByRowAndSeat() {
 	assert.GreaterOrEqual(s.T(), total, len(seats))
 
 	if len(hallSeats) >= len(seats) {
-		// Проверяем сортировку: сначала по ряду, потом по номеру места
+
 		for i := 1; i < len(hallSeats); i++ {
 			assert.True(s.T(),
 				hallSeats[i-1].RowNumber < hallSeats[i].RowNumber ||
@@ -518,7 +518,7 @@ func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallOrderByRowAndSeat() {
 }
 
 func (s *SeatRepositoryIntegrationTestSuite) TestGetByHallWithPagination() {
-	// Создаем несколько мест для тестирования пагинации
+
 	for i := 1; i <= 5; i++ {
 		seat := domain.Seat{
 			HallID:     s.testHalls[0],

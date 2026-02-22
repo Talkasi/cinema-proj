@@ -4,6 +4,7 @@ services:
     container_name: "${POSTGRES_CONTAINER_NAME:-postgres_db}"
     cpuset: "${POSTGRES_CPUSET:-3-7}"
     mem_limit: 8g
+    env_file: ".env"
     environment:
       POSTGRES_DB: cinema
       POSTGRES_USER: postgres
@@ -12,14 +13,15 @@ services:
       - "${HOST_POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./sql/prod_db_init:/docker-entrypoint-initdb.d:Z
     networks:
       - app-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cinema"]
+      test: ["CMD-SHELL", "test -f /var/lib/postgresql/data/.initialized && pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 20
+      start_period: 30s
 
   app:
     build: .
@@ -31,7 +33,9 @@ services:
         condition: service_healthy
     cpuset: "${APP_CPUSET:-8-9}"
     mem_limit: 4g
+    env_file: ".env"
     environment:
+      ADDR: :8080
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: cinema
@@ -43,19 +47,6 @@ services:
       TOKEN_DURATION: 24h
     networks:
       - app-net
-
-  # k6:
-  #   image: grafana/k6:latest
-  #   container_name: k6_runner
-  #   cpuset: "8-9"
-  #   mem_limit: 4g
-  #   user: root
-  #   volumes:
-  #     - ./scripts:/scripts
-  #   networks:
-  #     - app-net
-  #   depends_on:
-  #     - app
 
 volumes:
   postgres_data:

@@ -1,0 +1,83 @@
+name: BDD Authentication Tests
+
+on:
+  push:
+    branches: '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+          POSTGRES_DB: cinema_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Install dependencies
+      run: |
+        go mod download
+        go install github.com/cucumber/godog/cmd/godog@latest
+
+    - name: Wait for PostgreSQL to be ready
+      run: |
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5432 -U postgres; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Waiting for PostgreSQL... attempt $i"
+          sleep 2
+        done
+
+    - name: Initialize database schema
+      env:
+        PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+      run: |
+        if [ -d "sql/prod_db_init" ]; then
+          for file in sql/prod_db_init/*.sql; do
+            echo "Running init script: $file"
+            psql -h localhost -U postgres -d cinema_test -f "$file"
+          done
+        fi
+
+    - name: Build application
+      run: |
+        go build -o app ./cmd/api/main.go
+
+    - name: Run BDD tests
+      env:
+        TEST_DATABASE_URL: "host=localhost port=5432 user=postgres password=${{ secrets.POSTGRES_PASSWORD || 'postgres' }} dbname=cinema_test sslmode=disable"
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USER: postgres
+        DB_PASS: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+        DB_SSL: disable
+        SMTP_HOST: ${{ secrets.SMTP_HOST || 'postgres' }}
+        SMTP_PORT: 587
+        IMAP_HOST: ${{ secrets.IMAP_HOST || 'postgres' }}
+        IMAP_PORT: 993
+        SMTP_USER: ${{ secrets.SMTP_USER }}
+        SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        TEST_DB_NAME: cinema_test
+
+      run: |
+        cd tests/bdd
+        go test -v

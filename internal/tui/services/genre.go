@@ -21,7 +21,7 @@ func NewGenreService(apiClient *client.APIClient) GenreService {
 }
 
 func (s *genreService) GetAll(ctx context.Context, filters dto.GenreFilters, page, limit int) (*dto.PaginatedGenreResponse, error) {
-	// Build query parameters
+
 	params := url.Values{}
 	params.Add("page", strconv.Itoa(page))
 	params.Add("limit", strconv.Itoa(limit))

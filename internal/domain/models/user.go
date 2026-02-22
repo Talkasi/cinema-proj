@@ -1,14 +1,21 @@
 package domain
 
-import dto "cw/internal/dto/models"
+import (
+	dto "cw/internal/dto/models"
+)
 
 type User struct {
-	ID           string
-	Name         string
-	Email        string
-	BirthDate    string
-	PasswordHash string
-	IsAdmin      bool
+	ID                  string
+	Name                string
+	Email               string
+	BirthDate           string
+	PasswordHash        string
+	IsAdmin             bool
+	TwoFANeeded         bool
+	Email2FACode        string
+	Email2FAExpires     *string
+	FailedLoginAttempts int
+	LockedUntil         *string
 }
 
 type UserFilters struct {
@@ -67,9 +74,11 @@ func UsersToDTO(domainUsers []User) []dto.UserResponse {
 	return dtos
 }
 
-func AuthToDTO(id string, token string) dto.AuthResponse {
+func AuthToDTO(id string, token string, message string, twoFANeeded bool) dto.AuthResponse {
 	return dto.AuthResponse{
-		UserID: id,
-		Token:  token,
+		UserID:      id,
+		Token:       token,
+		TwoFANeeded: twoFANeeded,
+		Message:     message,
 	}
 }

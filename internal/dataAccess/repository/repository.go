@@ -1,4 +1,3 @@
-// internal/repository/interfaces.go
 package repository
 
 import (
@@ -15,6 +14,14 @@ type UserRepository interface {
 	Update(ctx context.Context, id string, user domain.User) (domain.User, *utils.Error)
 	UpdateAdminStatus(ctx context.Context, id string, isAdmin bool) (domain.User, *utils.Error)
 	Delete(ctx context.Context, id string) *utils.Error
+
+	Enable2FA(ctx context.Context, userID string) *utils.Error
+	Disable2FA(ctx context.Context, userID string) *utils.Error
+	Get2FAInfo(ctx context.Context, userID string) (bool, *utils.Error)
+	Verify2FACode(ctx context.Context, userID string, code string) (string, *utils.Error)
+
+	UpdatePassword(ctx context.Context, id string, newPasswordHash string) *utils.Error
+	VerifyCurrentPassword(ctx context.Context, id string, currentPassword string) *utils.Error
 }
 
 type GenreRepository interface {

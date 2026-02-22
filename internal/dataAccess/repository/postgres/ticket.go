@@ -79,27 +79,22 @@ func (r *TicketRepository) GetAll(ctx context.Context, filters domain.TicketFilt
 		return nil, 0, utils.ConvertError(err)
 	}
 
-	// Если нет результатов, возвращаем пустой список
 	if total == 0 {
 		return []domain.Ticket{}, 0, nil
 	}
 
-	// Build the main query
 	query := "SELECT id, movie_show_id, seat_id, user_id, ticket_Status, price FROM tickets"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 	query += " ORDER BY id DESC LIMIT $%d OFFSET $%d"
 
-	// Calculate offset for pagination
 	offset := (page - 1) * limit
 
-	// Create new args slice for the main query that includes LIMIT and OFFSET
 	mainQueryArgs := make([]interface{}, len(args))
 	copy(mainQueryArgs, args)
 	mainQueryArgs = append(mainQueryArgs, limit, offset)
 
-	// Update the query with correct parameter positions
 	finalQuery := fmt.Sprintf(query, len(mainQueryArgs)-1, len(mainQueryArgs))
 
 	rows, err := r.db.Query(ctx, finalQuery, mainQueryArgs...)

@@ -22,18 +22,18 @@ TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) pass
 # Инициализация основной БД
 db-init: db-clean
 	@echo "Инициализация основной БД..."
-	@$(PSQL_CONN) -q -f sql/001_create_app_roles.sql
-	@$(PSQL_CONN) -q -f sql/002_create_main.sql
-	@$(PSQL_CONN) -q -f sql/004_set_app_roles_privileges.sql
-	@$(PSQL_CONN) -q -f sql/006_seed_main.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/004_create_app_roles.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/005_create_main.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/006_set_app_roles_privileges.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/007_seed_main.sql
 	@echo "Основная БД готова!"
 
 # Очистка основной БД
 db-clean:
 	@echo "Очистка основной БД..."
-	@$(PSQL_CONN) -q -f sql/revoke_app_roles_privileges.sql || true
-	@$(PSQL_CONN) -q -f sql/drop_main.sql || true
-	@$(PSQL_CONN) -q -f sql/drop_app_roles.sql || true
+	@$(PSQL_CONN) -q -f sql/prod_db_clean/001_revoke_app_roles_privileges.sql || true
+	@$(PSQL_CONN) -q -f sql/prod_db_clean/002_drop_main.sql || true
+	@$(PSQL_CONN) -q -f sql/prod_db_clean/003_drop_app_roles.sql || true
 
 # Инициализация тестовой БД
 test-init: test-clean
@@ -51,7 +51,7 @@ test-clean:
 	@$(TEST_PSQL_CONN) -q -f sql/drop_test_roles.sql || true
 
 # Запуск приложения
-run: 
+run: swagger
 	@echo "Запуск приложения..."
 	@go run ./cmd/api/main.go
 
@@ -74,11 +74,13 @@ docker-down:
 ci-docker: swagger
 	@echo "Проверка запуска приложения в Docker..."
 	@set -eu; \
+	tmp_env_created=0; \
+	if [ ! -f .env ]; then : > .env; tmp_env_created=1; fi; \
 	export COMPOSE_PROJECT_NAME=ci-check; \
 	export POSTGRES_CPUSET=0-1 APP_CPUSET=2-3; \
 	export HOST_POSTGRES_PORT=15433 HOST_APP_PORT=18080; \
 	export POSTGRES_CONTAINER_NAME=ci_postgres_db APP_CONTAINER_NAME=ci_go_app; \
-	trap 'docker compose logs --no-color --tail=200 app postgres >/dev/null 2>&1 || true; docker compose down -v --remove-orphans >/dev/null 2>&1 || true' EXIT; \
+	trap 'docker compose logs --no-color --tail=200 app postgres >/dev/null 2>&1 || true; docker compose down -v --remove-orphans >/dev/null 2>&1 || true; if [ "$$tmp_env_created" -eq 1 ]; then rm -f .env; fi' EXIT; \
 	docker compose down -v --remove-orphans >/dev/null 2>&1 || true; \
 	docker rm -f ci_postgres_db ci_go_app >/dev/null 2>&1 || true; \
 	docker compose up --build -d; \
@@ -149,12 +151,21 @@ deps:
 	@echo "Анализ зависимостей..."
 	@go mod graph
 
+# Запуск BDD тестов
+bdd-test: db-clean
+	@$(PSQL_CONN) -q -f sql/prod_db_init/004_create_app_roles.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/005_create_main.sql
+	@$(PSQL_CONN) -q -f sql/prod_db_init/006_set_app_roles_privileges.sql
+	@echo "Запуск BDD тестов..."
+	@cd tests/bdd && go test -v
+
 # Помощь
 help:
 	@echo "Доступные команды:"
 	@echo "  run     - Запуск приложения"
 	@echo "  test    - Запуск тестов"
 	@echo "  test-v  - Запуск тестов с детальным выводом"
+	@echo "  bdd-test - Запуск BDD тестов"
 	@echo "  swagger - Обновление Swagger документации"
 	@echo "  docker-up - Сборка и запуск Docker окружения"
 	@echo "  docker-down - Остановка Docker окружения"

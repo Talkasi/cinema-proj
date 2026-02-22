@@ -56,7 +56,7 @@ func (s *MovieRepositoryIntegrationTestSuite) createTestGenres() {
 }
 
 func (s *MovieRepositoryIntegrationTestSuite) cleanDatabase() {
-	// Сначала удаляем из связующих таблиц
+
 	_, err := s.repo.db.Exec(s.ctx, "DELETE FROM movies_genres")
 	if err != nil {
 		s.T().Fatalf("Failed to clean movies_genres: %v", err)
@@ -65,7 +65,7 @@ func (s *MovieRepositoryIntegrationTestSuite) cleanDatabase() {
 	if err != nil {
 		s.T().Fatalf("Failed to clean reviews: %v", err)
 	}
-	// Потом из основных таблиц
+
 	_, err = s.repo.db.Exec(s.ctx, "DELETE FROM movies")
 	if err != nil {
 		s.T().Fatalf("Failed to clean movies: %v", err)

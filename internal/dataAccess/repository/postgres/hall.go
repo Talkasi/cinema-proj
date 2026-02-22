@@ -58,7 +58,6 @@ func (r *HallRepository) GetAll(ctx context.Context, filters domain.HallFilters,
 	}
 	query += " ORDER BY name"
 
-	// Добавляем пагинацию только если указаны limit и page
 	if limit > 0 && page > 0 {
 		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argPos, argPos+1)
 		args = append(args, limit, (page-1)*limit)

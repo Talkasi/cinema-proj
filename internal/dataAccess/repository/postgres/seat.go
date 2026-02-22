@@ -66,22 +66,18 @@ func (r *SeatRepository) GetByHall(ctx context.Context, hallId string, filters d
 		return nil, 0, utils.ConvertError(err)
 	}
 
-	// Build the main query
 	query := "SELECT id, hall_id, seat_type_id, row_number, seat_number FROM seats"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 	query += " ORDER BY row_number, seat_number LIMIT $%d OFFSET $%d"
 
-	// Calculate offset for pagination
 	offset := (page - 1) * limit
 
-	// Create new args slice for the main query that includes LIMIT and OFFSET
 	mainQueryArgs := make([]interface{}, len(args))
 	copy(mainQueryArgs, args)
 	mainQueryArgs = append(mainQueryArgs, limit, offset)
 
-	// Update the query with correct parameter positions
 	finalQuery := fmt.Sprintf(query, len(mainQueryArgs)-1, len(mainQueryArgs))
 
 	rows, err := r.db.Query(ctx, finalQuery, mainQueryArgs...)

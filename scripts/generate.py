@@ -550,7 +550,7 @@ class CSVDataGenerator:
             raise
 
 def main():
-    generator = CSVDataGenerator("../sql/data")
+    generator = CSVDataGenerator("../../data")
     generator.generate_all_data()
 
 if __name__ == "__main__":

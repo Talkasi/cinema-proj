@@ -51,7 +51,6 @@ func (rh *ReviewHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
 		Comment: r.URL.Query().Get("comment"),
 	}
 
-	// Парсинг числовых параметров
 	if ratingMin := r.URL.Query().Get("rating_min"); ratingMin != "" {
 		if val, err := strconv.Atoi(ratingMin); err == nil {
 			dtoFilters.RatingMin = val

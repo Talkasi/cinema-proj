@@ -64,7 +64,6 @@ func isNoRows(err error) bool {
 		return true
 	}
 
-	// Дополнительные проверки для pgx
 	if err != nil && err.Error() == "no rows in result set" {
 		return true
 	}
@@ -168,7 +167,7 @@ func ConvertError(err error) *Error {
 			}
 		case isCheckViolation(err):
 			{
-				// Анализируем какое именно check ограничение нарушено
+
 				errorStr := strings.ToLower(err.Error())
 				switch {
 				case strings.Contains(errorStr, "valid_name"):
@@ -205,7 +204,7 @@ func ConvertError(err error) *Error {
 			}
 		default:
 			{
-				// Дополнительные проверки по тексту ошибки для обратной совместимости
+
 				errorStr := strings.ToLower(err.Error())
 				if strings.Contains(errorStr, "check constraint") {
 					return NewBadRequest("Нарушение ограничений данных", err)
@@ -224,5 +223,10 @@ func ConvertError(err error) *Error {
 func WriteError(w http.ResponseWriter, err *Error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(err.Code)
-	json.NewEncoder(w).Encode(dto.ErrorResponse{Message: err.Message})
+
+	message := err.Message
+	if err.Err != nil {
+		message += " " + err.Err.Error()
+	}
+	json.NewEncoder(w).Encode(dto.ErrorResponse{Message: message})
 }

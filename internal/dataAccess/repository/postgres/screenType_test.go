@@ -349,7 +349,7 @@ func (s *ScreenTypeRepositoryIntegrationTestSuite) TestGetAllScreenTypesOrderByN
 	assert.GreaterOrEqual(s.T(), total, len(screenTypes))
 
 	if len(allScreenTypes) >= len(screenTypes) {
-		// Проверяем, что типы экранов отсортированы по имени
+
 		for i := 1; i < len(allScreenTypes); i++ {
 			assert.True(s.T(), allScreenTypes[i-1].Name <= allScreenTypes[i].Name)
 		}
@@ -360,7 +360,7 @@ func (s *ScreenTypeRepositoryIntegrationTestSuite) TestCreateScreenTypeWithReaso
 	screenType := domain.ScreenType{
 		Name:          "Luxury Screen " + strconv.FormatInt(time.Now().Unix(), 10),
 		Description:   "Luxury cinema experience",
-		PriceModifier: 5.0, // Используем разумное значение вместо 10.0
+		PriceModifier: 5.0,
 	}
 
 	result, utilsErr := s.repo.Create(s.ctx, screenType)
@@ -382,7 +382,6 @@ func (s *ScreenTypeRepositoryIntegrationTestSuite) TestUpdateScreenTypeToSameNam
 	s.assertNoError(utilsErr)
 	s.testScreenTypes = append(s.testScreenTypes, created.ID)
 
-	// Обновляем с тем же именем - должно работать
 	updateData := domain.ScreenType{
 		Name:          "Original Name " + timestamp,
 		Description:   "Updated description",
@@ -397,7 +396,6 @@ func (s *ScreenTypeRepositoryIntegrationTestSuite) TestUpdateScreenTypeToSameNam
 	assert.Equal(s.T(), 2.0, updated.PriceModifier)
 }
 
-// Упрощенный тест для пустого результата
 func (s *ScreenTypeRepositoryIntegrationTestSuite) TestGetAllScreenTypesEmptyResult() {
 	filters := domain.ScreenTypeFilters{
 		Name: "NonExistentScreenTypeNameThatDoesNotExist12345",

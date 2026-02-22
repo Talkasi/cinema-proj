@@ -7,6 +7,11 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     birth_date DATE NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
+    two_fa_enabled BOOLEAN DEFAULT FALSE,
+    email_2fa_code VARCHAR(6), -- For email 2FA
+    email_2fa_expires TIMESTAMP, -- When email 2FA code expires
+    failed_login_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMP DEFAULT NULL,
     CONSTRAINT valid_name CHECK (name ~ '\S'),
     CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
     CONSTRAINT valid_birth_date CHECK (birth_date <= CURRENT_DATE AND birth_date >= CURRENT_DATE - INTERVAL '100 years')
