@@ -222,7 +222,7 @@ BEGIN
         WHERE s.hall_id = p_hall_id
     ) LOOP
         v_price := ROUND(p_base_price * v_screen_modifier * v_seat.seat_modifier, 2);
-        
+
         INSERT INTO tickets (id, movie_show_id, seat_id, ticket_Status, price)
         VALUES (uuid_generate_v4(), v_show_id, v_seat.id, 'Available', v_price);
     END LOOP;
