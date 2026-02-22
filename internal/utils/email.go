@@ -78,7 +78,7 @@ func (s *SMTPSender) sendSTARTTLS(auth smtp.Auth, to, msg string) error {
 	}
 	defer func() {
 		if err := client.Close(); err != nil {
-			log.Printf("Ошибка при закрытии клиента: %v", err)
+			log.Printf("Error closing client: %v", err)
 		}
 	}()
 

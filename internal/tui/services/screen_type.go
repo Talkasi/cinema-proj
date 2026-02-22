@@ -43,7 +43,7 @@ func (s *screenTypeService) GetAll(ctx context.Context, filters dto.ScreenTypeFi
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -72,7 +72,7 @@ func (s *screenTypeService) GetByID(ctx context.Context, id string) (*dto.Screen
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -102,7 +102,7 @@ func (s *screenTypeService) Create(ctx context.Context, screenType dto.CreateScr
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -131,7 +131,7 @@ func (s *screenTypeService) Update(ctx context.Context, id string, screenType dt
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -158,7 +158,7 @@ func (s *screenTypeService) Delete(ctx context.Context, id string) error {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 

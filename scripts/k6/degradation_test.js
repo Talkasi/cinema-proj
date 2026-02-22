@@ -3,7 +3,7 @@ import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
-// Кастомные метрики
+// Kastomnye metriki
 const trends = {
   getMoviesList: new Trend('T_01_GetMoviesList'),
   getMovieDetails: new Trend('T_02_GetMovieDetails'),
@@ -17,7 +17,7 @@ const BASE_URL = 'http://app:8080/api/v1';
 const USER_PASSWORD = 'superSecurePassword123';
 
 export function setup() {
-  console.log('Setup: подготовка тестовых данных...');
+  console.log('Setup: podgotovka testovykh dannykh...');
   
   const testEmail = `admin_user_${Date.now()}@example.com`;
   const registerPayload = JSON.stringify({
@@ -29,7 +29,7 @@ export function setup() {
 
   const headers = { 'Content-Type': 'application/json' };
   
-  // Регистрация
+  // Registratsiya
   const regRes = http.post(`${BASE_URL}/auth/register`, registerPayload, { headers });
   console.log('Register status:', regRes.status, 'Body:', regRes.body);
   
@@ -37,7 +37,7 @@ export function setup() {
     'Admin user registered': (r) => r.status === 201 || r.status === 200 
   });
   
-  // Логин
+  // Login
   const loginPayload = JSON.stringify({
     email: testEmail,
     password: USER_PASSWORD
@@ -53,7 +53,7 @@ export function setup() {
   let token = null;
   try {
     const loginData = JSON.parse(loginRes.body);
-    // Ищем токен в разных возможных полях
+    // Ischem token v raznykh vozmozhnykh polyakh
     token = loginData.Token || loginData.token || loginData.access_token || loginData.accessToken;
     console.log('Token found:', token ? 'YES' : 'NO');
     if (token) {
@@ -91,7 +91,7 @@ export default function (data) {
     'Authorization': `Bearer ${authToken}`,
   } : { 'Content-Type': 'application/json' };
 
-  // СЦЕНАРИЙ 1: Просмотр фильмов (всегда работает без авторизации)
+  // STsENARIY 1: Prosmotr filmov (vsegda rabotaet bez avtorizatsii)
   group('Movie Browsing Flow', function () {
     const getMoviesRes = http.get(`${BASE_URL}/movies?limit=10`);
     check(getMoviesRes, { 
@@ -105,12 +105,12 @@ export default function (data) {
     if (movies && movies.length > 0) {
       const randomMovie = randomItem(movies);
       
-      // Детали фильма
+      // Detali filma
       const getMovieDetailRes = http.get(`${BASE_URL}/movies/${randomMovie.id}`);
       check(getMovieDetailRes, { 'GET /movies/{id} status is 200': (r) => r.status === 200 });
       trends.getMovieDetails.add(getMovieDetailRes.timings.duration);
 
-      // Расписание сеансов
+      // Raspisanie seansov
       const getShowsRes = http.get(`${BASE_URL}/movie-shows?movie_id=${randomMovie.id}`);
       check(getShowsRes, { 'GET /movie-shows status is 200': (r) => r.status === 200 });
       trends.getMovieShows.add(getShowsRes.timings.duration);
@@ -119,7 +119,7 @@ export default function (data) {
     sleep(Math.random() * 2 + 1);
   });
 
-  // СЦЕНАРИЙ 2: Написание отзыва (только если есть токен)
+  // STsENARIY 2: Napisanie otzyva (tolko esli est token)
   if (authToken && Math.random() < 0.3) {
     group('Review Writing Flow', function () {
       const getMoviesRes = http.get(`${BASE_URL}/movies?limit=5`);
@@ -130,7 +130,7 @@ export default function (data) {
         const reviewPayload = JSON.stringify({
           movie_id: movieToReview.id,
           rating: Math.floor(Math.random() * 10) + 1,
-          comment: `Тестовый отзыв под нагрузкой. VU: ${__VU}, Iter: ${__ITER}`
+          comment: `Testovyy otzyv pod nagruzkoy. VU: ${__VU}, Iter: ${__ITER}`
         });
         
         const postReviewRes = http.post(`${BASE_URL}/movies/${movieToReview.id}/reviews`, reviewPayload, { 
@@ -147,7 +147,7 @@ export default function (data) {
     });
   }
 
-  // СЦЕНАРИЙ 3: Регистрация и логин новых пользователей
+  // STsENARIY 3: Registratsiya i login novykh polzovateley
   if (Math.random() < 0.1) {
     group('Authentication Flow', function () {
       const userEmail = `stress_user_${__VU}_${__ITER}_${Date.now()}@test.com`;

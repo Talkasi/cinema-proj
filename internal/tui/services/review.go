@@ -29,7 +29,7 @@ func (s *reviewService) GetAll(ctx context.Context, filters dto.ReviewFilters, p
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -98,7 +98,7 @@ func (s *reviewService) Create(ctx context.Context, review dto.CreateReviewReque
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -127,7 +127,7 @@ func (s *reviewService) Update(ctx context.Context, id string, review dto.Update
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -154,7 +154,7 @@ func (s *reviewService) Delete(ctx context.Context, id string) error {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 

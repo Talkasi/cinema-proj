@@ -1,15 +1,15 @@
 
 # linters:
 #   enable:
-#     - gocyclo        # Цикломатическая сложность
-#     - gocognit       # Сложность по Холстеду (когнитивная сложность)
-#     - staticcheck    # Статический анализ
-#     - unused         # Неиспользуемый код
-#     - errcheck       # Проверка ошибок
-#     - ineffassign    # Неэффективные присваивания
-#     - gocritic       # Критика кода
-#     - misspell       # Орфография
-#     - unconvert      # Лишние конвертации
+#     - gocyclo        # Tsiklomaticheskaya slozhnost
+#     - gocognit       # Slozhnost po Kholstedu (kognitivnaya slozhnost)
+#     - staticcheck    # Staticheskiy analiz
+#     - unused         # Neispolzuemyy kod
+#     - errcheck       # Proverka oshibok
+#     - ineffassign    # Neeffektivnye prisvaivaniya
+#     - gocritic       # Kritika koda
+#     - misspell       # Orfografiya
+#     - unconvert      # Lishnie konvertatsii
 
 # linters-settings:
 #   gocyclo:

@@ -29,7 +29,7 @@ func (s *seatService) GetByHall(ctx context.Context, hallID string, filters dto.
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -98,7 +98,7 @@ func (s *seatService) GetByID(ctx context.Context, id string) (*dto.SeatResponse
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -130,7 +130,7 @@ func (s *seatService) Create(ctx context.Context, seat dto.CreateSeatRequest) (s
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -159,7 +159,7 @@ func (s *seatService) Update(ctx context.Context, id string, seat dto.UpdateSeat
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -186,7 +186,7 @@ func (s *seatService) Delete(ctx context.Context, id string) error {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 

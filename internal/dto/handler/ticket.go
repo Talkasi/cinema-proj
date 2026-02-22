@@ -5,7 +5,6 @@ import (
 	"cw/internal/domain/service"
 	dto "cw/internal/dto/models"
 	"cw/internal/utils"
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -20,31 +19,23 @@ func NewTicketHandler(ts *service.TicketService) *TicketHandler {
 	return &TicketHandler{ticketService: ts}
 }
 
-// @Summary Получить билеты
-// @Description Возвращает пагинированный список билетов с фильтрацией
-// @Tags Билеты
+// @Summary Poluchit bilety
+// @Description Vozvraschaet paginirovannyy spisok biletov s filtratsiey
+// @Tags Bilety
 // @Produce json
-// @Param page query int false "Номер страницы" default(1) minimum(1)
-// @Param limit query int false "Количество элементов на странице" default(20) minimum(1) maximum(100)
-// @Param ticket_Status query string false "Фильтр по статусу билета (можно указать несколько через запятую)"
-// @Param movie_show_id query string false "UUID сеанса"
-// @Param price_min query number false "Минимальная цена билета"
-// @Param price_max query number false "Максимальная цена билета"
-// @Param seat_id query string false "Фильтр по ID места (можно указать несколько через запятую)"
-// @Param user_id query string false "Фильтр по ID пользователя (можно указать несколько через запятую)"
-// @Success 200 {object} dto.PaginatedTicketResponse "Список билетов"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
+// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
+// @Param ticket_Status query string false "Filtr po statusu bileta (mozhno ukazat neskolko cherez zapyatuyu)"
+// @Param movie_show_id query string false "UUID seansa"
+// @Param price_min query number false "Minimalnaya tsena bileta"
+// @Param price_max query number false "Maksimalnaya tsena bileta"
+// @Param seat_id query string false "Filtr po ID mesta (mozhno ukazat neskolko cherez zapyatuyu)"
+// @Param user_id query string false "Filtr po ID polzovatelya (mozhno ukazat neskolko cherez zapyatuyu)"
+// @Success 200 {object} dto.PaginatedTicketResponse "Spisok biletov"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /tickets [get]
 func (th *TicketHandler) GetTickets(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
+	page, limit := parsePaginationParams(r)
 
 	dtoFilters := dto.TicketFilters{
 		Status:      splitCommaSeparated(r.URL.Query().Get("ticket_Status")),
@@ -73,20 +64,19 @@ func (th *TicketHandler) GetTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+	if err := writeJSON(w, http.StatusOK, result); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 }
 
-// @Summary Получить билет по ID
-// @Description Возвращает информацию о билете по его идентификатору
-// @Tags Билеты
+// @Summary Poluchit bilet po ID
+// @Description Vozvraschaet informatsiyu o bilete po ego identifikatoru
+// @Tags Bilety
 // @Produce json
-// @Param id path string true "UUID билета"
-// @Success 200 {object} dto.TicketResponse "Информация о билете"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID bileta"
+// @Success 200 {object} dto.TicketResponse "Informatsiya o bilete"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /tickets/{id} [get]
 func (th *TicketHandler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -96,31 +86,30 @@ func (th *TicketHandler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(ticket); err != nil {
-		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+	if err := writeJSON(w, http.StatusOK, ticket); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 }
 
-// @Summary Создать билет на сеанс
-// @Description Создает новый билет для указанного киносеанса (только для авторизованных пользователей)
-// @Tags Билеты
+// @Summary Sozdat bilet na seans
+// @Description Sozdaet novyy bilet dlya ukazannogo kinoseansa (tolko dlya avtorizovannykh polzovateley)
+// @Tags Bilety
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param movie_show_id path string true "UUID киносеанса"
-// @Param ticket body dto.CreateTicketRequest true "Данные билета"
-// @Success 201 {object} dto.CreateResponse "Билет создан"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param movie_show_id path string true "UUID kinoseansa"
+// @Param ticket body dto.CreateTicketRequest true "Dannye bileta"
+// @Success 201 {object} dto.CreateResponse "Bilet sozdan"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /movie-shows/{movie_show_id}/tickets [post]
 func (th *TicketHandler) CreateTicketForMovieShow(w http.ResponseWriter, r *http.Request) {
 	movieShowID := chi.URLParam(r, "movie_show_id")
 
 	var req dto.CreateTicketRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -132,33 +121,31 @@ func (th *TicketHandler) CreateTicketForMovieShow(w http.ResponseWriter, r *http
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
-		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+	if err := writeJSON(w, http.StatusCreated, dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 }
 
-// @Summary Обновить статус билета
-// @Description Обновляет статус билета (бронирование/покупка)
-// @Tags Билеты
+// @Summary Obnovit status bileta
+// @Description Obnovlyaet status bileta (bronirovanie/pokupka)
+// @Tags Bilety
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID билета"
-// @Param Status body dto.UpdateStatusRequest true "Данные статуса билета"
-// @Success 200 "Статус билета обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID bileta"
+// @Param Status body dto.UpdateStatusRequest true "Dannye statusa bileta"
+// @Success 200 "Status bileta obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /tickets/{id} [patch]
 func (th *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateStatusRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -171,14 +158,14 @@ func (th *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Удалить билет
-// @Description Удаляет билет по идентификатору (только для администраторов или владельца)
-// @Tags Билеты
+// @Summary Udalit bilet
+// @Description Udalyaet bilet po identifikatoru (tolko dlya administratorov ili vladeltsa)
+// @Tags Bilety
 // @Security BearerAuth
-// @Param id path string true "UUID билета"
-// @Success 204 "Билет удален"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID bileta"
+// @Success 204 "Bilet udalen"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /tickets/{id} [delete]
 func (th *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

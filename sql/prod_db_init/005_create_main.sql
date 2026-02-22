@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS genres (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(64) NOT NULL UNIQUE,
     description VARCHAR(1000) NOT NULL,
-    CONSTRAINT valid_name CHECK (name ~ '^[A-Za-zА-Яа-яЁё\s-]+$' AND name ~ '\S'),
+    CONSTRAINT valid_name CHECK (name ~ '^[A-Za-zA-Yaa-yaEe\s-]+$' AND name ~ '\S'),
     CONSTRAINT valid_description CHECK (description ~ '\S')
 );
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS halls (
     name VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(1000),
     CONSTRAINT valid_name CHECK (
-        name ~ '^[a-zA-Zа-яА-Я0-9\s\.\-_#№]+$' AND
+        name ~ '^[a-zA-Za-yaA-Ya0-9\s\.\-_#№]+$' AND
         name ~ '\S' AND
         length(name) <= 100
     ),
@@ -75,10 +75,10 @@ CREATE TYPE language_enum AS ENUM (
     'French',
     'German',
     'Italian',
-    'Русский'
+    'Russkiy'
 );
 
-CREATE TABLE IF NOT EXISTS movie_shows ( -- Тут надо проверять при вставке, что не конфликтуют показы между собой
+CREATE TABLE IF NOT EXISTS movie_shows ( -- Tut nado proveryat pri vstavke, chto ne konfliktuyut pokazy mezhdu soboy
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     movie_id UUID REFERENCES movies(id),
     hall_id UUID REFERENCES halls(id),
@@ -104,7 +104,7 @@ BEGIN
              NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > start_time)
         )
     ) THEN
-        RAISE EXCEPTION 'Невозможно запланировать показ, поскольку в это время кинозал будет занят показом другого фильма или будет проводиться уборка';
+        RAISE EXCEPTION 'Nevozmozhno zaplanirovat pokaz, poskolku v eto vremya kinozal budet zanyat pokazom drugogo filma ili budet provoditsya uborka';
     END IF;
 
     RETURN NEW;
@@ -165,13 +165,13 @@ CREATE TABLE IF NOT EXISTS tickets (
 CREATE OR REPLACE FUNCTION update_box_office_revenue()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Если статус билета изменился на "Купленный"
+    -- Esli status bileta izmenilsya na "Kuplennyy"
     IF NEW.ticket_Status = 'Purchased' AND OLD.ticket_Status <> 'Purchased' THEN
         UPDATE movies
         SET box_office_revenue = box_office_revenue + NEW.price
         WHERE id = (SELECT movie_id FROM movie_shows WHERE id = NEW.movie_show_id);
     
-    -- Если статус билета изменился с "Купленного" на другой статус
+    -- Esli status bileta izmenilsya s "Kuplennogo" na drugoy status
     ELSIF OLD.ticket_Status = 'Purchased' AND NEW.ticket_Status <> 'Purchased' THEN
         UPDATE movies
         SET box_office_revenue = box_office_revenue - OLD.price
@@ -235,7 +235,7 @@ BEGIN
     RETURN v_show_id;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE EXCEPTION 'Ошибка при создании сеанса: %', SQLERRM;
+        RAISE EXCEPTION 'Oshibka pri sozdanii seansa: %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -249,7 +249,7 @@ CREATE OR REPLACE PROCEDURE update_movie(
     p_genre_ids UUID[]
 ) LANGUAGE plpgsql AS $$
 BEGIN
-    -- Обновляем основные данные фильма
+    -- Obnovlyaem osnovnye dannye filma
     UPDATE movies 
     SET 
         title = p_title,
@@ -259,7 +259,7 @@ BEGIN
         release_date = p_release_date
     WHERE id = p_movie_id;
     
-    -- Обновляем жанры
+    -- Obnovlyaem zhanry
     DELETE FROM movies_genres 
     WHERE movie_id = p_movie_id 
     AND genre_id NOT IN (SELECT unnest(p_genre_ids));

@@ -81,7 +81,7 @@ func (r *SeatRepository) buildFilterClauses(hallId string, filters domain.SeatFi
 		argPos++
 	}
 
-	_ = argPos  // Mark as used to avoid linter error
+	_ = argPos // Mark as used to avoid linter error
 
 	return whereClauses, args, nil
 }

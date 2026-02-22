@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Rate, Counter } from 'k6/metrics';
 
-// Кастомные метрики
+// Kastomnye metriki
 const responseTime = new Trend('post_user_registration_response_time');
 const requestCount = new Counter('total_post_requests');
 const errorCount = new Counter('total_post_errors');
@@ -25,7 +25,7 @@ export const options = {
 };
 
 export default function () {
-  // POST запрос: регистрация нового пользователя (не требует внешних ID)
+  // POST zapros: registratsiya novogo polzovatelya (ne trebuet vneshnikh ID)
   const timestamp = Date.now();
   const testEmail = `degradation_test_user_${timestamp}_${__VU}_${__ITER}@example.com`;
   const registerPayload = JSON.stringify({
@@ -52,5 +52,5 @@ export default function () {
   
   responseTime.add(postRegisterRes.timings.duration);
 
-  sleep(Math.random() * 2 + 1); // Небольшая задержка между запросами
+  sleep(Math.random() * 2 + 1); // Nebolshaya zaderzhka mezhdu zaprosami
 }

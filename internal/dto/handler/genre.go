@@ -5,9 +5,6 @@ import (
 	"cw/internal/domain/service"
 	dto "cw/internal/dto/models"
 	"cw/internal/utils"
-	"strconv"
-
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -21,28 +18,20 @@ func NewGenreHandler(gs *service.GenreService) *GenreHandler {
 	return &GenreHandler{genreService: gs}
 }
 
-// @Summary Получить список жанров
-// @Description Возвращает пагинированный список всех жанров с фильтрацией
-// @Tags Жанры
+// @Summary Poluchit spisok zhanrov
+// @Description Vozvraschaet paginirovannyy spisok vsekh zhanrov s filtratsiey
+// @Tags Zhanry
 // @Produce json
-// @Param page query int false "Номер страницы" default(1) minimum(1)
-// @Param limit query int false "Количество элементов на странице" default(20) minimum(1) maximum(100)
-// @Param name query string false "Поиск по названию жанра (регистронезависимый поиск вхождений)"
-// @Param description query string false "Поиск по описанию жанра (регистронезависимый поиск вхождений)"
-// @Success 200 {object} dto.PaginatedGenreResponse "Список жанров"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
-// @Failure 500 {object} dto.ErrorResponse "Ошибка сервера"
+// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
+// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
+// @Param name query string false "Poisk po nazvaniyu zhanra (registronezavisimyy poisk vkhozhdeniy)"
+// @Param description query string false "Poisk po opisaniyu zhanra (registronezavisimyy poisk vkhozhdeniy)"
+// @Success 200 {object} dto.PaginatedGenreResponse "Spisok zhanrov"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Failure 500 {object} dto.ErrorResponse "Server error"
 // @Router /genres [get]
 func (g *GenreHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
+	page, limit := parsePaginationParams(r)
 
 	dtoFilters := dto.GenreFilters{
 		Name:        r.URL.Query().Get("name"),
@@ -57,20 +46,19 @@ func (g *GenreHandler) GetGenres(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+	if err := writeJSON(w, http.StatusOK, result); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 }
 
-// @Summary Получить жанр по ID
-// @Description Возвращает информацию о жанре по его идентификатору
-// @Tags Жанры
+// @Summary Poluchit zhanr po ID
+// @Description Vozvraschaet informatsiyu o zhanre po ego identifikatoru
+// @Tags Zhanry
 // @Produce json
-// @Param id path string true "UUID жанра"
-// @Success 200 {object} dto.GenreResponse "Информация о жанре"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID zhanra"
+// @Success 200 {object} dto.GenreResponse "Informatsiya o zhanre"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /genres/{id} [get]
 func (g *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -80,28 +68,27 @@ func (g *GenreHandler) GetGenreByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(genre); err != nil {
-		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+	if err := writeJSON(w, http.StatusOK, genre); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 }
 
-// @Summary Создать жанр
-// @Description Создает новый жанр (только для администраторов)
-// @Tags Жанры
+// @Summary Sozdat zhanr
+// @Description Sozdaet novyy zhanr (tolko dlya administratorov)
+// @Tags Zhanry
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param genre body dto.CreateGenreRequest true "Данные жанра"
-// @Success 201 {object} dto.CreateResponse "Жанр создан"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param genre body dto.CreateGenreRequest true "Dannye zhanra"
+// @Success 201 {object} dto.CreateResponse "Zhanr sozdan"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /genres [post]
 func (g *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateGenreRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -113,33 +100,31 @@ func (g *GenreHandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(dto.CreateResponse{ID: result.ID}); err != nil {
-		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+	if err := writeJSON(w, http.StatusCreated, dto.CreateResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 }
 
-// @Summary Обновить жанр
-// @Description Обновляет информацию о жанре (только для администраторов)
-// @Tags Жанры
+// @Summary Obnovit zhanr
+// @Description Obnovlyaet informatsiyu o zhanre (tolko dlya administratorov)
+// @Tags Zhanry
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID жанра"
-// @Param genre body dto.UpdateGenreRequest true "Новые данные жанра"
-// @Success 200 "Жанр обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID zhanra"
+// @Param genre body dto.UpdateGenreRequest true "Novye dannye zhanra"
+// @Success 200 "Zhanr obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /genres/{id} [put]
 func (g *GenreHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateGenreRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -152,14 +137,14 @@ func (g *GenreHandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Удалить жанр
-// @Description Удаляет жанр по идентификатору (только для администраторов)
-// @Tags Жанры
+// @Summary Udalit zhanr
+// @Description Udalyaet zhanr po identifikatoru (tolko dlya administratorov)
+// @Tags Zhanry
 // @Security BearerAuth
-// @Param id path string true "UUID жанра"
-// @Success 204 "Жанр удален"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID zhanra"
+// @Success 204 "Zhanr udalen"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /genres/{id} [delete]
 func (g *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

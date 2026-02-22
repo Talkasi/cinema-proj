@@ -13,61 +13,61 @@ BEGIN
     SELECT id INTO new_user_id FROM users LIMIT 1;
     SELECT id, price INTO ticket_id, ticket_price FROM tickets WHERE movie_show_id = show_id LIMIT 1;
     
-    -- Запоминаем начальные сборы
+    -- Zapominaem nachalnye sbory
     SELECT box_office_revenue INTO initial_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
     
-    -- Тест: Available → Purchased
+    -- Test: Available → Purchased
     UPDATE tickets SET ticket_Status = 'Purchased'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 1: Available → Purchased, Revenue изменился с % на % (ожидалось +%)', initial_revenue, new_revenue, ticket_price;
+    RAISE NOTICE 'Test 1: Available → Purchased, Revenue izmenilsya s % na % (ozhidalos +%)', initial_revenue, new_revenue, ticket_price;
 
-    -- Запоминаем новый доход
+    -- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: Purchased → Available
+    -- Test: Purchased → Available
     UPDATE tickets SET ticket_status = 'Available'::ticket_status_enum, user_id = NULL WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 2: Purchased → Available, Revenue изменился с % на % (ожидалось -%)', initial_revenue, new_revenue, ticket_price;
+    RAISE NOTICE 'Test 2: Purchased → Available, Revenue izmenilsya s % na % (ozhidalos -%)', initial_revenue, new_revenue, ticket_price;
 
-    -- Запоминаем новый доход
+    -- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: Available → Reserved
+    -- Test: Available → Reserved
     UPDATE tickets SET ticket_status = 'Reserved'::ticket_status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 3: Available → Reserved, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
+    RAISE NOTICE 'Test 3: Available → Reserved, Revenue izmenilsya s % na % (ozhidalos 0)', initial_revenue, new_revenue;
 
-    -- Запоминаем новый доход
+    -- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: Reserved → Purchased
+    -- Test: Reserved → Purchased
     UPDATE tickets SET ticket_Status = 'Purchased'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 4: Reserved → Purchased, Revenue изменился с % на % (ожидалось +%)', initial_revenue, new_revenue, ticket_price;
+    RAISE NOTICE 'Test 4: Reserved → Purchased, Revenue izmenilsya s % na % (ozhidalos +%)', initial_revenue, new_revenue, ticket_price;
 
-    -- Запоминаем новый доход
+    -- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: Purchased → Reserved
+    -- Test: Purchased → Reserved
     UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 5: Purchased → Reserved, Revenue изменился с % на % (ожидалось -%)', initial_revenue, new_revenue, ticket_price;
+    RAISE NOTICE 'Test 5: Purchased → Reserved, Revenue izmenilsya s % na % (ozhidalos -%)', initial_revenue, new_revenue, ticket_price;
 
-    -- Запоминаем новый доход
+    -- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: Reserved → Available
+    -- Test: Reserved → Available
     UPDATE tickets SET ticket_Status = 'Available'::ticket_Status_enum, user_id = NULL WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 6: Reserved → Available, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
+    RAISE NOTICE 'Test 6: Reserved → Available, Revenue izmenilsya s % na % (ozhidalos 0)', initial_revenue, new_revenue;
 
-	-- Запоминаем новый доход
+	-- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: price + 100
+    -- Test: price + 100
     UPDATE tickets SET price = price + 100 WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 7: price + 100, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
+    RAISE NOTICE 'Test 7: price + 100, Revenue izmenilsya s % na % (ozhidalos 0)', initial_revenue, new_revenue;
 
 END $$;
 
@@ -87,29 +87,29 @@ BEGIN
     SELECT id INTO new_user_id FROM users LIMIT 1;
     SELECT id, price INTO ticket_id, ticket_price FROM tickets WHERE movie_show_id = show_id LIMIT 1;
     
-    -- Запоминаем начальные сборы
+    -- Zapominaem nachalnye sbory
     SELECT box_office_revenue INTO initial_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
 
-    -- Тест: Available → Reserved
+    -- Test: Available → Reserved
     UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 1: Available → Reserved, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
+    RAISE NOTICE 'Test 1: Available → Reserved, Revenue izmenilsya s % na % (ozhidalos 0)', initial_revenue, new_revenue;
 
-    -- Запоминаем новый доход
+    -- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: Purchased → Reserved
+    -- Test: Purchased → Reserved
     UPDATE tickets SET ticket_Status = 'Reserved'::ticket_Status_enum, user_id = new_user_id WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 2: Purchased → Reserved, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
+    RAISE NOTICE 'Test 2: Purchased → Reserved, Revenue izmenilsya s % na % (ozhidalos 0)', initial_revenue, new_revenue;
 
-	-- Запоминаем новый доход
+	-- Zapominaem novyy dokhod
     initial_revenue := new_revenue;
 
-    -- Тест: price + 100
+    -- Test: price + 100
     UPDATE tickets SET price = price + 100 WHERE id = ticket_id;
     SELECT box_office_revenue INTO new_revenue FROM movies WHERE id = (SELECT movie_id FROM movie_shows WHERE id = show_id);
-    RAISE NOTICE 'Тест 3: price + 100, Revenue изменился с % на % (ожидалось 0)', initial_revenue, new_revenue;
+    RAISE NOTICE 'Test 3: price + 100, Revenue izmenilsya s % na % (ozhidalos 0)', initial_revenue, new_revenue;
 END $$;
 
 SET ROLE cinema_admin;
@@ -128,7 +128,7 @@ DECLARE
     v_seat_type_id UUID;
     v_base_user_id UUID;
 BEGIN
-    -- Создаем тестовые данные
+    -- Sozdaem testovye dannye
     INSERT INTO screen_types (name, description, price_modifier)
     VALUES ('Standard', 'Standard screen', 1.0)
     RETURNING id INTO v_screen_type_id;
@@ -141,7 +141,7 @@ BEGIN
     VALUES ('Standard', 'Standard seat', 1.0)
     RETURNING id INTO v_seat_type_id;
     
-    -- Добавляем тестовые места
+    -- Dobavlyaem testovye mesta
     INSERT INTO seats (hall_id, seat_type_id, row_number, seat_number)
     VALUES 
         (v_hall_id, v_seat_type_id, 1, 1),
@@ -155,7 +155,7 @@ BEGIN
     VALUES ('Test Movie', '02:00:00', 'Test Description', 12, '2023-01-01')
     RETURNING id INTO v_movie_id;
 
-    -- Создаем тестовый сеанс и сохраняем его ID
+    -- Sozdaem testovyy seans i sokhranyaem ego ID
     SELECT create_movie_show_with_tickets(
         v_movie_id, 
         v_hall_id, 
@@ -164,11 +164,11 @@ BEGIN
         300.00
     ) INTO v_existing_show_id;
     
-    RAISE NOTICE 'Создан тестовый сеанс с ID: %', v_existing_show_id;
+    RAISE NOTICE 'Sozdan testovyy seans s ID: %', v_existing_show_id;
     
-    RAISE NOTICE '=== Тестирование граничных условий ===';
+    RAISE NOTICE '=== Testirovanie granichnykh usloviy ===';
     
-    -- 1. Начало сразу после уборки (успех)
+    -- 1. Nachalo srazu posle uborki (uspekh)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) + 
                           (SELECT duration FROM movies WHERE id = v_movie_id) + v_cleanup_time;
@@ -177,13 +177,13 @@ BEGIN
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum)
         RETURNING id INTO v_new_show_id;
         
-        RAISE NOTICE 'Тест 1: Начало сразу после уборки - УСПЕХ (сеанс %)', v_new_show_id;
+        RAISE NOTICE 'Test 1: Nachalo srazu posle uborki - USPEKh (seans %)', v_new_show_id;
         DELETE FROM movie_shows WHERE id = v_new_show_id;
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 1: Начало сразу после уборки - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 1: Nachalo srazu posle uborki - OShIBKA: %', SQLERRM;
     END;
     
-    -- 2. Конец уборки = начало другого сеанса (успех)
+    -- 2. Konets uborki = nachalo drugogo seansa (uspekh)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) + 
                           (SELECT duration FROM movies WHERE id = v_movie_id) + v_cleanup_time;
@@ -192,39 +192,39 @@ BEGIN
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum)
         RETURNING id INTO v_new_show_id;
         
-        RAISE NOTICE 'Тест 2: Конец уборки = начало другого - УСПЕХ (сеанс %)', v_new_show_id;
+        RAISE NOTICE 'Test 2: Konets uborki = nachalo drugogo - USPEKh (seans %)', v_new_show_id;
         DELETE FROM movie_shows WHERE id = v_new_show_id;
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 2: Конец уборки = начало другого - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 2: Konets uborki = nachalo drugogo - OShIBKA: %', SQLERRM;
     END;
     
-    RAISE NOTICE '=== Тестирование конфликтных сценариев ===';
+    RAISE NOTICE '=== Testirovanie konfliktnykh stsenariev ===';
     
-    -- 3. Полное вложение интервала (ошибка)
+    -- 3. Polnoe vlozhenie intervala (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) + INTERVAL '30 minutes';
         
         INSERT INTO movie_shows (movie_id, hall_id, start_time, language)
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum);
         
-        RAISE NOTICE 'Тест 3: Полное вложение интервала - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 3: Polnoe vlozhenie intervala - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 3: Полное вложение интервала - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 3: Polnoe vlozhenie intervala - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 4. Частичное перекрытие (левый край) (ошибка)
+    -- 4. Chastichnoe perekrytie (levyy kray) (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) - INTERVAL '30 minutes';
         
         INSERT INTO movie_shows (movie_id, hall_id, start_time, language)
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum);
         
-        RAISE NOTICE 'Тест 4: Частичное перекрытие (левый край) - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 4: Chastichnoe perekrytie (levyy kray) - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 4: Частичное перекрытие (левый край) - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 4: Chastichnoe perekrytie (levyy kray) - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 5. Частичное перекрытие (правый край) (ошибка)
+    -- 5. Chastichnoe perekrytie (pravyy kray) (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) + 
                          (SELECT duration FROM movies WHERE id = v_movie_id) - INTERVAL '30 minutes';
@@ -232,38 +232,38 @@ BEGIN
         INSERT INTO movie_shows (movie_id, hall_id, start_time, language)
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum);
         
-        RAISE NOTICE 'Тест 5: Частичное перекрытие (правый край) - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 5: Chastichnoe perekrytie (pravyy kray) - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 5: Частичное перекрытие (правый край) - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 5: Chastichnoe perekrytie (pravyy kray) - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 6. Полное совпадение интервалов (ошибка)
+    -- 6. Polnoe sovpadenie intervalov (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id);
         
         INSERT INTO movie_shows (movie_id, hall_id, start_time, language)
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum);
         
-        RAISE NOTICE 'Тест 6: Полное совпадение интервалов - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 6: Polnoe sovpadenie intervalov - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 6: Полное совпадение интервалов - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 6: Polnoe sovpadenie intervalov - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 7. Полное перекрытие интервалов (ошибка)
+    -- 7. Polnoe perekrytie intervalov (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) - INTERVAL '30 minutes';
         
         INSERT INTO movie_shows (movie_id, hall_id, start_time, language)
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum);
         
-        RAISE NOTICE 'Тест 7: Полное перекрытие интервалов - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 7: Polnoe perekrytie intervalov - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 7: Полное перекрытие интервалов - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 7: Polnoe perekrytie intervalov - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    RAISE NOTICE '=== Тестирование неконфликтных сценариев ===';
+    RAISE NOTICE '=== Testirovanie nekonfliktnykh stsenariev ===';
     
-    -- 8. Раздельные интервалы (успех)
+    -- 8. Razdelnye intervaly (uspekh)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_existing_show_id) + 
                           (SELECT duration FROM movies WHERE id = v_movie_id) + v_cleanup_time + INTERVAL '1 hour';
@@ -272,21 +272,21 @@ BEGIN
         VALUES (v_movie_id, v_hall_id, v_test_start_time, 'English'::language_enum)
         RETURNING id INTO v_new_show_id;
         
-        RAISE NOTICE 'Тест 8: Раздельные интервалы - УСПЕХ (сеанс %)', v_new_show_id;
+        RAISE NOTICE 'Test 8: Razdelnye intervaly - USPEKh (seans %)', v_new_show_id;
         DELETE FROM movie_shows WHERE id = v_new_show_id;
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 8: Раздельные интервалы - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 8: Razdelnye intervaly - OShIBKA: %', SQLERRM;
     END;
     
-    -- 9. Изменение невременных атрибутов (успех)
+    -- 9. Izmenenie nevremennykh atributov (uspekh)
     BEGIN
-        UPDATE movie_shows SET language = 'Русский'::language_enum WHERE id = v_existing_show_id;
-        RAISE NOTICE 'Тест 9: Изменение невременных атрибутов - УСПЕХ';
+        UPDATE movie_shows SET language = 'Russkiy'::language_enum WHERE id = v_existing_show_id;
+        RAISE NOTICE 'Test 9: Izmenenie nevremennykh atributov - USPEKh';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 9: Изменение невременных атрибутов - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 9: Izmenenie nevremennykh atributov - OShIBKA: %', SQLERRM;
     END;
     
-    -- Очистка
+    -- Ochistka
     DELETE FROM tickets WHERE movie_show_id = v_existing_show_id;
     DELETE FROM movie_shows WHERE id = v_existing_show_id;
     DELETE FROM seats WHERE hall_id = v_hall_id;
@@ -311,7 +311,7 @@ DECLARE
     v_seat_type_id UUID;
     v_base_user_id UUID;
 BEGIN
-    -- Создаем тестовые данные
+    -- Sozdaem testovye dannye
     INSERT INTO screen_types (name, description, price_modifier)
     VALUES ('Standard', 'Standard screen', 1.0)
     RETURNING id INTO v_screen_type_id;
@@ -324,7 +324,7 @@ BEGIN
     VALUES ('Standard', 'Standard seat', 1.0)
     RETURNING id INTO v_seat_type_id;
     
-    -- Добавляем тестовые места
+    -- Dobavlyaem testovye mesta
     INSERT INTO seats (hall_id, seat_type_id, row_number, seat_number)
     VALUES 
         (v_hall_id, v_seat_type_id, 1, 1),
@@ -338,7 +338,7 @@ BEGIN
     VALUES ('Test Movie', '02:00:00', 'Test Description', 12, '2023-01-01')
     RETURNING id INTO v_movie_id;
 
-    -- Создаем базовый сеанс для тестирования
+    -- Sozdaem bazovyy seans dlya testirovaniya
     SELECT create_movie_show_with_tickets(
         v_movie_id, 
         v_hall_id, 
@@ -347,7 +347,7 @@ BEGIN
         300.00
     ) INTO v_base_show_id;
     
-    -- Создаем тестовый сеанс, который будем обновлять
+    -- Sozdaem testovyy seans, kotoryy budem obnovlyat
     SELECT create_movie_show_with_tickets(
         v_movie_id, 
         v_hall_id, 
@@ -356,11 +356,11 @@ BEGIN
         300.00
     ) INTO v_test_show_id;
     
-    RAISE NOTICE '=== ТЕСТИРОВАНИЕ ОБНОВЛЕНИЯ СЕАНСОВ ===';
+    RAISE NOTICE '=== TESTIROVANIE OBNOVLENIYa SEANSOV ===';
     
-    RAISE NOTICE '=== Граничные условия ===';
+    RAISE NOTICE '=== Granichnye usloviya ===';
     
-    -- 1. Обновление: начало сразу после уборки (успех)
+    -- 1. Obnovlenie: nachalo srazu posle uborki (uspekh)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) + 
                           (SELECT duration FROM movies WHERE id = v_movie_id) + v_cleanup_time;
@@ -369,12 +369,12 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 1: Обновление - начало сразу после уборки - УСПЕХ';
+        RAISE NOTICE 'Test 1: Obnovlenie - nachalo srazu posle uborki - USPEKh';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 1: Обновление - начало сразу после уборки - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 1: Obnovlenie - nachalo srazu posle uborki - OShIBKA: %', SQLERRM;
     END;
     
-    -- 2. Обновление: конец уборки = начало другого сеанса (успех)
+    -- 2. Obnovlenie: konets uborki = nachalo drugogo seansa (uspekh)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) + 
                           (SELECT duration FROM movies WHERE id = v_movie_id) + v_cleanup_time;
@@ -383,14 +383,14 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 2: Обновление - конец уборки = начало другого - УСПЕХ';
+        RAISE NOTICE 'Test 2: Obnovlenie - konets uborki = nachalo drugogo - USPEKh';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 2: Обновление - конец уборки = начало другого - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 2: Obnovlenie - konets uborki = nachalo drugogo - OShIBKA: %', SQLERRM;
     END;
     
-    RAISE NOTICE '=== Конфликтные сценарии ===';
+    RAISE NOTICE '=== Konfliktnye stsenarii ===';
     
-    -- 3. Обновление: полное вложение интервала (ошибка)
+    -- 3. Obnovlenie: polnoe vlozhenie intervala (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) + INTERVAL '30 minutes';
         
@@ -398,12 +398,12 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 3: Обновление - полное вложение интервала - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 3: Obnovlenie - polnoe vlozhenie intervala - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 3: Обновление - полное вложение интервала - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 3: Obnovlenie - polnoe vlozhenie intervala - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 4. Обновление: частичное перекрытие (левый край) (ошибка)
+    -- 4. Obnovlenie: chastichnoe perekrytie (levyy kray) (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) - INTERVAL '30 minutes';
         
@@ -411,12 +411,12 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 4: Обновление - частичное перекрытие (левый край) - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 4: Obnovlenie - chastichnoe perekrytie (levyy kray) - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 4: Обновление - частичное перекрытие (левый край) - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 4: Obnovlenie - chastichnoe perekrytie (levyy kray) - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 5. Обновление: частичное перекрытие (правый край) (ошибка)
+    -- 5. Obnovlenie: chastichnoe perekrytie (pravyy kray) (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) + 
                          (SELECT duration FROM movies WHERE id = v_movie_id) - INTERVAL '30 minutes';
@@ -425,12 +425,12 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 5: Обновление - частичное перекрытие (правый край) - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 5: Obnovlenie - chastichnoe perekrytie (pravyy kray) - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 5: Обновление - частичное перекрытие (правый край) - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 5: Obnovlenie - chastichnoe perekrytie (pravyy kray) - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 6. Обновление: полное совпадение интервалов (ошибка)
+    -- 6. Obnovlenie: polnoe sovpadenie intervalov (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id);
         
@@ -438,12 +438,12 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 6: Обновление - полное совпадение интервалов - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 6: Obnovlenie - polnoe sovpadenie intervalov - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 6: Обновление - полное совпадение интервалов - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 6: Obnovlenie - polnoe sovpadenie intervalov - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 7. Обновление: полное перекрытие интервалов (ошибка)
+    -- 7. Obnovlenie: polnoe perekrytie intervalov (oshibka)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) - INTERVAL '30 minutes';
         
@@ -451,14 +451,14 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 7: Обновление - полное перекрытие интервалов - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 7: Obnovlenie - polnoe perekrytie intervalov - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 7: Обновление - полное перекрытие интервалов - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 7: Obnovlenie - polnoe perekrytie intervalov - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    RAISE NOTICE '=== Неконфликтные сценарии ===';
+    RAISE NOTICE '=== Nekonfliktnye stsenarii ===';
     
-    -- 8. Обновление: раздельные интервалы (успех)
+    -- 8. Obnovlenie: razdelnye intervaly (uspekh)
     BEGIN
         v_test_start_time := (SELECT start_time FROM movie_shows WHERE id = v_base_show_id) + 
                           (SELECT duration FROM movies WHERE id = v_movie_id) + v_cleanup_time + INTERVAL '1 hour';
@@ -467,23 +467,23 @@ BEGIN
         SET start_time = v_test_start_time 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 8: Обновление - раздельные интервалы - УСПЕХ';
+        RAISE NOTICE 'Test 8: Obnovlenie - razdelnye intervaly - USPEKh';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 8: Обновление - раздельные интервалы - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 8: Obnovlenie - razdelnye intervaly - OShIBKA: %', SQLERRM;
     END;
     
-    -- 9. Обновление: изменение невременных атрибутов (успех)
+    -- 9. Obnovlenie: izmenenie nevremennykh atributov (uspekh)
     BEGIN
         UPDATE movie_shows 
-        SET language = 'Русский'::language_enum 
+        SET language = 'Russkiy'::language_enum 
         WHERE id = v_test_show_id;
         
-        RAISE NOTICE 'Тест 9: Обновление - изменение невременных атрибутов - УСПЕХ';
+        RAISE NOTICE 'Test 9: Obnovlenie - izmenenie nevremennykh atributov - USPEKh';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 9: Обновление - изменение невременных атрибутов - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 9: Obnovlenie - izmenenie nevremennykh atributov - OShIBKA: %', SQLERRM;
     END;
     
-    -- Очистка
+    -- Ochistka
     DELETE FROM tickets WHERE movie_show_id IN (v_base_show_id, v_test_show_id);
     DELETE FROM movie_shows WHERE id IN (v_base_show_id, v_test_show_id);
     DELETE FROM seats WHERE hall_id = v_hall_id;
@@ -510,7 +510,7 @@ DECLARE
     v_screen_modifier DECIMAL(5,2);
     v_seat_modifier DECIMAL(5,2);
 BEGIN
-    -- Подготовка тестовых данных
+    -- Podgotovka testovykh dannykh
     INSERT INTO movies (title, duration, description, age_limit, release_date)
     VALUES ('Test Movie', '02:00:00', 'Test Description', 12, '2023-01-01')
     RETURNING id INTO v_movie_id;
@@ -528,17 +528,17 @@ BEGIN
            ('VIP', 'VIP seat', 1.5)
     RETURNING id INTO v_seat_modifier;
     
-    -- Тест 1: Зал с 10 одинаковыми местами (ряды != места в ряду)
-    RAISE NOTICE '=== Тест 1: Зал с 10 одинаковыми местами (ряды != места в ряду) ===';
+    -- Test 1: Zal s 10 odinakovymi mestami (ryady != mesta v ryadu)
+    RAISE NOTICE '=== Test 1: Zal s 10 odinakovymi mestami (ryady != mesta v ryadu) ===';
     
-    -- Добавляем 10 мест (2 ряда по 5 мест)
+    -- Dobavlyaem 10 mest (2 ryada po 5 mest)
     INSERT INTO seats (hall_id, seat_type_id, row_number, seat_number)
     SELECT v_hall_id, v_seat_modifier, 
-           (n-1)/5 + 1, -- 2 ряда (1 и 2)
-           (n-1)%5 + 1  -- 5 мест в ряду
+           (n-1)/5 + 1, -- 2 ryada (1 i 2)
+           (n-1)%5 + 1  -- 5 mest v ryadu
     FROM generate_series(1, 10) AS n;
     
-    -- Вызываем функцию
+    -- Vyzyvaem funktsiyu
     SELECT create_movie_show_with_tickets(
         v_movie_id, 
         v_hall_id, 
@@ -547,32 +547,32 @@ BEGIN
         300.00
     ) INTO v_show_id;
     
-    -- Проверяем результаты
+    -- Proveryaem rezultaty
     SELECT COUNT(*) INTO v_tickets_count FROM tickets WHERE movie_show_id = v_show_id;
     SELECT price INTO v_actual_price FROM tickets WHERE movie_show_id = v_show_id LIMIT 1;
     v_expected_price := ROUND(300.00 * 1.2 * 1.0, 2); -- base_price * screen_mod * seat_mod
     
-    RAISE NOTICE 'ID сеанса: %', v_show_id;
-    RAISE NOTICE 'Создано билетов: % (ожидалось 10)', v_tickets_count;
-    RAISE NOTICE 'Цена билета: % (ожидалось %)', v_actual_price, v_expected_price;
+    RAISE NOTICE 'ID seansa: %', v_show_id;
+    RAISE NOTICE 'Sozdano biletov: % (ozhidalos 10)', v_tickets_count;
+    RAISE NOTICE 'Tsena bileta: % (ozhidalos %)', v_actual_price, v_expected_price;
     
-    -- Очистка
+    -- Ochistka
     DELETE FROM tickets WHERE movie_show_id = v_show_id;
     DELETE FROM movie_shows WHERE id = v_show_id;
     DELETE FROM seats WHERE hall_id = v_hall_id;
     
     
-    -- Тест 2: Зал с 25 одинаковыми местами (ряды == места в ряду)
-    RAISE NOTICE '=== Тест 2: Зал с 25 одинаковыми местами (ряды == места в ряду) ===';
+    -- Test 2: Zal s 25 odinakovymi mestami (ryady == mesta v ryadu)
+    RAISE NOTICE '=== Test 2: Zal s 25 odinakovymi mestami (ryady == mesta v ryadu) ===';
     
-    -- Добавляем 25 мест (5x5)
+    -- Dobavlyaem 25 mest (5x5)
     INSERT INTO seats (hall_id, seat_type_id, row_number, seat_number)
     SELECT v_hall_id, v_seat_modifier, 
-           (n-1)/5 + 1, -- 5 рядов
-           (n-1)%5 + 1   -- 5 мест в ряду
+           (n-1)/5 + 1, -- 5 ryadov
+           (n-1)%5 + 1   -- 5 mest v ryadu
     FROM generate_series(1, 25) AS n;
     
-    -- Вызываем функцию
+    -- Vyzyvaem funktsiyu
     SELECT create_movie_show_with_tickets(
         v_movie_id, 
         v_hall_id, 
@@ -581,29 +581,29 @@ BEGIN
         350.00
     ) INTO v_show_id;
     
-    -- Проверяем результаты
+    -- Proveryaem rezultaty
     SELECT COUNT(*) INTO v_tickets_count FROM tickets WHERE movie_show_id = v_show_id;
-    RAISE NOTICE 'Создано билетов: % (ожидалось 25)', v_tickets_count;
+    RAISE NOTICE 'Sozdano biletov: % (ozhidalos 25)', v_tickets_count;
     
-    -- Очистка
+    -- Ochistka
     DELETE FROM tickets WHERE movie_show_id = v_show_id;
     DELETE FROM movie_shows WHERE id = v_show_id;
     DELETE FROM seats WHERE hall_id = v_hall_id;
     
     
-    -- Тест 3: Зал с разными типами мест
-    RAISE NOTICE '=== Тест 3: Зал с разными типами мест ===';
+    -- Test 3: Zal s raznymi tipami mest
+    RAISE NOTICE '=== Test 3: Zal s raznymi tipami mest ===';
     
-    -- Добавляем 10 мест (5 стандартных, 5 VIP)
+    -- Dobavlyaem 10 mest (5 standartnykh, 5 VIP)
     INSERT INTO seats (hall_id, seat_type_id, row_number, seat_number)
     SELECT v_hall_id, 
            CASE WHEN n <= 5 THEN (SELECT id FROM seat_types WHERE name = 'Standard') 
                 ELSE (SELECT id FROM seat_types WHERE name = 'VIP') END,
-           1, -- все в одном ряду
+           1, -- vse v odnom ryadu
            n
     FROM generate_series(1, 10) AS n;
     
-    -- Вызываем функцию
+    -- Vyzyvaem funktsiyu
     SELECT create_movie_show_with_tickets(
         v_movie_id, 
         v_hall_id, 
@@ -612,7 +612,7 @@ BEGIN
         400.00
     ) INTO v_show_id;
     
-    -- Проверяем разные цены
+    -- Proveryaem raznye tseny
     SELECT price INTO v_actual_price 
     FROM tickets 
     WHERE movie_show_id = v_show_id 
@@ -620,7 +620,7 @@ BEGIN
     LIMIT 1;
     
     v_expected_price := ROUND(400.00 * 1.2 * 1.0, 2);
-    RAISE NOTICE 'Цена стандартного места: % (ожидалось %)', v_actual_price, v_expected_price;
+    RAISE NOTICE 'Tsena standartnogo mesta: % (ozhidalos %)', v_actual_price, v_expected_price;
     
     SELECT price INTO v_actual_price 
     FROM tickets 
@@ -629,48 +629,48 @@ BEGIN
     LIMIT 1;
     
     v_expected_price := ROUND(400.00 * 1.2 * 1.5, 2);
-    RAISE NOTICE 'Цена VIP места: % (ожидалось %)', v_actual_price, v_expected_price;
+    RAISE NOTICE 'Tsena VIP mesta: % (ozhidalos %)', v_actual_price, v_expected_price;
     
-    -- Очистка
+    -- Ochistka
     DELETE FROM tickets WHERE movie_show_id = v_show_id;
     DELETE FROM movie_shows WHERE id = v_show_id;
     DELETE FROM seats WHERE hall_id = v_hall_id;
     
     
-    -- Тест 4: Ошибочные сценарии
-    RAISE NOTICE '=== Тест 4: Ошибочные сценарии ===';
+    -- Test 4: Oshibochnye stsenarii
+    RAISE NOTICE '=== Test 4: Oshibochnye stsenarii ===';
     
-    -- 4.1 Несуществующий movie_id
+    -- 4.1 Nesuschestvuyuschiy movie_id
     BEGIN
         SELECT create_movie_show_with_tickets(
-            gen_random_uuid(), -- случайный UUID
+            gen_random_uuid(), -- sluchaynyy UUID
             v_hall_id, 
             NOW() + INTERVAL '4 hours', 
             'English'::language_enum, 
             300.00
         ) INTO v_show_id;
         
-        RAISE NOTICE 'Тест 4.1: Несуществующий movie_id - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 4.1: Nesuschestvuyuschiy movie_id - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 4.1: Несуществующий movie_id - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 4.1: Nesuschestvuyuschiy movie_id - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 4.2 Несуществующий hall_id
+    -- 4.2 Nesuschestvuyuschiy hall_id
     BEGIN
         SELECT create_movie_show_with_tickets(
             v_movie_id, 
-            gen_random_uuid(), -- случайный UUID
+            gen_random_uuid(), -- sluchaynyy UUID
             NOW() + INTERVAL '4 hours', 
             'English'::language_enum, 
             300.00
         ) INTO v_show_id;
         
-        RAISE NOTICE 'Тест 4.2: Несуществующий hall_id - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 4.2: Nesuschestvuyuschiy hall_id - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 4.2: Несуществующий hall_id - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 4.2: Nesuschestvuyuschiy hall_id - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 4.3 Отрицательная базовая цена
+    -- 4.3 Otritsatelnaya bazovaya tsena
     BEGIN
         SELECT create_movie_show_with_tickets(
             v_movie_id, 
@@ -680,12 +680,12 @@ BEGIN
             -10.00
         ) INTO v_show_id;
         
-        RAISE NOTICE 'Тест 4.3: Отрицательная базовая цена - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 4.3: Otritsatelnaya bazovaya tsena - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 4.3: Отрицательная базовая цена - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 4.3: Otritsatelnaya bazovaya tsena - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
-    -- 4.4 Нулевая базовая цена
+    -- 4.4 Nulevaya bazovaya tsena
     BEGIN
         SELECT create_movie_show_with_tickets(
             v_movie_id, 
@@ -695,18 +695,18 @@ BEGIN
             0.00
         ) INTO v_show_id;
         
-        RAISE NOTICE 'Тест 4.4: Нулевая базовая цена - НЕПРОЙДЕН (ожидалась ошибка)';
+        RAISE NOTICE 'Test 4.4: Nulevaya bazovaya tsena - NEPROYDEN (ozhidalas oshibka)';
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 4.4: Нулевая базовая цена - ОШИБКА (ожидаемо): %', SQLERRM;
+        RAISE NOTICE 'Test 4.4: Nulevaya bazovaya tsena - OShIBKA (ozhidaemo): %', SQLERRM;
     END;
     
     
-    -- Тест 5: Специальные случаи
-    RAISE NOTICE '=== Тест 5: Специальные случаи ===';
+    -- Test 5: Spetsialnye sluchai
+    RAISE NOTICE '=== Test 5: Spetsialnye sluchai ===';
     
-    -- 5.1 Зал без мест
+    -- 5.1 Zal bez mest
     BEGIN
-        -- Создаем пустой зал
+        -- Sozdaem pustoy zal
         INSERT INTO halls (screen_type_id, name, description)
         VALUES (v_screen_modifier, 'Empty Hall', 'Empty Hall Description')
         RETURNING id INTO v_hall_id;
@@ -719,19 +719,19 @@ BEGIN
             300.00
         ) INTO v_show_id;
         
-        -- Проверяем
+        -- Proveryaem
         SELECT COUNT(*) INTO v_tickets_count FROM tickets WHERE movie_show_id = v_show_id;
-        RAISE NOTICE 'Тест 5.1: Зал без мест - сеанс создан с ID: %', v_show_id;
-        RAISE NOTICE 'Создано билетов: % (ожидалось 0)', v_tickets_count;
+        RAISE NOTICE 'Test 5.1: Zal bez mest - seans sozdan s ID: %', v_show_id;
+        RAISE NOTICE 'Sozdano biletov: % (ozhidalos 0)', v_tickets_count;
         
-        -- Очистка
+        -- Ochistka
         DELETE FROM movie_shows WHERE id = v_show_id;
         DELETE FROM halls WHERE id = v_hall_id;
     EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Тест 5.1: Зал без мест - ОШИБКА: %', SQLERRM;
+        RAISE NOTICE 'Test 5.1: Zal bez mest - OShIBKA: %', SQLERRM;
     END;
     
-    -- Окончательная очистка
+    -- Okonchatelnaya ochistka
     DELETE FROM seat_types WHERE id IN (SELECT id FROM seat_types WHERE name IN ('Standard', 'VIP'));
     DELETE FROM halls WHERE id = v_hall_id;
     DELETE FROM screen_types WHERE id = v_screen_modifier;

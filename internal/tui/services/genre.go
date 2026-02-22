@@ -45,7 +45,7 @@ func (s *genreService) GetAll(ctx context.Context, filters dto.GenreFilters, pag
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -74,7 +74,7 @@ func (s *genreService) GetByID(ctx context.Context, id string) (*dto.GenreRespon
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -104,7 +104,7 @@ func (s *genreService) Create(ctx context.Context, genre dto.CreateGenreRequest)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -133,7 +133,7 @@ func (s *genreService) Update(ctx context.Context, id string, genre dto.UpdateGe
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -160,7 +160,7 @@ func (s *genreService) Delete(ctx context.Context, id string) error {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 

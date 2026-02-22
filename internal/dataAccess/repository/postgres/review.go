@@ -78,7 +78,7 @@ func (r *ReviewRepository) buildFilterClauses(filters domain.ReviewFilters) ([]s
 		argPos++
 	}
 
-	_ = argPos  // Mark as used to avoid linter error
+	_ = argPos // Mark as used to avoid linter error
 
 	return whereClauses, args, nil
 }

@@ -20,17 +20,17 @@ func NewHallHandler(hs *service.HallService) *HallHandler {
 	return &HallHandler{hallService: hs}
 }
 
-// @Summary Получить список залов
-// @Description Возвращает пагинированный список всех кинозалов с фильтрацией
-// @Tags Кинозалы
+// @Summary Poluchit spisok zalov
+// @Description Vozvraschaet paginirovannyy spisok vsekh kinozalov s filtratsiey
+// @Tags Kinozaly
 // @Produce json
-// @Param page query int false "Номер страницы" default(1) minimum(1)
-// @Param limit query int false "Количество элементов на странице" default(20) minimum(1) maximum(100)
-// @Param name query string false "Поиск по названию зала (регистронезависимый поиск вхождений)"
-// @Param screen_type_id query string false "Фильтр по ID типа экрана"
-// @Param description query string false "Поиск по описанию зала (регистронезависимый поиск вхождений)"
-// @Success 200 {object} dto.PaginatedHallResponse "Список залов"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
+// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
+// @Param name query string false "Poisk po nazvaniyu zala (registronezavisimyy poisk vkhozhdeniy)"
+// @Param screen_type_id query string false "Filtr po ID tipa ekrana"
+// @Param description query string false "Poisk po opisaniyu zala (registronezavisimyy poisk vkhozhdeniy)"
+// @Success 200 {object} dto.PaginatedHallResponse "Spisok zalov"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /halls [get]
 func (h *HallHandler) GetHalls(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -64,13 +64,13 @@ func (h *HallHandler) GetHalls(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Получить зал по ID
-// @Description Возвращает информацию о кинозале по его идентификатору
-// @Tags Кинозалы
+// @Summary Poluchit zal po ID
+// @Description Vozvraschaet informatsiyu o kinozale po ego identifikatoru
+// @Tags Kinozaly
 // @Produce json
-// @Param id path string true "UUID зала"
-// @Success 200 {object} dto.HallResponse "Информация о зале"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID zala"
+// @Success 200 {object} dto.HallResponse "Informatsiya o zale"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /halls/{id} [get]
 func (h *HallHandler) GetHallByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -87,21 +87,21 @@ func (h *HallHandler) GetHallByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Создать зал
-// @Description Создает новый кинозал (только для администраторов)
-// @Tags Кинозалы
+// @Summary Sozdat zal
+// @Description Sozdaet novyy kinozal (tolko dlya administratorov)
+// @Tags Kinozaly
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param hall body dto.CreateHallRequest true "Данные зала"
-// @Success 201 {object} dto.CreateResponse "Зал создан"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param hall body dto.CreateHallRequest true "Dannye zala"
+// @Success 201 {object} dto.CreateResponse "Zal sozdan"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /halls [post]
 func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateHallRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -121,25 +121,25 @@ func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Обновить зал
-// @Description Обновляет информацию о кинозале (только для администраторов)
-// @Tags Кинозалы
+// @Summary Obnovit zal
+// @Description Obnovlyaet informatsiyu o kinozale (tolko dlya administratorov)
+// @Tags Kinozaly
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID зала"
-// @Param hall body dto.UpdateHallRequest true "Новые данные зала"
-// @Success 200 "Зал обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID zala"
+// @Param hall body dto.UpdateHallRequest true "Novye dannye zala"
+// @Success 200 "Zal obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /halls/{id} [put]
 func (h *HallHandler) UpdateHall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateHallRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -152,14 +152,14 @@ func (h *HallHandler) UpdateHall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Удалить зал
-// @Description Удаляет кинозал по идентификатору (только для администраторов)
-// @Tags Кинозалы
+// @Summary Udalit zal
+// @Description Udalyaet kinozal po identifikatoru (tolko dlya administratorov)
+// @Tags Kinozaly
 // @Security BearerAuth
-// @Param id path string true "UUID зала"
-// @Success 204 "Зал удален"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID zala"
+// @Success 204 "Zal udalen"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /halls/{id} [delete]
 func (h *HallHandler) DeleteHall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

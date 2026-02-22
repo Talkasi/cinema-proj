@@ -1,0 +1,4 @@
+*.svg linguist-vendored
+docs/docs.go linguist-generated
+docs/swagger.json linguist-generated
+docs/swagger.yaml linguist-generated

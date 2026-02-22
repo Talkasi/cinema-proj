@@ -20,19 +20,19 @@ func NewReviewHandler(rs *service.ReviewService) *ReviewHandler {
 	return &ReviewHandler{reviewService: rs}
 }
 
-// @Summary Получить отзывы
-// @Description Возвращает пагинированный список отзывов с фильтрацией
-// @Tags Отзывы
+// @Summary Poluchit otzyvy
+// @Description Vozvraschaet paginirovannyy spisok otzyvov s filtratsiey
+// @Tags Otzyvy
 // @Produce json
-// @Param page query int false "Номер страницы" default(1) minimum(1)
-// @Param limit query int false "Количество элементов на странице" default(20) minimum(1) maximum(100)
-// @Param movie_id query string false "Поиск по фильму"
-// @Param user_id query string false "Поиск по пользователю"
-// @Param rating_min query int false "Минимальный рейтинг" minimum(1) maximum(10)
-// @Param rating_max query int false "Максимальный рейтинг" minimum(1) maximum(10)
-// @Param comment query string false "Поиск по тексту отзыва (регистронезависимый поиск вхождений)"
-// @Success 200 {object} dto.PaginatedReviewResponse "Список отзывов"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
+// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
+// @Param movie_id query string false "Poisk po filmu"
+// @Param user_id query string false "Poisk po polzovatelyu"
+// @Param rating_min query int false "Minimalnyy reyting" minimum(1) maximum(10)
+// @Param rating_max query int false "Maksimalnyy reyting" minimum(1) maximum(10)
+// @Param comment query string false "Poisk po tekstu otzyva (registronezavisimyy poisk vkhozhdeniy)"
+// @Success 200 {object} dto.PaginatedReviewResponse "Spisok otzyvov"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /reviews [get]
 func (rh *ReviewHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -78,24 +78,24 @@ func (rh *ReviewHandler) GetReviews(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Создать отзыв к фильму
-// @Description Создает новый отзыв для указанного фильма (только для авторизованных пользователей)
-// @Tags Отзывы
+// @Summary Sozdat otzyv k filmu
+// @Description Sozdaet novyy otzyv dlya ukazannogo filma (tolko dlya avtorizovannykh polzovateley)
+// @Tags Otzyvy
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param movie_id path string true "UUID фильма"
-// @Param review body dto.CreateReviewRequest true "Данные отзыва"
-// @Success 201 {object} dto.CreateResponse "Отзыв создан"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param movie_id path string true "UUID filma"
+// @Param review body dto.CreateReviewRequest true "Dannye otzyva"
+// @Success 201 {object} dto.CreateResponse "Otzyv sozdan"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /movies/{movie_id}/reviews [post]
 func (rh *ReviewHandler) CreateReviewForMovie(w http.ResponseWriter, r *http.Request) {
 	movieID := chi.URLParam(r, "movie_id")
 
 	var req dto.CreateReviewRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -115,25 +115,25 @@ func (rh *ReviewHandler) CreateReviewForMovie(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// @Summary Обновить отзыв
-// @Description Полностью обновляет информацию об отзыве (только автор отзыва или администратор)
-// @Tags Отзывы
+// @Summary Obnovit otzyv
+// @Description Polnostyu obnovlyaet informatsiyu ob otzyve (tolko avtor otzyva ili administrator)
+// @Tags Otzyvy
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param review_id path string true "UUID отзыва"
-// @Param review body dto.UpdateReviewRequest true "Новые данные отзыва"
-// @Success 200 "Отзыв обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param review_id path string true "UUID otzyva"
+// @Param review body dto.UpdateReviewRequest true "Novye dannye otzyva"
+// @Success 200 "Otzyv obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /reviews/{review_id} [put]
 func (rh *ReviewHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 	reviewID := chi.URLParam(r, "review_id")
 
 	var req dto.UpdateReviewRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -146,14 +146,14 @@ func (rh *ReviewHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Удалить отзыв
-// @Description Удаляет отзыв по идентификатору (только автор отзыва или администратор)
-// @Tags Отзывы
+// @Summary Udalit otzyv
+// @Description Udalyaet otzyv po identifikatoru (tolko avtor otzyva ili administrator)
+// @Tags Otzyvy
 // @Security BearerAuth
-// @Param review_id path string true "UUID отзыва"
-// @Success 204 "Отзыв удален"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param review_id path string true "UUID otzyva"
+// @Success 204 "Otzyv udalen"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /reviews/{review_id} [delete]
 func (rh *ReviewHandler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 	reviewID := chi.URLParam(r, "review_id")

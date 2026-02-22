@@ -25,7 +25,7 @@ type CreateResponse struct {
 }
 
 type ErrorResponse struct {
-	Message string `json:"message" example:"Произошла ошибка при обработке запроса"`
+	Message string `json:"message" example:"Proizoshla oshibka pri obrabotke zaprosa"`
 }
 
 type PaginatedResponse[T any] struct {

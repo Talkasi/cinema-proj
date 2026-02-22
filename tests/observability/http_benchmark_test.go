@@ -78,13 +78,13 @@ func benchmarkHTTP(b *testing.B, tracing bool, logMode string) {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Recoverer)
 
-router.Get("/genres", func(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`[{"id":1,"name":"Drama"},{"id":2,"name":"Comedy"}]`))
-})
+	router.Get("/genres", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`[{"id":1,"name":"Drama"},{"id":2,"name":"Comedy"}]`))
+	})
 
-req := httptest.NewRequest(http.MethodGet, "/genres", nil)
+	req := httptest.NewRequest(http.MethodGet, "/genres", nil)
 
 	b.ReportAllocs()
 	b.ResetTimer()

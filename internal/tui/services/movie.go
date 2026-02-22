@@ -43,7 +43,7 @@ func (s *movieService) GetAll(ctx context.Context, filters dto.MovieFilters, pag
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -72,7 +72,7 @@ func (s *movieService) GetByID(ctx context.Context, id string) (*dto.MovieRespon
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -102,7 +102,7 @@ func (s *movieService) Create(ctx context.Context, movie dto.CreateMovieRequest)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -131,7 +131,7 @@ func (s *movieService) Update(ctx context.Context, id string, movie dto.UpdateMo
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 
@@ -158,7 +158,7 @@ func (s *movieService) Delete(ctx context.Context, id string) error {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+			log.Printf("Error closing response body: %v", err)
 		}
 	}()
 

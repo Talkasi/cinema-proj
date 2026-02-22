@@ -4,57 +4,57 @@ import { Trend } from 'k6/metrics';
 import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 // ===================================================================================
-// 1. НАСТРОЙКА ТЕСТА
+// 1. NASTROYKA TESTA
 // ===================================================================================
 
-// Создаем кастомные метрики (Trend) для измерения времени ответа каждого важного эндпоинта.
-// Это позволит вам детально анализировать производительность разных частей вашего API.
+// Sozdaem kastomnye metriki (Trend) dlya izmereniya vremeni otveta kazhdogo vazhnogo endpointa.
+// Eto pozvolit vam detalno analizirovat proizvoditelnost raznykh chastey vashego API.
 const trends = {
-  // Аутентификация
+  // Autentifikatsiya
   register: new Trend('T_01_Register'),
   login: new Trend('T_02_Login'),
-  // Чтение (легкие и средние запросы)
+  // Chtenie (legkie i srednie zaprosy)
   getMoviesList: new Trend('T_03_GetMoviesList'),
   getMovieDetails: new Trend('T_04_GetMovieDetails'),
   getMovieShows: new Trend('T_05_GetMovieShows'),
-  // Запись (тяжелые запросы)
+  // Zapis (tyazhelye zaprosy)
   postReview: new Trend('T_06_PostReview'),
 };
 
 export const options = {
-  // Сценарий нагрузки, имитирующий поиск "точки деградации" и работу под нагрузкой.
-  // VU - Virtual User (виртуальный пользователь)
+  // Stsenariy nagruzki, imitiruyuschiy poisk "tochki degradatsii" i rabotu pod nagruzkoy.
+  // VU - Virtual User (virtualnyy polzovatel)
   stages: [
-    { duration: '1m', target: 50 },   // 1. Плавный рост до 50 VU в течение 1 минуты
-    { duration: '3m', target: 50 },   // 2. Работа на стабильной нагрузке (50 VU) в течение 3 минут
-    { duration: '1m', target: 150 },  // 3. Плавный рост до 150 VU (ищем точку деградации)
-    { duration: '3m', target: 150 },  // 4. Работа на пиковой нагрузке (150 VU)
-    { duration: '1m', target: 0 },    // 5. Плавное снижение нагрузки до 0 для проверки восстановления
+    { duration: '1m', target: 50 },   // 1. Plavnyy rost do 50 VU v techenie 1 minuty
+    { duration: '3m', target: 50 },   // 2. Rabota na stabilnoy nagruzke (50 VU) v techenie 3 minut
+    { duration: '1m', target: 150 },  // 3. Plavnyy rost do 150 VU (ischem tochku degradatsii)
+    { duration: '3m', target: 150 },  // 4. Rabota na pikovoy nagruzke (150 VU)
+    { duration: '1m', target: 0 },    // 5. Plavnoe snizhenie nagruzki do 0 dlya proverki vosstanovleniya
   ],
-  // Пороги (thresholds) - это критерии успеха/провала теста.
-  // Тест будет считаться проваленным, если хотя бы одно из условий не выполнится.
+  // Porogi (thresholds) - eto kriterii uspekha/provala testa.
+  // Test budet schitatsya provalennym, esli khotya by odno iz usloviy ne vypolnitsya.
   thresholds: {
-    'http_req_failed': ['rate<0.05'], // Доля ошибок должна быть меньше 5%
-    'http_req_duration': ['p(95)<1500'], // 95% запросов должны выполняться быстрее 1.5 секунд
-    // Персональные пороги для разных эндпоинтов
-    'T_03_GetMoviesList_p(95)': ['p(95)<1000'], // Список фильмов < 1с
-    'T_04_GetMovieDetails_p(95)': ['p(95)<500'],  // Детали фильма < 0.5с
-    'T_06_PostReview_p(95)': ['p(95)<2000'],    // Отправка отзыва < 2с
+    'http_req_failed': ['rate<0.05'], // Dolya oshibok dolzhna byt menshe 5%
+    'http_req_duration': ['p(95)<1500'], // 95% zaprosov dolzhny vypolnyatsya bystree 1.5 sekund
+    // Personalnye porogi dlya raznykh endpointov
+    'T_03_GetMoviesList_p(95)': ['p(95)<1000'], // Spisok filmov < 1s
+    'T_04_GetMovieDetails_p(95)': ['p(95)<500'],  // Detali filma < 0.5s
+    'T_06_PostReview_p(95)': ['p(95)<2000'],    // Otpravka otzyva < 2s
   },
 };
 
-const BASE_URL = 'http://app:8080/api/v1'; // URL вашего API внутри Docker-сети
+const BASE_URL = 'http://app:8080/api/v1'; // URL vashego API vnutri Docker-seti
 const USER_PASSWORD = 'superSecurePassword123';
 
 // ===================================================================================
-// 2. ФУНКЦИЯ SETUP - выполняется один раз перед началом тестов
+// 2. FUNKTsIYa SETUP - vypolnyaetsya odin raz pered nachalom testov
 // ===================================================================================
 
-// В `setup` мы подготовим данные, которые будут использоваться во всем тесте.
-// Например, создадим одного "тестового" пользователя, чтобы под его токеном выполнять
-// действия, требующие авторизации (например, оставлять отзывы).
+// V `setup` my podgotovim dannye, kotorye budut ispolzovatsya vo vsem teste.
+// Naprimer, sozdadim odnogo "testovogo" polzovatelya, chtoby pod ego tokenom vypolnyat
+// deystviya, trebuyuschie avtorizatsii (naprimer, ostavlyat otzyvy).
 export function setup() {
-  console.log('Подготовка тестовых данных...');
+  console.log('Podgotovka testovykh dannykh...');
 
   const registerPayload = JSON.stringify({
     name: 'Benchmark Admin User',
@@ -65,11 +65,11 @@ export function setup() {
 
   const headers = { 'Content-Type': 'application/json' };
   
-  // Регистрируем админ-пользователя
+  // Registriruem admin-polzovatelya
   const regRes = http.post(`${BASE_URL}/auth/register`, registerPayload, { headers });
   check(regRes, { 'Admin user registered successfully': (r) => r.status === 201 });
   
-  // Логинимся и получаем токен
+  // Loginimsya i poluchaem token
   const loginPayload = JSON.stringify({
     email: JSON.parse(registerPayload).email,
     password_hash: USER_PASSWORD,
@@ -80,19 +80,19 @@ export function setup() {
 
   const token = loginRes.json('token');
   if (!token) {
-    throw new Error('Не удалось получить токен аутентификации в setup');
+    throw new Error('Ne udalos poluchit token autentifikatsii v setup');
   }
 
-  console.log('Подготовка завершена. Получен токен для тестов.');
-  return { authToken: token }; // Передаем токен в основную функцию теста
+  console.log('Podgotovka zavershena. Poluchen token dlya testov.');
+  return { authToken: token }; // Peredaem token v osnovnuyu funktsiyu testa
 }
 
 
 // ===================================================================================
-// 3. ОСНОВНАЯ ФУНКЦИЯ ТЕСТА - выполняется в цикле каждым VU
+// 3. OSNOVNAYa FUNKTsIYa TESTA - vypolnyaetsya v tsikle kazhdym VU
 // ===================================================================================
 export default function (data) {
-  // `data` содержит результат из `setup`, то есть наш токен.
+  // `data` soderzhit rezultat iz `setup`, to est nash token.
   const authToken = data.authToken;
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -100,11 +100,11 @@ export default function (data) {
   };
 
   //----------------------------------------------------------------
-  // СЦЕНАРИЙ 1: Поведение неавторизованного пользователя (самый частый случай)
-  // Пользователь просматривает список фильмов, выбирает один и смотрит его детали.
+  // STsENARIY 1: Povedenie neavtorizovannogo polzovatelya (samyy chastyy sluchay)
+  // Polzovatel prosmatrivaet spisok filmov, vybiraet odin i smotrit ego detali.
   //----------------------------------------------------------------
   group('Unauthenticated User Flow', function () {
-    // 1. Получаем первую страницу списка фильмов (средняя нагрузка)
+    // 1. Poluchaem pervuyu stranitsu spiska filmov (srednyaya nagruzka)
     const getMoviesRes = http.get(`${BASE_URL}/movies?limit=10`);
     
     check(getMoviesRes, { 'GET /movies status is 200': (r) => r.status === 200 });
@@ -112,35 +112,35 @@ export default function (data) {
 
     const movies = getMoviesRes.json('data');
     
-    // Если список фильмов пришел и он не пустой, выполняем следующие шаги
+    // Esli spisok filmov prishel i on ne pustoy, vypolnyaem sleduyuschie shagi
     if (movies && movies.length > 0) {
-      // Выбираем случайный фильм из списка
+      // Vybiraem sluchaynyy film iz spiska
       const randomMovie = randomItem(movies);
       
-      // 2. Получаем детали этого фильма (легкая нагрузка)
+      // 2. Poluchaem detali etogo filma (legkaya nagruzka)
       const getMovieDetailRes = http.get(`${BASE_URL}/movies/${randomMovie.id}`);
       check(getMovieDetailRes, { 'GET /movies/{id} status is 200': (r) => r.status === 200 });
       trends.getMovieDetails.add(getMovieDetailRes.timings.duration);
 
-      // 3. Получаем расписание сеансов для этого фильма (средняя нагрузка с фильтром)
+      // 3. Poluchaem raspisanie seansov dlya etogo filma (srednyaya nagruzka s filtrom)
       const getShowsRes = http.get(`${BASE_URL}/movie-shows?movie_id=${randomMovie.id}`);
       check(getShowsRes, { 'GET /movie-shows status is 200': (r) => r.status === 200 });
       trends.getMovieShows.add(getShowsRes.timings.duration);
 
     } else {
-        console.log("Не удалось получить список фильмов, пропускаем шаги.");
+        console.log("Ne udalos poluchit spisok filmov, propuskaem shagi.");
     }
 
-    sleep(2); // Пользователь "думает" 2 секунды
+    sleep(2); // Polzovatel "dumaet" 2 sekundy
   });
 
 
   //----------------------------------------------------------------
-  // СЦЕНАРИЙ 2: Поведение авторизованного пользователя
-  // Пользователь оставляет отзыв к случайному фильму.
+  // STsENARIY 2: Povedenie avtorizovannogo polzovatelya
+  // Polzovatel ostavlyaet otzyv k sluchaynomu filmu.
   //----------------------------------------------------------------
   group('Authenticated User Flow', function () {
-    // Снова получаем список фильмов, чтобы взять ID для отзыва
+    // Snova poluchaem spisok filmov, chtoby vzyat ID dlya otzyva
     const getMoviesRes = http.get(`${BASE_URL}/movies?limit=5`);
     const movies = getMoviesRes.json('data');
 
@@ -148,26 +148,26 @@ export default function (data) {
       const movieToReview = randomItem(movies);
       const reviewPayload = JSON.stringify({
           movie_id: movieToReview.id,
-          user_id: "550e8400-e29b-41d4-a716-446655440001", // В реальном тесте ID надо получать динамически
-          rating: Math.floor(Math.random() * 10) + 1, // Случайный рейтинг от 1 до 10
-          comment: `Отличный фильм! Тест VU: ${__VU}, Итерация: ${__ITER}`
+          user_id: "550e8400-e29b-41d4-a716-446655440001", // V realnom teste ID nado poluchat dinamicheski
+          rating: Math.floor(Math.random() * 10) + 1, // Sluchaynyy reyting ot 1 do 10
+          comment: `Otlichnyy film! Test VU: ${__VU}, Iteratsiya: ${__ITER}`
       });
       
-      // 4. Отправляем отзыв (тяжелая нагрузка, запись в БД)
+      // 4. Otpravlyaem otzyv (tyazhelaya nagruzka, zapis v BD)
       const postReviewRes = http.post(`${BASE_URL}/movies/${movieToReview.id}/reviews`, reviewPayload, { headers: authHeaders });
       check(postReviewRes, { 'POST /reviews status is 201': (r) => r.status === 201 });
       trends.postReview.add(postReviewRes.timings.duration);
     }
-    sleep(3); // Пауза после написания отзыва
+    sleep(3); // Pauza posle napisaniya otzyva
   });
 
 
   //----------------------------------------------------------------
-  // СЦЕНАРИЙ 3: Массовая регистрация и логин
-  // Имитирует приток новых пользователей.
+  // STsENARIY 3: Massovaya registratsiya i login
+  // Imitiruet pritok novykh polzovateley.
   //----------------------------------------------------------------
   group('Authentication Flow', function () {
-    const userEmail = `user_${__VU}_${__ITER}@test.com`; // Уникальный email для каждого VU и итерации
+    const userEmail = `user_${__VU}_${__ITER}@test.com`; // Unikalnyy email dlya kazhdogo VU i iteratsii
     const registerPayload = JSON.stringify({
         name: `User ${__VU} ${__ITER}`,
         email: userEmail,
@@ -175,14 +175,14 @@ export default function (data) {
         birth_date: "1995-05-15",
     });
 
-    // 5. Регистрируем нового пользователя
+    // 5. Registriruem novogo polzovatelya
     const registerRes = http.post(`${BASE_URL}/auth/register`, registerPayload, { headers: { 'Content-Type': 'application/json' } });
     check(registerRes, { 'POST /register status is 201': (r) => r.status === 201 });
     trends.register.add(registerRes.timings.duration);
 
     sleep(1);
 
-    // 6. Логинимся под этим новым пользователем
+    // 6. Loginimsya pod etim novym polzovatelem
     const loginPayload = JSON.stringify({
         email: userEmail,
         password_hash: USER_PASSWORD

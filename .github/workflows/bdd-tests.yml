@@ -17,7 +17,7 @@ jobs:
 
     - name: Run static analysis checks
       run: |
-        bash ./scripts/pre-commit.sh
+        make verify-fast
 
   test:
     runs-on: ubuntu-latest
@@ -106,39 +106,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: bdd-observability
-        path: artifacts/observability
-
-  observability-benchmark:
-    runs-on: ubuntu-latest
-    needs: static-analysis
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-
-    - name: Install dependencies
-      run: |
-        go mod download
-
-    - name: Run HTTP observability benchmarks (20 runs each)
-      env:
-        OUT_DIR: artifacts/observability
-        BENCH_COUNT: 20
-      run: |
-        chmod +x scripts/run_all_http_benchmarks.sh scripts/analyze_observability_benchmarks.py
-        chmod +x scripts/run_bench_http_tracing_*  # ensure executable in CI
-        ./scripts/run_all_http_benchmarks.sh
-
-    - name: Build aggregated observability report
-      run: |
-        mkdir -p artifacts/observability
-        ./scripts/analyze_observability_benchmarks.py artifacts/observability --out "artifacts/observability/observability-report-$(date +%Y%m%d-%H%M%S).md"
-
-    - name: Upload observability artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: observability-report
         path: artifacts/observability

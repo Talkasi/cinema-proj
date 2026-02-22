@@ -20,16 +20,16 @@ func NewScreenTypeHandler(sts *service.ScreenTypeService) *ScreenTypeHandler {
 	return &ScreenTypeHandler{screenTypeService: sts}
 }
 
-// @Summary Получить список типов экранов
-// @Description Возвращает пагинированный список всех типов экранов с фильтрацией
-// @Tags Типы экранов
+// @Summary Poluchit spisok tipov ekranov
+// @Description Vozvraschaet paginirovannyy spisok vsekh tipov ekranov s filtratsiey
+// @Tags Tipy ekranov
 // @Produce json
-// @Param page query int false "Номер страницы" default(1) minimum(1)
-// @Param limit query int false "Количество элементов на странице" default(20) minimum(1) maximum(100)
-// @Param name query string false "Поиск по названию типа экрана (регистронезависимый поиск вхождений)"
-// @Param description query string false "Поиск по описанию типа экрана (регистронезависимый поиск вхождений)"
-// @Success 200 {object} dto.PaginatedScreenTypeResponse "Список типов экранов"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
+// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
+// @Param name query string false "Poisk po nazvaniyu tipa ekrana (registronezavisimyy poisk vkhozhdeniy)"
+// @Param description query string false "Poisk po opisaniyu tipa ekrana (registronezavisimyy poisk vkhozhdeniy)"
+// @Success 200 {object} dto.PaginatedScreenTypeResponse "Spisok tipov ekranov"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /screen-types [get]
 func (st *ScreenTypeHandler) GetScreenTypes(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -62,13 +62,13 @@ func (st *ScreenTypeHandler) GetScreenTypes(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// @Summary Получить тип экрана по ID
-// @Description Возвращает информацию о типе экрана по его идентификатору
-// @Tags Типы экранов
+// @Summary Poluchit tip ekrana po ID
+// @Description Vozvraschaet informatsiyu o tipe ekrana po ego identifikatoru
+// @Tags Tipy ekranov
 // @Produce json
-// @Param id path string true "UUID типа экрана"
-// @Success 200 {object} dto.ScreenTypeResponse "Информация о типе экрана"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID tipa ekrana"
+// @Success 200 {object} dto.ScreenTypeResponse "Informatsiya o tipe ekrana"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /screen-types/{id} [get]
 func (st *ScreenTypeHandler) GetScreenTypeByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -85,21 +85,21 @@ func (st *ScreenTypeHandler) GetScreenTypeByID(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// @Summary Создать тип экрана
-// @Description Создает новый тип экрана (только для администраторов)
-// @Tags Типы экранов
+// @Summary Sozdat tip ekrana
+// @Description Sozdaet novyy tip ekrana (tolko dlya administratorov)
+// @Tags Tipy ekranov
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param screen_type body dto.CreateScreenTypeRequest true "Данные типа экрана"
-// @Success 201 {object} dto.CreateResponse "Тип экрана создан"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param screen_type body dto.CreateScreenTypeRequest true "Dannye tipa ekrana"
+// @Success 201 {object} dto.CreateResponse "Tip ekrana sozdan"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /screen-types [post]
 func (st *ScreenTypeHandler) CreateScreenType(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateScreenTypeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -119,25 +119,25 @@ func (st *ScreenTypeHandler) CreateScreenType(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// @Summary Обновить тип экрана
-// @Description Полностью обновляет информацию о типе экрана (только для администраторов)
-// @Tags Типы экранов
+// @Summary Obnovit tip ekrana
+// @Description Polnostyu obnovlyaet informatsiyu o tipe ekrana (tolko dlya administratorov)
+// @Tags Tipy ekranov
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID типа экрана"
-// @Param screen_type body dto.UpdateScreenTypeRequest true "Новые данные типа экрана"
-// @Success 200 "Тип экрана обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID tipa ekrana"
+// @Param screen_type body dto.UpdateScreenTypeRequest true "Novye dannye tipa ekrana"
+// @Success 200 "Tip ekrana obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /screen-types/{id} [put]
 func (st *ScreenTypeHandler) UpdateScreenType(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateScreenTypeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -150,14 +150,14 @@ func (st *ScreenTypeHandler) UpdateScreenType(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// @Summary Удалить тип экрана
-// @Description Удаляет тип экрана по идентификатору (только для администраторов)
-// @Tags Типы экранов
+// @Summary Udalit tip ekrana
+// @Description Udalyaet tip ekrana po identifikatoru (tolko dlya administratorov)
+// @Tags Tipy ekranov
 // @Security BearerAuth
-// @Param id path string true "UUID типа экрана"
-// @Success 204 "Тип экрана удален"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID tipa ekrana"
+// @Success 204 "Tip ekrana udalen"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /screen-types/{id} [delete]
 func (st *ScreenTypeHandler) DeleteScreenType(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

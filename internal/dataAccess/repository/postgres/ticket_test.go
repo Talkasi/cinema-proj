@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package postgres
 
 import (
@@ -107,7 +110,7 @@ func (s *TicketRepositoryIntegrationTestSuite) createRequiredTestData() TestData
 	futureTime := time.Now().Add(24 * time.Hour)
 	_, err = db.Exec(s.ctx, `
 		INSERT INTO movie_shows (id, movie_id, hall_id, start_time, language) 
-		VALUES ($1, $2, $3, $4, 'Русский')
+		VALUES ($1, $2, $3, $4, 'Russkiy')
 	`, movieShowID, movieID, hallID, futureTime)
 	if err != nil {
 		s.T().Fatalf("Failed to create movie show: %v", err)

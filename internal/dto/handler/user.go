@@ -22,18 +22,18 @@ func NewUserHandler(us *service.UserService) *UserHandler {
 	return &UserHandler{userService: us}
 }
 
-// @Summary Получить список пользователей
-// @Description Возвращает пагинированный список пользователей с фильтрацией (только для администраторов)
-// @Tags Пользователи
+// @Summary Poluchit spisok polzovateley
+// @Description Vozvraschaet paginirovannyy spisok polzovateley s filtratsiey (tolko dlya administratorov)
+// @Tags Polzovateli
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "Номер страницы" default(1) minimum(1)
-// @Param limit query int false "Количество элементов на странице" default(20) minimum(1) maximum(100)
-// @Param name query string false "Фильтр по имени (регистронезависимый поиск)"
-// @Param email query string false "Фильтр по email (регистронезависимый поиск)"
-// @Param is_admin query boolean false "Фильтр по статусу администратора"
-// @Success 200 {object} dto.PaginatedUserResponse "Список пользователей"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
+// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
+// @Param name query string false "Filtr po imeni (registronezavisimyy poisk)"
+// @Param email query string false "Filtr po email (registronezavisimyy poisk)"
+// @Param is_admin query boolean false "Filtr po statusu administratora"
+// @Success 200 {object} dto.PaginatedUserResponse "Spisok polzovateley"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /users [get]
 func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -72,15 +72,15 @@ func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Получить пользователя по ID
-// @Description Возвращает информацию о пользователе (доступно самому пользователю или администратору)
-// @Tags Пользователи
+// @Summary Poluchit polzovatelya po ID
+// @Description Vozvraschaet informatsiyu o polzovatele (dostupno samomu polzovatelyu ili administratoru)
+// @Tags Polzovateli
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID пользователя"
-// @Success 200 {object} dto.UserResponse "Информация о пользователе"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID polzovatelya"
+// @Success 200 {object} dto.UserResponse "Informatsiya o polzovatele"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /users/{id} [get]
 func (uh *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -97,25 +97,25 @@ func (uh *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Обновить пользователя
-// @Description Обновляет информацию о пользователе (доступно самому пользователю или администратору)
-// @Tags Пользователи
+// @Summary Obnovit polzovatelya
+// @Description Obnovlyaet informatsiyu o polzovatele (dostupno samomu polzovatelyu ili administratoru)
+// @Tags Polzovateli
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID пользователя"
-// @Param user body dto.UpdateUserRequest true "Новые данные пользователя"
-// @Success 200 "Пользователь обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID polzovatelya"
+// @Param user body dto.UpdateUserRequest true "Novye dannye polzovatelya"
+// @Success 200 "Polzovatel obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /users/{id} [put]
 func (uh *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -128,25 +128,25 @@ func (uh *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Изменить статус администратора
-// @Description Изменяет статус администратора пользователя (только для администраторов)
-// @Tags Пользователи
+// @Summary Izmenit status administratora
+// @Description Izmenyaet status administratora polzovatelya (tolko dlya administratorov)
+// @Tags Polzovateli
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID пользователя"
-// @Param admin body dto.UpdateAdminStatusRequest true "Статус администратора"
-// @Success 200 "Статус администратора обновлен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID polzovatelya"
+// @Param admin body dto.UpdateAdminStatusRequest true "Status administratora"
+// @Success 200 "Status administratora obnovlen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /users/{id}/role [patch]
 func (uh *UserHandler) UpdateAdminStatus(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateAdminStatusRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -157,14 +157,14 @@ func (uh *UserHandler) UpdateAdminStatus(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// @Summary Удалить пользователя
-// @Description Удаляет пользователя (только для администраторов)
-// @Tags Пользователи
+// @Summary Udalit polzovatelya
+// @Description Udalyaet polzovatelya (tolko dlya administratorov)
+// @Tags Polzovateli
 // @Security BearerAuth
-// @Param id path string true "UUID пользователя"
-// @Success 204 "Пользователь удален"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
-// @Failure 404 {object} dto.ErrorResponse "Ресурс не найден"
+// @Param id path string true "UUID polzovatelya"
+// @Success 204 "Polzovatel udalen"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
 // @Router /users/{id} [delete]
 func (uh *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -176,20 +176,20 @@ func (uh *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// @Summary Регистрация нового пользователя
-// @Description Регистрирует нового пользователя в системе
-// @Tags Аутентификация
+// @Summary Registratsiya novogo polzovatelya
+// @Description Registriruet novogo polzovatelya v sisteme
+// @Tags Autentifikatsiya
 // @Accept json
 // @Produce json
-// @Param user body dto.CreateUserRequest true "Данные для регистрации"
-// @Success 201 {object} dto.RegisterResponse "ID созданного пользователя"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 409 {object} dto.ErrorResponse "Конфликт данных"
+// @Param user body dto.CreateUserRequest true "Dannye dlya registratsii"
+// @Success 201 {object} dto.RegisterResponse "ID sozdannogo polzovatelya"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 409 {object} dto.ErrorResponse "Konflikt dannykh"
 // @Router /auth/register [post]
 func (uh *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -209,20 +209,20 @@ func (uh *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Аутентификация пользователя
-// @Description Аутентифицирует пользователя и возвращает JWT-токен
-// @Tags Аутентификация
+// @Summary Autentifikatsiya polzovatelya
+// @Description Autentifitsiruet polzovatelya i vozvraschaet JWT-token
+// @Tags Autentifikatsiya
 // @Accept json
 // @Produce json
-// @Param credentials body dto.LoginRequest true "Данные для входа"
-// @Success 200 {object} dto.AuthResponse "Успешная аутентификация"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 401 {object} dto.ErrorResponse "Неавторизованный доступ"
+// @Param credentials body dto.LoginRequest true "Dannye dlya vkhoda"
+// @Success 200 {object} dto.AuthResponse "Uspeshnaya autentifikatsiya"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 401 {object} dto.ErrorResponse "Neavtorizovannyy dostup"
 // @Router /auth/login [post]
 func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -241,14 +241,14 @@ func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Включить двухфакторную аутентификацию
-// @Description Включает двухфакторную аутентификацию для текущего пользователя
-// @Tags Аутентификация
+// @Summary Vklyuchit dvukhfaktornuyu autentifikatsiyu
+// @Description Vklyuchaet dvukhfaktornuyu autentifikatsiyu dlya tekuschego polzovatelya
+// @Tags Autentifikatsiya
 // @Produce json
 // @Security BearerAuth
-// @Success 200 "2FA включена"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Success 200 "2FA vklyuchena"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /auth/2fa/enable [post]
 func (uh *UserHandler) Enable2FA(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.UserIDKey).(string)
@@ -261,13 +261,13 @@ func (uh *UserHandler) Enable2FA(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// @Summary Выключить двухфакторную аутентификацию
-// @Description Выключает двухфакторную аутентификацию для текущего пользователя
-// @Tags Аутентификация
+// @Summary Vyklyuchit dvukhfaktornuyu autentifikatsiyu
+// @Description Vyklyuchaet dvukhfaktornuyu autentifikatsiyu dlya tekuschego polzovatelya
+// @Tags Autentifikatsiya
 // @Produce json
 // @Security BearerAuth
-// @Success 200 "2FA выключена"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Success 200 "2FA vyklyuchena"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /auth/2fa/disable [post]
 func (uh *UserHandler) Disable2FA(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.UserIDKey).(string)
@@ -280,13 +280,13 @@ func (uh *UserHandler) Disable2FA(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// @Summary Получить информацию о 2FA
-// @Description Получает информацию о статусе двухфакторной аутентификации текущего пользователя
-// @Tags Аутентификация
+// @Summary Poluchit informatsiyu o 2FA
+// @Description Poluchaet informatsiyu o statuse dvukhfaktornoy autentifikatsii tekuschego polzovatelya
+// @Tags Autentifikatsiya
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} dto.TwoFAInfoResponse "Информация о 2FA"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Success 200 {object} dto.TwoFAInfoResponse "Informatsiya o 2FA"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /auth/2fa/info [get]
 func (uh *UserHandler) Get2FAInfo(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.UserIDKey).(string)
@@ -307,20 +307,20 @@ func (uh *UserHandler) Get2FAInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Подтвердить код 2FA
-// @Description Подтверждает код двухфакторной аутентификации и возвращает токен
-// @Tags Аутентификация
+// @Summary Podtverdit kod 2FA
+// @Description Podtverzhdaet kod dvukhfaktornoy autentifikatsii i vozvraschaet token
+// @Tags Autentifikatsiya
 // @Accept json
 // @Produce json
-// @Param code body dto.Verify2FARequest true "Код 2FA"
-// @Success 200 {object} dto.AuthResponse "Токен аутентификации"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param code body dto.Verify2FARequest true "Kod 2FA"
+// @Success 200 {object} dto.AuthResponse "Token autentifikatsii"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /auth/verify [post]
 func (uh *UserHandler) Verify2FA(w http.ResponseWriter, r *http.Request) {
 	var req dto.Verify2FARequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -343,21 +343,21 @@ func (uh *UserHandler) Verify2FA(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Изменить пароль
-// @Description Позволяет пользователю изменить свой пароль
-// @Tags Пользователи
+// @Summary Izmenit parol
+// @Description Pozvolyaet polzovatelyu izmenit svoy parol
+// @Tags Polzovateli
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param password body dto.UpdatePasswordRequest true "Текущий и новый пароли"
-// @Success 200 "Пароль успешно изменен"
-// @Failure 400 {object} dto.ErrorResponse "Неверный запрос"
-// @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
+// @Param password body dto.UpdatePasswordRequest true "Tekuschiy i novyy paroli"
+// @Success 200 "Parol uspeshno izmenen"
+// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
+// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
 // @Router /users/password [patch]
 func (uh *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	var req dto.UpdatePasswordRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, utils.NewBadRequest("Некорректные данные", err))
+	if err := decodeAndValidateJSONBody(r, &req); err != nil {
+		utils.WriteError(w, err)
 		return
 	}
 
@@ -365,7 +365,7 @@ func (uh *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 
 	err := uh.userService.VerifyCurrentPassword(r.Context(), userID, req.CurrentPassword)
 	if err != nil {
-		utils.WriteError(w, utils.NewForbidden("Текущий пароль неверен", nil))
+		utils.WriteError(w, utils.NewForbidden("Tekuschiy parol neveren", nil))
 		return
 	}
 

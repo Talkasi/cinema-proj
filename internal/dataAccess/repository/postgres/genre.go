@@ -59,7 +59,7 @@ func (r *GenreRepository) buildFilterClauses(filters domain.GenreFilters) ([]str
 		argPos++
 	}
 
-	_ = argPos  // Mark as used to avoid linter error
+	_ = argPos // Mark as used to avoid linter error
 
 	return whereClauses, args, nil
 }

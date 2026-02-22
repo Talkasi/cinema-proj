@@ -65,7 +65,7 @@ func (r *HallRepository) buildFilterClauses(filters domain.HallFilters) ([]strin
 		argPos++
 	}
 
-	_ = argPos  // Mark as used to avoid linter error
+	_ = argPos // Mark as used to avoid linter error
 
 	return whereClauses, args, nil
 }

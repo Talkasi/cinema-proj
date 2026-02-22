@@ -26,8 +26,8 @@ COPY --from=builder /app/scripts ./scripts
 
 RUN chmod -R 777 ./scripts/k6/*.js
 
-COPY docker-entrypoint.sh .
-RUN chmod +x docker-entrypoint.sh
+COPY --from=builder /app/scripts/docker/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 EXPOSE 8080
 

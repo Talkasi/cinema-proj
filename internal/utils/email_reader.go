@@ -43,7 +43,7 @@ func (r *IMAPEmailReader) Connect() (*client.Client, error) {
 
 	if err := c.Login(r.config.SMTPUser, r.config.SMTPPassword); err != nil {
 		if err := c.Logout(); err != nil {
-			log.Printf("Ошибка: %v", err)
+			log.Printf("Error: %v", err)
 		}
 		return nil, fmt.Errorf("failed to login to IMAP server: %v", err)
 	}
@@ -78,7 +78,7 @@ func (r *IMAPEmailReader) ReadRecentEmailWithSubjectAndSender(toEmail, subject, 
 	defer func() {
 		if c != nil {
 			if err := c.Logout(); err != nil {
-				log.Printf("Ошибка: %v", err)
+				log.Printf("Error: %v", err)
 			}
 		}
 	}()

@@ -3,7 +3,7 @@ import { check, sleep, group } from 'k6';
 import { Trend, Rate, Counter } from 'k6/metrics';
 import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
-// Кастомные метрики
+// Kastomnye metriki
 const trends = {
   getMoviesList: new Trend('T_01_GetMoviesList'),
   getMovieDetails: new Trend('T_02_GetMovieDetails'),
@@ -13,7 +13,7 @@ const trends = {
   login: new Trend('T_06_Login'),
 };
 
-// Дополнительные метрики для мониторинга стабильности
+// Dopolnitelnye metriki dlya monitoringa stabilnosti
 const responseTime = new Trend('get_movies_response_time');
 const requestCount = new Counter('total_get_requests');
 const errorCount = new Counter('total_get_errors');
@@ -27,7 +27,7 @@ export const options = {
   //     executor: 'constant-arrival-rate',
   //     rate: 1900,
   //     timeUnit: '1s',
-  //     duration: '3m', // Увеличиваем продолжительность для лучшего анализа
+  //     duration: '3m', // Uvelichivaem prodolzhitelnost dlya luchshego analiza
   //     preAllocatedVUs: 750, // RPS * response time per second = 1900 * 0.49
   //   },
   // },
@@ -37,7 +37,7 @@ export const options = {
       executor: 'constant-arrival-rate',
       rate: 1940,
       timeUnit: '1s',
-      duration: '6m', // Увеличиваем продолжительность для лучшего анализа
+      duration: '6m', // Uvelichivaem prodolzhitelnost dlya luchshego analiza
       preAllocatedVUs: 950, // RPS * response time per second = 1900 * 0.49
     },
   },
@@ -45,7 +45,7 @@ export const options = {
 };
 
 export default function () {
-  // GET запрос: получение списка фильмов (не требует внешних ID)
+  // GET zapros: poluchenie spiska filmov (ne trebuet vneshnikh ID)
   const randomPage = Math.floor(Math.random() * 8) + 1; // Generates a random number between 1 and 80
   const getMoviesRes = http.get(`${BASE_URL}/movies?limit=10&page=${randomPage}`);
   requestCount.add(1);
@@ -63,5 +63,5 @@ export default function () {
   responseTime.add(getMoviesRes.timings.duration);
 
   return
-  // sleep(Math.random() * 2 + 1); // Небольшая задержка между запросами
+  // sleep(Math.random() * 2 + 1); // Nebolshaya zaderzhka mezhdu zaprosami
 }

@@ -1,27 +1,27 @@
 package dto
 
 type GenreFilters struct {
-	Name        string `form:"name" example:"драма"`
-	Description string `form:"description" example:"эмоциональный"`
+	Name        string `form:"name" example:"drama"`
+	Description string `form:"description" example:"emotsionalnyy"`
 }
 
 type CreateGenreRequest struct {
-	Name        string `json:"name" validate:"required" example:"Фантастика"`
-	Description string `json:"description" validate:"required" example:"Фильмы о будущем, технологиях и космосе"`
+	Name        string `json:"name" validate:"required" example:"Fantastika"`
+	Description string `json:"description" validate:"required" example:"Filmy o buduschem, tekhnologiyakh i kosmose"`
 }
 
 type UpdateGenreRequest struct {
-	Name        string `json:"name" validate:"required" example:"Научная фантастика"`
-	Description string `json:"description" validate:"required" example:"Фильмы, основанные на научных концепциях и технологиях будущего"`
+	Name        string `json:"name" validate:"required" example:"Nauchnaya fantastika"`
+	Description string `json:"description" validate:"required" example:"Filmy, osnovannye na nauchnykh kontseptsiyakh i tekhnologiyakh buduschego"`
 }
 
 type GenreResponse struct {
 	ID          string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Name        string `json:"name" example:"Фантастика"`
-	Description string `json:"description" example:"Фильмы о будущем, технологиях и космосе"`
+	Name        string `json:"name" example:"Fantastika"`
+	Description string `json:"description" example:"Filmy o buduschem, tekhnologiyakh i kosmose"`
 }
 
 type GenreDataRequest struct {
-	Name        string `json:"name" validate:"required" example:"Драма"`
-	Description string `json:"description" example:"Эмоциональные фильмы о человеческих отношениях"`
+	Name        string `json:"name" validate:"required" example:"Drama"`
+	Description string `json:"description" example:"Emotsionalnye filmy o chelovecheskikh otnosheniyakh"`
 }

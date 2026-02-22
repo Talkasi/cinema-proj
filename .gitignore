@@ -1,6 +1,7 @@
 degradation_*/
 continious_max_test_*/
-__pycache__
+__pycache__/
+.ipynb_checkpoints/
 .vscode
 QWEN.md
 /main
