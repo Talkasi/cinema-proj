@@ -135,86 +135,94 @@ func isDataTypeMismatch(err error) bool {
 }
 
 func ConvertError(err error) *Error {
-	if err != nil {
-		switch {
-		case isUniqueViolation(err):
-			{
-				return NewConflict("Конфликт при работе с БД", err)
-			}
-		case isPermissionDenied(err):
-			{
-				return NewForbidden("Доступ запрещён", err)
-			}
-		case isNoRows(err):
-			{
-				return NewNotFound("Данные не найдены", err)
-			}
-		case isForeignKeyViolation(err):
-			{
-				return NewConflict("Ошибка внешнего ключа", err)
-			}
-		case isDataTypeMismatch(err):
-			{
-				return NewBadRequest("Неверный тип", err)
-			}
-		case isSyntaxError(err):
-			{
-				return NewInternal(fmt.Sprintf("Ошибка SQL запроса, %v\n", err), err)
-			}
-		case isNotNullViolation(err):
-			{
-				return NewBadRequest("Обязательное поле не заполнено", err)
-			}
-		case isCheckViolation(err):
-			{
+	if err == nil {
+		return nil
+	}
 
-				errorStr := strings.ToLower(err.Error())
-				switch {
-				case strings.Contains(errorStr, "valid_name"):
-					return NewBadRequest("Некорректное имя", err)
-				case strings.Contains(errorStr, "valid_description"):
-					return NewBadRequest("Некорректное описание", err)
-				case strings.Contains(errorStr, "email_format"):
-					return NewBadRequest("Некорректный формат email", err)
-				case strings.Contains(errorStr, "valid_birth_date"):
-					return NewBadRequest("Некорректная дата рождения", err)
-				case strings.Contains(errorStr, "valid_duration"):
-					return NewBadRequest("Некорректная длительность", err)
-				case strings.Contains(errorStr, "valid_age_limit"):
-					return NewBadRequest("Некорректный возрастной рейтинг", err)
-				case strings.Contains(errorStr, "box_office_revenue"):
-					return NewBadRequest("Некорректная выручка", err)
-				case strings.Contains(errorStr, "start_time"):
-					return NewBadRequest("Некорректное время начала", err)
-				case strings.Contains(errorStr, "price"):
-					return NewBadRequest("Некорректная цена", err)
-				case strings.Contains(errorStr, "rating"):
-					return NewBadRequest("Некорректный рейтинг", err)
-				default:
-					return NewBadRequest("Нарушение ограничений данных", err)
-				}
-			}
-		case isInvalidTextRepresentation(err):
-			{
-				return NewBadRequest("Некорректный формат данных", err)
-			}
-		case strings.Contains(err.Error(), "Невозможно запланировать показ"):
-			{
-				return NewConflict(err.Error(), err)
-			}
-		default:
-			{
+	// Check for specific database-related errors first
+	if convertedErr := handleDatabaseErrors(err); convertedErr != nil {
+		return convertedErr
+	}
 
-				errorStr := strings.ToLower(err.Error())
-				if strings.Contains(errorStr, "check constraint") {
-					return NewBadRequest("Нарушение ограничений данных", err)
-				}
-				if strings.Contains(errorStr, "invalid input") {
-					return NewBadRequest("Некорректные входные данные", err)
-				}
-				return NewInternal("Неизвестная ошибка сервера", err)
-			}
+	// Check for check constraint violations
+	if convertedErr := handleCheckConstraintErrors(err); convertedErr != nil {
+		return convertedErr
+	}
+
+	// Check for other custom error patterns
+	if convertedErr := handleCustomErrors(err); convertedErr != nil {
+		return convertedErr
+	}
+
+	// Default error
+	return NewInternal("Неизвестная ошибка сервера", err)
+}
+
+// handleDatabaseErrors checks for common database errors
+func handleDatabaseErrors(err error) *Error {
+	switch {
+	case isUniqueViolation(err):
+		return NewConflict("Конфликт при работе с БД", err)
+	case isPermissionDenied(err):
+		return NewForbidden("Доступ запрещён", err)
+	case isNoRows(err):
+		return NewNotFound("Данные не найдены", err)
+	case isForeignKeyViolation(err):
+		return NewConflict("Ошибка внешнего ключа", err)
+	case isDataTypeMismatch(err):
+		return NewBadRequest("Неверный тип", err)
+	case isSyntaxError(err):
+		return NewInternal(fmt.Sprintf("Ошибка SQL запроса, %v\n", err), err)
+	case isNotNullViolation(err):
+		return NewBadRequest("Обязательное поле не заполнено", err)
+	case isInvalidTextRepresentation(err):
+		return NewBadRequest("Некорректный формат данных", err)
+	default:
+		return nil
+	}
+}
+
+// handleCheckConstraintErrors handles specific check constraint violations
+func handleCheckConstraintErrors(err error) *Error {
+	if !isCheckViolation(err) {
+		return nil
+	}
+
+	errorStr := strings.ToLower(err.Error())
+	checkViolationMap := map[string]string{
+		"valid_name":         "Некорректное имя",
+		"valid_description":  "Некорректное описание",
+		"email_format":       "Некорректный формат email",
+		"valid_birth_date":   "Некорректная дата рождения",
+		"valid_duration":     "Некорректная длительность",
+		"valid_age_limit":    "Некорректный возрастной рейтинг",
+		"box_office_revenue": "Некорректная выручка",
+		"start_time":         "Некорректное время начала",
+		"price":              "Некорректная цена",
+		"rating":             "Некорректный рейтинг",
+	}
+
+	for constraint, message := range checkViolationMap {
+		if strings.Contains(errorStr, constraint) {
+			return NewBadRequest(message, err)
 		}
+	}
+
+	return NewBadRequest("Нарушение ограничений данных", err)
+}
+
+// handleCustomErrors handles special custom error cases
+func handleCustomErrors(err error) *Error {
+	if strings.Contains(err.Error(), "Невозможно запланировать показ") {
+		return NewConflict(err.Error(), err)
+	}
+
+	errorStr := strings.ToLower(err.Error())
+	if strings.Contains(errorStr, "check constraint") {
+		return NewBadRequest("Нарушение ограничений данных", err)
+	}
+	if strings.Contains(errorStr, "invalid input") {
+		return NewBadRequest("Некорректные входные данные", err)
 	}
 
 	return nil
@@ -228,5 +236,8 @@ func WriteError(w http.ResponseWriter, err *Error) {
 	if err.Err != nil {
 		message += " " + err.Err.Error()
 	}
-	json.NewEncoder(w).Encode(dto.ErrorResponse{Message: message})
+	if err := json.NewEncoder(w).Encode(dto.ErrorResponse{Message: message}); err != nil {
+		// If we can't write the error response, log it and continue
+		fmt.Printf("Failed to encode error response: %v\n", err)
+	}
 }

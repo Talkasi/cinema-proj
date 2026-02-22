@@ -124,7 +124,7 @@ func (s *TicketRepositoryIntegrationTestSuite) createRequiredTestData() TestData
 
 func (s *TicketRepositoryIntegrationTestSuite) cleanDatabase() {
 	for _, id := range s.testTickets {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 	s.testTickets = []string{}
 }

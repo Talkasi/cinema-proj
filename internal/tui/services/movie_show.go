@@ -6,6 +6,7 @@ import (
 	"cw/internal/tui/client"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,6 +21,23 @@ func NewMovieShowService(apiClient *client.APIClient) MovieShowService {
 }
 
 func (s *movieShowService) GetAll(ctx context.Context, filters dto.MovieShowFilters, page, limit int) (*dto.PaginatedMovieShowResponse, error) {
+	path := s.buildGetAllPath(filters, page, limit)
+
+	resp, err := s.client.DoRequest("GET", path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
+
+	return s.handleGetAllResponse(resp)
+}
+
+// buildGetAllPath constructs the path with query parameters
+func (s *movieShowService) buildGetAllPath(filters dto.MovieShowFilters, page, limit int) string {
 	params := url.Values{}
 	params.Add("page", strconv.Itoa(page))
 	params.Add("limit", strconv.Itoa(limit))
@@ -48,18 +66,13 @@ func (s *movieShowService) GetAll(ctx context.Context, filters dto.MovieShowFilt
 		path += "?" + params.Encode()
 	}
 
-	resp, err := s.client.DoRequest("GET", path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
+	return path
+}
 
+// handleGetAllResponse processes the HTTP response
+func (s *movieShowService) handleGetAllResponse(resp *http.Response) (*dto.PaginatedMovieShowResponse, error) {
 	if resp.StatusCode != http.StatusOK {
-		var errorResp dto.ErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
-			return nil, fmt.Errorf("API error: %s", errorResp.Message)
-		}
-		return nil, fmt.Errorf("API error: %s", resp.Status)
+		return s.handleErrorStatusCode(resp)
 	}
 
 	var result dto.PaginatedMovieShowResponse
@@ -70,6 +83,15 @@ func (s *movieShowService) GetAll(ctx context.Context, filters dto.MovieShowFilt
 	return &result, nil
 }
 
+// handleErrorStatusCode handles non-200 status codes
+func (s *movieShowService) handleErrorStatusCode(resp *http.Response) (*dto.PaginatedMovieShowResponse, error) {
+	var errorResp dto.ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
+		return nil, fmt.Errorf("API error: %s", errorResp.Message)
+	}
+	return nil, fmt.Errorf("API error: %s", resp.Status)
+}
+
 func (s *movieShowService) GetByID(ctx context.Context, id string) (*dto.MovieShowResponse, error) {
 	path := fmt.Sprintf("/movie-shows/%s", id)
 
@@ -77,7 +99,11 @@ func (s *movieShowService) GetByID(ctx context.Context, id string) (*dto.MovieSh
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -103,7 +129,11 @@ func (s *movieShowService) Create(ctx context.Context, show dto.CreateMovieShowR
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		var errorResp dto.ErrorResponse
@@ -128,7 +158,11 @@ func (s *movieShowService) Update(ctx context.Context, id string, show dto.Updat
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -151,7 +185,11 @@ func (s *movieShowService) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusNoContent {
 		if resp.StatusCode == http.StatusNotFound {

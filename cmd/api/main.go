@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	postgresDb "cw/internal/dataAccess/config"
 	repository "cw/internal/dataAccess/repository/postgres"
 	"cw/internal/domain/service"
 	"cw/internal/dto/handler"
+	"cw/internal/observability"
 	"cw/internal/utils"
 
 	authMiddleware "cw/internal/middleware"
@@ -29,6 +33,34 @@ import (
 // @name Authorization
 // @description JWT токен
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	logCloser, err := observability.SetupLogging(observability.LoadLogConfigFromEnv())
+	if err != nil {
+		log.Fatalf("failed to configure logging: %v", err)
+	}
+	defer func() {
+		if closeErr := logCloser(); closeErr != nil {
+			log.Printf("failed to close log writer: %v", closeErr)
+		}
+	}()
+
+	obsCfg := observability.LoadConfigFromEnv()
+	providers, err := observability.SetupProviders(ctx, obsCfg)
+	if err != nil {
+		log.Fatalf("failed to init observability providers: %v", err)
+	}
+	defer func() {
+		if providers != nil {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := providers.Shutdown(shutdownCtx); err != nil {
+				log.Printf("failed to shutdown observability providers: %v", err)
+			}
+		}
+	}()
+
 	addr := utils.GetEnv("ADDR")
 	jwtSecret := utils.GetEnv("JWT_SECRET")
 	tokenDurationStr := utils.GetEnv("TOKEN_DURATION")
@@ -79,6 +111,10 @@ func main() {
 
 	r := chi.NewRouter()
 
+	if obsCfg.TracesEnabled {
+		r.Use(observability.HTTPMiddleware(obsCfg.ServiceName))
+	}
+	r.Use(observability.HTTPLoggingMiddleware(obsCfg.ServiceName))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
@@ -112,7 +148,7 @@ func main() {
 		})
 	})
 
-	log.Printf("Starting server on %s", addr)
+	observability.Infof("Starting server on %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

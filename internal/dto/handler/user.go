@@ -4,6 +4,7 @@ import (
 	domain "cw/internal/domain/models"
 	"cw/internal/domain/service"
 	dto "cw/internal/dto/models"
+	"cw/internal/middleware"
 	"cw/internal/utils"
 	"encoding/json"
 	"fmt"
@@ -65,7 +66,10 @@ func (uh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Получить пользователя по ID
@@ -87,7 +91,10 @@ func (uh *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Обновить пользователя
@@ -196,7 +203,10 @@ func (uh *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(dto.RegisterResponse{ID: result.ID})
+	if err := json.NewEncoder(w).Encode(dto.RegisterResponse{ID: result.ID}); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Аутентификация пользователя
@@ -225,7 +235,10 @@ func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Включить двухфакторную аутентификацию
@@ -238,7 +251,7 @@ func (uh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
 // @Router /auth/2fa/enable [post]
 func (uh *UserHandler) Enable2FA(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(string)
+	userID := r.Context().Value(middleware.UserIDKey).(string)
 	err := uh.userService.Enable2FA(r.Context(), userID)
 	if err != nil {
 		utils.WriteError(w, err)
@@ -257,7 +270,7 @@ func (uh *UserHandler) Enable2FA(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
 // @Router /auth/2fa/disable [post]
 func (uh *UserHandler) Disable2FA(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(string)
+	userID := r.Context().Value(middleware.UserIDKey).(string)
 	err := uh.userService.Disable2FA(r.Context(), userID)
 	if err != nil {
 		utils.WriteError(w, err)
@@ -276,7 +289,7 @@ func (uh *UserHandler) Disable2FA(w http.ResponseWriter, r *http.Request) {
 // @Failure 403 {object} dto.ErrorResponse "Доступ запрещен"
 // @Router /auth/2fa/info [get]
 func (uh *UserHandler) Get2FAInfo(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(string)
+	userID := r.Context().Value(middleware.UserIDKey).(string)
 	enabled, err := uh.userService.Get2FAInfo(r.Context(), userID)
 	if err != nil {
 		utils.WriteError(w, err)
@@ -288,7 +301,10 @@ func (uh *UserHandler) Get2FAInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Подтвердить код 2FA
@@ -321,7 +337,10 @@ func (uh *UserHandler) Verify2FA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		utils.WriteError(w, utils.NewInternal("failed to encode JSON", err))
+		return
+	}
 }
 
 // @Summary Изменить пароль
@@ -342,7 +361,7 @@ func (uh *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.Context().Value("userID").(string)
+	userID := r.Context().Value(middleware.UserIDKey).(string)
 
 	err := uh.userService.VerifyCurrentPassword(r.Context(), userID, req.CurrentPassword)
 	if err != nil {
@@ -357,7 +376,7 @@ func (uh *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "Password updated successfully")
+	_, _ = fmt.Fprint(w, "Password updated successfully")
 }
 
 func (uh *UserHandler) RegisterRoutesNoAuth(r chi.Router) {

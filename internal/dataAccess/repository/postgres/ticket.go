@@ -21,53 +21,92 @@ func NewTicketRepository(db *pgxpool.Pool) *TicketRepository {
 }
 
 func (r *TicketRepository) GetAll(ctx context.Context, filters domain.TicketFilters, page, limit int) ([]domain.Ticket, int, *utils.Error) {
+
+	whereClauses, args, err := r.buildFilterClauses(filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.getCount(ctx, whereClauses, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if total == 0 {
+		return []domain.Ticket{}, 0, nil
+	}
+
+	query, queryArgs := r.buildGetAllQuery(whereClauses, args, page, limit)
+
+	ticketEntities, err := r.executeGetAllQuery(ctx, query, queryArgs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return entity.TicketsToDomain(ticketEntities), total, nil
+}
+
+func (r *TicketRepository) buildFilterClauses(filters domain.TicketFilters) ([]string, []interface{}, *utils.Error) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
 
 	if len(filters.Status) > 0 {
-		placeholders := make([]string, len(filters.Status))
-		for i, Status := range filters.Status {
-			placeholders[i] = fmt.Sprintf("$%d", argPos)
-			args = append(args, Status)
-			argPos++
-		}
-		whereClauses = append(whereClauses, fmt.Sprintf("ticket_Status IN (%s)", strings.Join(placeholders, ",")))
+		clause, clauseArgs, newPos := r.buildInClause(filters.Status, argPos)
+		whereClauses = append(whereClauses, fmt.Sprintf("ticket_Status IN (%s)", clause))
+		args = append(args, clauseArgs...)
+		argPos = newPos
 	}
+
 	if filters.MovieShowID != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("movie_show_id = $%d", argPos))
 		args = append(args, filters.MovieShowID)
 		argPos++
 	}
+
 	if filters.PriceMin > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("price >= $%d", argPos))
 		args = append(args, filters.PriceMin)
 		argPos++
 	}
+
 	if filters.PriceMax > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("price <= $%d", argPos))
 		args = append(args, filters.PriceMax)
 		argPos++
 	}
+
+	var clause string
+	var clauseArgs []interface{}
+
 	if len(filters.SeatID) > 0 {
-		placeholders := make([]string, len(filters.SeatID))
-		for i, seatID := range filters.SeatID {
-			placeholders[i] = fmt.Sprintf("$%d", argPos)
-			args = append(args, seatID)
-			argPos++
-		}
-		whereClauses = append(whereClauses, fmt.Sprintf("seat_id IN (%s)", strings.Join(placeholders, ",")))
-	}
-	if len(filters.UserID) > 0 {
-		placeholders := make([]string, len(filters.UserID))
-		for i, userID := range filters.UserID {
-			placeholders[i] = fmt.Sprintf("$%d", argPos)
-			args = append(args, userID)
-			argPos++
-		}
-		whereClauses = append(whereClauses, fmt.Sprintf("user_id IN (%s)", strings.Join(placeholders, ",")))
+		clause, clauseArgs, argPos = r.buildInClause(filters.SeatID, argPos)
+		whereClauses = append(whereClauses, fmt.Sprintf("seat_id IN (%s)", clause))
+		args = append(args, clauseArgs...)
 	}
 
+	if len(filters.UserID) > 0 {
+		clause, clauseArgs, _ = r.buildInClause(filters.UserID, argPos)
+		whereClauses = append(whereClauses, fmt.Sprintf("user_id IN (%s)", clause))
+		args = append(args, clauseArgs...)
+	}
+
+	return whereClauses, args, nil
+}
+
+func (r *TicketRepository) buildInClause(values []string, startPos int) (string, []interface{}, int) {
+	placeholders := make([]string, len(values))
+	args := make([]interface{}, len(values))
+
+	for i, val := range values {
+		placeholders[i] = fmt.Sprintf("$%d", startPos+i)
+		args[i] = val
+	}
+
+	return strings.Join(placeholders, ","), args, startPos + len(values)
+}
+
+func (r *TicketRepository) getCount(ctx context.Context, whereClauses []string, args []interface{}) (int, *utils.Error) {
 	countQuery := "SELECT COUNT(*) FROM tickets"
 	if len(whereClauses) > 0 {
 		countQuery += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -76,13 +115,13 @@ func (r *TicketRepository) GetAll(ctx context.Context, filters domain.TicketFilt
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return 0, utils.ConvertError(err)
 	}
 
-	if total == 0 {
-		return []domain.Ticket{}, 0, nil
-	}
+	return total, nil
+}
 
+func (r *TicketRepository) buildGetAllQuery(whereClauses []string, args []interface{}, page, limit int) (string, []interface{}) {
 	query := "SELECT id, movie_show_id, seat_id, user_id, ticket_Status, price FROM tickets"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -97,9 +136,13 @@ func (r *TicketRepository) GetAll(ctx context.Context, filters domain.TicketFilt
 
 	finalQuery := fmt.Sprintf(query, len(mainQueryArgs)-1, len(mainQueryArgs))
 
-	rows, err := r.db.Query(ctx, finalQuery, mainQueryArgs...)
+	return finalQuery, mainQueryArgs
+}
+
+func (r *TicketRepository) executeGetAllQuery(ctx context.Context, query string, args []interface{}) ([]entity.Ticket, *utils.Error) {
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
@@ -108,17 +151,17 @@ func (r *TicketRepository) GetAll(ctx context.Context, filters domain.TicketFilt
 		var ticket entity.Ticket
 		var userID *string
 		if err := rows.Scan(&ticket.ID, &ticket.MovieShowID, &ticket.SeatID, &userID, &ticket.Status, &ticket.Price); err != nil {
-			return nil, 0, utils.ConvertError(err)
+			return nil, utils.ConvertError(err)
 		}
 		ticket.UserID = userID
 		ticketEntities = append(ticketEntities, ticket)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 
-	return entity.TicketsToDomain(ticketEntities), total, nil
+	return ticketEntities, nil
 }
 
 func (r *TicketRepository) GetByID(ctx context.Context, id string) (domain.Ticket, *utils.Error) {
@@ -148,11 +191,11 @@ func (r *TicketRepository) CreateForMovieShow(ctx context.Context, movieShowId s
 	return entity.TicketToDomain(ticketEntity), nil
 }
 
-func (r *TicketRepository) UpdateStatus(ctx context.Context, id string, StatusData domain.Ticket) (domain.Ticket, *utils.Error) {
+func (r *TicketRepository) UpdateStatus(ctx context.Context, id string, statusData domain.Ticket) (domain.Ticket, *utils.Error) {
 	query := "UPDATE tickets SET ticket_Status = $1, user_id = $2 WHERE id = $3 RETURNING id, movie_show_id, seat_id, user_id, ticket_Status, price"
 	var updatedTicket entity.Ticket
 	var updatedUserID *string
-	err := r.db.QueryRow(ctx, query, StatusData.Status, StatusData.UserID, id).Scan(
+	err := r.db.QueryRow(ctx, query, statusData.Status, statusData.UserID, id).Scan(
 		&updatedTicket.ID, &updatedTicket.MovieShowID, &updatedTicket.SeatID, &updatedUserID, &updatedTicket.Status, &updatedTicket.Price,
 	)
 	if err != nil {

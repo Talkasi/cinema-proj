@@ -21,6 +21,28 @@ func NewSeatRepository(db *pgxpool.Pool) *SeatRepository {
 }
 
 func (r *SeatRepository) GetByHall(ctx context.Context, hallId string, filters domain.SeatFilters, page, limit int) ([]domain.Seat, int, *utils.Error) {
+
+	whereClauses, args, err := r.buildFilterClauses(hallId, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.getCount(ctx, whereClauses, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	query, queryArgs := r.buildGetByHallQuery(whereClauses, args, page, limit)
+
+	seatEntities, err := r.executeGetByHallQuery(ctx, query, queryArgs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return entity.SeatsToDomain(seatEntities), total, nil
+}
+
+func (r *SeatRepository) buildFilterClauses(hallId string, filters domain.SeatFilters) ([]string, []interface{}, *utils.Error) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
@@ -34,27 +56,37 @@ func (r *SeatRepository) GetByHall(ctx context.Context, hallId string, filters d
 		args = append(args, filters.SeatTypeID)
 		argPos++
 	}
+
 	if filters.RowNumberMin > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("row_number >= $%d", argPos))
 		args = append(args, filters.RowNumberMin)
 		argPos++
 	}
+
 	if filters.RowNumberMax > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("row_number <= $%d", argPos))
 		args = append(args, filters.RowNumberMax)
 		argPos++
 	}
+
 	if filters.SeatNumberMin > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("seat_number >= $%d", argPos))
 		args = append(args, filters.SeatNumberMin)
 		argPos++
 	}
+
 	if filters.SeatNumberMax > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("seat_number <= $%d", argPos))
 		args = append(args, filters.SeatNumberMax)
 		argPos++
 	}
 
+	_ = argPos  // Mark as used to avoid linter error
+
+	return whereClauses, args, nil
+}
+
+func (r *SeatRepository) getCount(ctx context.Context, whereClauses []string, args []interface{}) (int, *utils.Error) {
 	countQuery := "SELECT COUNT(*) FROM seats"
 	if len(whereClauses) > 0 {
 		countQuery += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -63,9 +95,13 @@ func (r *SeatRepository) GetByHall(ctx context.Context, hallId string, filters d
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return 0, utils.ConvertError(err)
 	}
 
+	return total, nil
+}
+
+func (r *SeatRepository) buildGetByHallQuery(whereClauses []string, args []interface{}, page, limit int) (string, []interface{}) {
 	query := "SELECT id, hall_id, seat_type_id, row_number, seat_number FROM seats"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -80,9 +116,13 @@ func (r *SeatRepository) GetByHall(ctx context.Context, hallId string, filters d
 
 	finalQuery := fmt.Sprintf(query, len(mainQueryArgs)-1, len(mainQueryArgs))
 
-	rows, err := r.db.Query(ctx, finalQuery, mainQueryArgs...)
+	return finalQuery, mainQueryArgs
+}
+
+func (r *SeatRepository) executeGetByHallQuery(ctx context.Context, query string, args []interface{}) ([]entity.Seat, *utils.Error) {
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
@@ -90,16 +130,16 @@ func (r *SeatRepository) GetByHall(ctx context.Context, hallId string, filters d
 	for rows.Next() {
 		var seat entity.Seat
 		if err := rows.Scan(&seat.ID, &seat.HallID, &seat.SeatTypeID, &seat.RowNumber, &seat.SeatNumber); err != nil {
-			return nil, 0, utils.ConvertError(err)
+			return nil, utils.ConvertError(err)
 		}
 		seatEntities = append(seatEntities, seat)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 
-	return entity.SeatsToDomain(seatEntities), total, nil
+	return seatEntities, nil
 }
 
 func (r *SeatRepository) GetByID(ctx context.Context, id string) (domain.Seat, *utils.Error) {

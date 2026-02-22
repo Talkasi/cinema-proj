@@ -91,6 +91,12 @@ func (app *TUIApp) showAuthMenu() {
 }
 
 func (app *TUIApp) showMainMenu() {
+	app.displayMainMenuOptions()
+	choice := app.getMenuChoice()
+	app.processMenuChoice(choice)
+}
+
+func (app *TUIApp) displayMainMenuOptions() {
 	fmt.Println("\n--- Main Menu ---")
 	fmt.Println("1. Manage Genres")
 	fmt.Println("2. Manage Movies")
@@ -106,38 +112,43 @@ func (app *TUIApp) showMainMenu() {
 	}
 	fmt.Println("0. Logout")
 	fmt.Print("Choose option: ")
+}
 
+func (app *TUIApp) getMenuChoice() string {
 	app.scanner.Scan()
-	choice := app.scanner.Text()
+	return app.scanner.Text()
+}
 
-	switch choice {
-	case "1":
-		app.manageGenres()
-	case "2":
-		app.manageMovies()
-	case "3":
-		app.manageMovieShows()
-	case "4":
-		app.manageTickets()
-	case "5":
-		app.manageReviews()
-	case "6":
-		app.manageHalls()
-	case "7":
-		app.manageScreenTypes()
-	case "8":
-		app.manageSeatTypes()
-	case "9":
-		app.manageSeats()
-	case "10":
-		if app.isAdmin {
-			app.manageUsers()
-		} else {
-			fmt.Println("Invalid option!")
-		}
-	case "0":
-		app.logout()
-	default:
+func (app *TUIApp) processMenuChoice(choice string) {
+	action := app.getActionForChoice(choice)
+	if action != nil {
+		action()
+	} else {
+		fmt.Println("Invalid option!")
+	}
+}
+
+func (app *TUIApp) getActionForChoice(choice string) func() {
+	actions := map[string]func(){
+		"1":  app.manageGenres,
+		"2":  app.manageMovies,
+		"3":  app.manageMovieShows,
+		"4":  app.manageTickets,
+		"5":  app.manageReviews,
+		"6":  app.manageHalls,
+		"7":  app.manageScreenTypes,
+		"8":  app.manageSeatTypes,
+		"9":  app.manageSeats,
+		"10": func() { app.handleUserManagementOption() },
+		"0":  app.logout,
+	}
+	return actions[choice]
+}
+
+func (app *TUIApp) handleUserManagementOption() {
+	if app.isAdmin {
+		app.manageUsers()
+	} else {
 		fmt.Println("Invalid option!")
 	}
 }

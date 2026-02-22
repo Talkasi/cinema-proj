@@ -164,19 +164,19 @@ func (s *MovieShowRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *MovieShowRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testShows {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 
 func (s *MovieShowRepositoryIntegrationTestSuite) TearDownSuite() {
 	for _, id := range s.testHalls {
-		s.hallRepo.Delete(s.ctx, id)
+		_ = s.hallRepo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testMovies {
-		s.movieRepo.Delete(s.ctx, id)
+		_ = s.movieRepo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testScreenTypes {
-		s.screenTypeRepo.Delete(s.ctx, id)
+		_ = s.screenTypeRepo.Delete(s.ctx, id)
 	}
 }
 

@@ -82,13 +82,13 @@ func (s *MovieRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *MovieRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testMovies {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 
 func (s *MovieRepositoryIntegrationTestSuite) TearDownSuite() {
 	for _, id := range s.testGenres {
-		s.genreRepo.Delete(s.ctx, id)
+		_ = s.genreRepo.Delete(s.ctx, id)
 	}
 }
 

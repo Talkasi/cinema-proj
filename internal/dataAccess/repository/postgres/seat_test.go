@@ -123,16 +123,16 @@ func (s *SeatRepositoryIntegrationTestSuite) createTestSeatTypes() {
 func (s *SeatRepositoryIntegrationTestSuite) cleanDatabase() {
 
 	for _, id := range s.testSeats {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testHalls {
-		s.hallRepo.Delete(s.ctx, id)
+		_ = s.hallRepo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testSeatTypes {
-		s.seatTypeRepo.Delete(s.ctx, id)
+		_ = s.seatTypeRepo.Delete(s.ctx, id)
 	}
 	for _, id := range s.testScreenTypes {
-		s.screenTypeRepo.Delete(s.ctx, id)
+		_ = s.screenTypeRepo.Delete(s.ctx, id)
 	}
 }
 
@@ -142,7 +142,7 @@ func (s *SeatRepositoryIntegrationTestSuite) SetupTest() {
 
 func (s *SeatRepositoryIntegrationTestSuite) TearDownTest() {
 	for _, id := range s.testSeats {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 }
 

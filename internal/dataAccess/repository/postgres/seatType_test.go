@@ -40,7 +40,7 @@ func (s *SeatTypeRepositoryIntegrationTestSuite) SetupSuite() {
 func (s *SeatTypeRepositoryIntegrationTestSuite) cleanDatabase() {
 
 	for _, id := range s.testSeatTypes {
-		s.repo.Delete(s.ctx, id)
+		_ = s.repo.Delete(s.ctx, id)
 	}
 	s.testSeatTypes = []string{}
 }

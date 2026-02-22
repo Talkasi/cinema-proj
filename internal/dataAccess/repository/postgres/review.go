@@ -22,6 +22,28 @@ func NewReviewRepository(db *pgxpool.Pool) *ReviewRepository {
 }
 
 func (r *ReviewRepository) GetAll(ctx context.Context, filters domain.ReviewFilters, page, limit int) ([]domain.Review, int, *utils.Error) {
+
+	whereClauses, args, err := r.buildFilterClauses(filters)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.getCount(ctx, whereClauses, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	query, queryArgs := r.buildGetAllQuery(whereClauses, args, page, limit)
+
+	reviewEntities, err := r.executeGetAllQuery(ctx, query, queryArgs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return entity.ReviewsToDomain(reviewEntities), total, nil
+}
+
+func (r *ReviewRepository) buildFilterClauses(filters domain.ReviewFilters) ([]string, []interface{}, *utils.Error) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
@@ -31,27 +53,37 @@ func (r *ReviewRepository) GetAll(ctx context.Context, filters domain.ReviewFilt
 		args = append(args, filters.MovieID)
 		argPos++
 	}
+
 	if filters.UserID != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("user_id = $%d", argPos))
 		args = append(args, filters.UserID)
 		argPos++
 	}
+
 	if filters.RatingMin > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("rating >= $%d", argPos))
 		args = append(args, filters.RatingMin)
 		argPos++
 	}
+
 	if filters.RatingMax > 0 {
 		whereClauses = append(whereClauses, fmt.Sprintf("rating <= $%d", argPos))
 		args = append(args, filters.RatingMax)
 		argPos++
 	}
+
 	if filters.Comment != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("review_comment ILIKE $%d", argPos))
 		args = append(args, "%"+filters.Comment+"%")
 		argPos++
 	}
 
+	_ = argPos  // Mark as used to avoid linter error
+
+	return whereClauses, args, nil
+}
+
+func (r *ReviewRepository) getCount(ctx context.Context, whereClauses []string, args []interface{}) (int, *utils.Error) {
 	countQuery := "SELECT COUNT(*) FROM reviews"
 	if len(whereClauses) > 0 {
 		countQuery += " WHERE " + strings.Join(whereClauses, " AND ")
@@ -60,20 +92,28 @@ func (r *ReviewRepository) GetAll(ctx context.Context, filters domain.ReviewFilt
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return 0, utils.ConvertError(err)
 	}
 
+	return total, nil
+}
+
+func (r *ReviewRepository) buildGetAllQuery(whereClauses []string, args []interface{}, page, limit int) (string, []interface{}) {
 	query := "SELECT id, movie_id, user_id, rating, review_comment FROM reviews"
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
-	query += " ORDER BY id DESC LIMIT $" + strconv.Itoa(argPos) + " OFFSET $" + strconv.Itoa(argPos+1)
+	query += " ORDER BY id DESC LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
 
 	args = append(args, limit, (page-1)*limit)
 
+	return query, args
+}
+
+func (r *ReviewRepository) executeGetAllQuery(ctx context.Context, query string, args []interface{}) ([]entity.Review, *utils.Error) {
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
@@ -82,7 +122,7 @@ func (r *ReviewRepository) GetAll(ctx context.Context, filters domain.ReviewFilt
 		var review entity.Review
 		var comment *string
 		if err := rows.Scan(&review.ID, &review.MovieID, &review.UserID, &review.Rating, &comment); err != nil {
-			return nil, 0, utils.ConvertError(err)
+			return nil, utils.ConvertError(err)
 		}
 		if comment != nil {
 			review.Comment = *comment
@@ -91,10 +131,10 @@ func (r *ReviewRepository) GetAll(ctx context.Context, filters domain.ReviewFilt
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, utils.ConvertError(err)
+		return nil, utils.ConvertError(err)
 	}
 
-	return entity.ReviewsToDomain(reviewEntities), total, nil
+	return reviewEntities, nil
 }
 
 func (r *ReviewRepository) CreateForMovie(ctx context.Context, movieId string, review domain.Review) (domain.Review, *utils.Error) {

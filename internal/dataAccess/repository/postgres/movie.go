@@ -21,6 +21,35 @@ func NewMovieRepository(db *pgxpool.Pool) *MovieRepository {
 }
 
 func (r *MovieRepository) GetAll(ctx context.Context, filters domain.MovieFilters, page, limit int) ([]domain.Movie, int, *utils.Error) {
+
+	query, args := r.buildGetAllQuery(filters, page, limit)
+
+	movieEntities, total, err := r.executeGetAllQuery(ctx, query, args)
+	if err != nil || len(movieEntities) == 0 {
+		return entity.MoviesToDomain(movieEntities), total, err
+	}
+
+	movieIDs := make([]string, len(movieEntities))
+	for i, movie := range movieEntities {
+		movieIDs[i] = movie.ID
+	}
+
+	ratingsMap, err := r.fetchRatings(ctx, movieIDs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	genresMap, err := r.fetchGenres(ctx, movieIDs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	r.updateMovieEntities(movieEntities, ratingsMap, genresMap)
+
+	return entity.MoviesToDomain(movieEntities), total, nil
+}
+
+func (r *MovieRepository) buildGetAllQuery(filters domain.MovieFilters, page, limit int) (string, []interface{}) {
 	var whereClauses []string
 	var args []interface{}
 	argPos := 1
@@ -65,13 +94,16 @@ func (r *MovieRepository) GetAll(ctx context.Context, filters domain.MovieFilter
 
 	query += ") SELECT id, title, duration, description, age_limit, box_office_revenue, release_date, total_count FROM filtered_movies"
 
+	return query, args
+}
+
+func (r *MovieRepository) executeGetAllQuery(ctx context.Context, query string, args []interface{}) ([]entity.Movie, int, *utils.Error) {
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, utils.ConvertError(err)
 	}
 	defer rows.Close()
 
-	var movieIDs []string
 	var movieEntities []entity.Movie
 	var total int
 
@@ -95,7 +127,6 @@ func (r *MovieRepository) GetAll(ctx context.Context, filters domain.MovieFilter
 		if total == 0 {
 			total = rowCount
 		}
-		movieIDs = append(movieIDs, movieEntity.ID)
 		movieEntities = append(movieEntities, movieEntity)
 	}
 	rows.Close()
@@ -104,76 +135,87 @@ func (r *MovieRepository) GetAll(ctx context.Context, filters domain.MovieFilter
 		return nil, 0, utils.ConvertError(err)
 	}
 
-	if len(movieEntities) == 0 {
-		return []domain.Movie{}, 0, nil
+	return movieEntities, total, nil
+}
+
+func (r *MovieRepository) fetchRatings(ctx context.Context, movieIDs []string) (map[string]float64, *utils.Error) {
+	if len(movieIDs) == 0 {
+		return map[string]float64{}, nil
 	}
 
-	if len(movieIDs) > 0 {
+	ratingQuery := `
+		SELECT movie_id, COALESCE(AVG(rating), 0)
+		FROM reviews
+		WHERE movie_id = ANY($1)
+		GROUP BY movie_id`
 
-		ratingQuery := fmt.Sprintf(`
-			SELECT movie_id, COALESCE(AVG(rating), 0)
-			FROM reviews
-			WHERE movie_id = ANY($1)
-			GROUP BY movie_id`)
+	ratingRows, err := r.db.Query(ctx, ratingQuery, movieIDs)
+	if err != nil {
+		return nil, utils.ConvertError(err)
+	}
+	defer ratingRows.Close()
 
-		ratingRows, err := r.db.Query(ctx, ratingQuery, movieIDs)
-		if err != nil {
-			return nil, 0, utils.ConvertError(err)
+	ratingMap := make(map[string]float64)
+	for ratingRows.Next() {
+		var movieID string
+		var rating float64
+		if err := ratingRows.Scan(&movieID, &rating); err != nil {
+			return nil, utils.ConvertError(err)
 		}
-		defer ratingRows.Close()
+		ratingMap[movieID] = rating
+	}
+	ratingRows.Close()
 
-		ratingMap := make(map[string]float64)
-		for ratingRows.Next() {
-			var movieID string
-			var rating float64
-			if err := ratingRows.Scan(&movieID, &rating); err != nil {
-				return nil, 0, utils.ConvertError(err)
-			}
-			ratingMap[movieID] = rating
-		}
-		ratingRows.Close()
+	return ratingMap, nil
+}
 
-		genreQuery := fmt.Sprintf(`
-			SELECT movie_id, ARRAY_AGG(genre_id) as genre_ids
-			FROM movies_genres
-			WHERE movie_id = ANY($1)
-			GROUP BY movie_id`)
-
-		genreRows, err := r.db.Query(ctx, genreQuery, movieIDs)
-		if err != nil {
-			return nil, 0, utils.ConvertError(err)
-		}
-		defer genreRows.Close()
-
-		genreMap := make(map[string][]string)
-		for genreRows.Next() {
-			var movieID string
-			var genreIDs []string
-			if err := genreRows.Scan(&movieID, &genreIDs); err != nil {
-				return nil, 0, utils.ConvertError(err)
-			}
-			genreMap[movieID] = genreIDs
-		}
-		genreRows.Close()
-
-		for i := range movieEntities {
-			movieID := movieEntities[i].ID
-
-			if rating, exists := ratingMap[movieID]; exists {
-				movieEntities[i].Rating = rating
-			} else {
-				movieEntities[i].Rating = 0
-			}
-
-			if genreIDs, exists := genreMap[movieID]; exists {
-				movieEntities[i].GenreIDs = genreIDs
-			} else {
-				movieEntities[i].GenreIDs = []string{}
-			}
-		}
+func (r *MovieRepository) fetchGenres(ctx context.Context, movieIDs []string) (map[string][]string, *utils.Error) {
+	if len(movieIDs) == 0 {
+		return map[string][]string{}, nil
 	}
 
-	return entity.MoviesToDomain(movieEntities), total, nil
+	genreQuery := `
+		SELECT movie_id, ARRAY_AGG(genre_id) as genre_ids
+		FROM movies_genres
+		WHERE movie_id = ANY($1)
+		GROUP BY movie_id`
+
+	genreRows, err := r.db.Query(ctx, genreQuery, movieIDs)
+	if err != nil {
+		return nil, utils.ConvertError(err)
+	}
+	defer genreRows.Close()
+
+	genreMap := make(map[string][]string)
+	for genreRows.Next() {
+		var movieID string
+		var genreIDs []string
+		if err := genreRows.Scan(&movieID, &genreIDs); err != nil {
+			return nil, utils.ConvertError(err)
+		}
+		genreMap[movieID] = genreIDs
+	}
+	genreRows.Close()
+
+	return genreMap, nil
+}
+
+func (r *MovieRepository) updateMovieEntities(movieEntities []entity.Movie, ratings map[string]float64, genres map[string][]string) {
+	for i := range movieEntities {
+		movieID := movieEntities[i].ID
+
+		if rating, exists := ratings[movieID]; exists {
+			movieEntities[i].Rating = rating
+		} else {
+			movieEntities[i].Rating = 0
+		}
+
+		if genreIDs, exists := genres[movieID]; exists {
+			movieEntities[i].GenreIDs = genreIDs
+		} else {
+			movieEntities[i].GenreIDs = []string{}
+		}
+	}
 }
 
 func (r *MovieRepository) GetByID(ctx context.Context, id string) (domain.Movie, *utils.Error) {
@@ -220,7 +262,9 @@ func (r *MovieRepository) Create(ctx context.Context, movie domain.Movie) (domai
 	if err != nil {
 		return domain.Movie{}, utils.ConvertError(err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	movieEntity := entity.MovieFromDomain(movie)
 
@@ -266,7 +310,9 @@ func (r *MovieRepository) Update(ctx context.Context, id string, movie domain.Mo
 	if err != nil {
 		return domain.Movie{}, utils.ConvertError(err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	movieEntity := entity.MovieFromDomain(movie)
 

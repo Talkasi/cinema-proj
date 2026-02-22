@@ -6,6 +6,7 @@ import (
 	"cw/internal/tui/client"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,6 +21,23 @@ func NewSeatService(apiClient *client.APIClient) SeatService {
 }
 
 func (s *seatService) GetByHall(ctx context.Context, hallID string, filters dto.SeatFilters, page, limit int) (*dto.PaginatedSeatResponse, error) {
+	path := s.buildGetByHallPath(hallID, filters, page, limit)
+
+	resp, err := s.client.DoRequest("GET", path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
+
+	return s.handleGetByHallResponse(resp)
+}
+
+// buildGetByHallPath constructs the path with query parameters
+func (s *seatService) buildGetByHallPath(hallID string, filters dto.SeatFilters, page, limit int) string {
 	params := url.Values{}
 	params.Add("page", strconv.Itoa(page))
 	params.Add("limit", strconv.Itoa(limit))
@@ -45,18 +63,13 @@ func (s *seatService) GetByHall(ctx context.Context, hallID string, filters dto.
 		path += "?" + params.Encode()
 	}
 
-	resp, err := s.client.DoRequest("GET", path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
+	return path
+}
 
+// handleGetByHallResponse processes the HTTP response
+func (s *seatService) handleGetByHallResponse(resp *http.Response) (*dto.PaginatedSeatResponse, error) {
 	if resp.StatusCode != http.StatusOK {
-		var errorResp dto.ErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
-			return nil, fmt.Errorf("API error: %s", errorResp.Message)
-		}
-		return nil, fmt.Errorf("API error: %s", resp.Status)
+		return s.handleErrorStatusCode(resp)
 	}
 
 	var result dto.PaginatedSeatResponse
@@ -67,6 +80,15 @@ func (s *seatService) GetByHall(ctx context.Context, hallID string, filters dto.
 	return &result, nil
 }
 
+// handleErrorStatusCode handles non-200 status codes
+func (s *seatService) handleErrorStatusCode(resp *http.Response) (*dto.PaginatedSeatResponse, error) {
+	var errorResp dto.ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
+		return nil, fmt.Errorf("API error: %s", errorResp.Message)
+	}
+	return nil, fmt.Errorf("API error: %s", resp.Status)
+}
+
 func (s *seatService) GetByID(ctx context.Context, id string) (*dto.SeatResponse, error) {
 	path := fmt.Sprintf("/seats/%s", id)
 
@@ -74,7 +96,11 @@ func (s *seatService) GetByID(ctx context.Context, id string) (*dto.SeatResponse
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -102,7 +128,11 @@ func (s *seatService) Create(ctx context.Context, seat dto.CreateSeatRequest) (s
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		var errorResp dto.ErrorResponse
@@ -127,7 +157,11 @@ func (s *seatService) Update(ctx context.Context, id string, seat dto.UpdateSeat
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -150,7 +184,11 @@ func (s *seatService) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusNoContent {
 		if resp.StatusCode == http.StatusNotFound {

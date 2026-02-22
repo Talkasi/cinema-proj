@@ -6,6 +6,7 @@ import (
 	"cw/internal/tui/client"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,6 +21,23 @@ func NewReviewService(apiClient *client.APIClient) ReviewService {
 }
 
 func (s *reviewService) GetAll(ctx context.Context, filters dto.ReviewFilters, page, limit int) (*dto.PaginatedReviewResponse, error) {
+	path := s.buildGetAllPath(filters, page, limit)
+
+	resp, err := s.client.DoRequest("GET", path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
+
+	return s.handleGetAllResponse(resp)
+}
+
+// buildGetAllPath constructs the path with query parameters
+func (s *reviewService) buildGetAllPath(filters dto.ReviewFilters, page, limit int) string {
 	params := url.Values{}
 	params.Add("page", strconv.Itoa(page))
 	params.Add("limit", strconv.Itoa(limit))
@@ -45,18 +63,13 @@ func (s *reviewService) GetAll(ctx context.Context, filters dto.ReviewFilters, p
 		path += "?" + params.Encode()
 	}
 
-	resp, err := s.client.DoRequest("GET", path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
+	return path
+}
 
+// handleGetAllResponse processes the HTTP response
+func (s *reviewService) handleGetAllResponse(resp *http.Response) (*dto.PaginatedReviewResponse, error) {
 	if resp.StatusCode != http.StatusOK {
-		var errorResp dto.ErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
-			return nil, fmt.Errorf("API error: %s", errorResp.Message)
-		}
-		return nil, fmt.Errorf("API error: %s", resp.Status)
+		return s.handleErrorStatusCode(resp)
 	}
 
 	var result dto.PaginatedReviewResponse
@@ -67,6 +80,15 @@ func (s *reviewService) GetAll(ctx context.Context, filters dto.ReviewFilters, p
 	return &result, nil
 }
 
+// handleErrorStatusCode handles non-200 status codes
+func (s *reviewService) handleErrorStatusCode(resp *http.Response) (*dto.PaginatedReviewResponse, error) {
+	var errorResp dto.ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
+		return nil, fmt.Errorf("API error: %s", errorResp.Message)
+	}
+	return nil, fmt.Errorf("API error: %s", resp.Status)
+}
+
 func (s *reviewService) Create(ctx context.Context, review dto.CreateReviewRequest, movieID string) (string, error) {
 	path := fmt.Sprintf("/movies/%s/reviews", movieID)
 
@@ -74,7 +96,11 @@ func (s *reviewService) Create(ctx context.Context, review dto.CreateReviewReque
 	if err != nil {
 		return "", fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		var errorResp dto.ErrorResponse
@@ -99,7 +125,11 @@ func (s *reviewService) Update(ctx context.Context, id string, review dto.Update
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
@@ -122,7 +152,11 @@ func (s *reviewService) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Ошибка при закрытии тела ответа: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusNoContent {
 		if resp.StatusCode == http.StatusNotFound {

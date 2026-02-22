@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ func (r *IMAPEmailReader) Connect() (*client.Client, error) {
 	if imapHost == "" {
 		return nil, fmt.Errorf("could not determine IMAP host for %s", r.config.SMTPHost)
 	}
-	
+
 	imapAddr := fmt.Sprintf("%s:993", imapHost)
 
 	c, err := client.DialTLS(imapAddr, &tls.Config{ServerName: imapHost})
@@ -41,7 +42,9 @@ func (r *IMAPEmailReader) Connect() (*client.Client, error) {
 	}
 
 	if err := c.Login(r.config.SMTPUser, r.config.SMTPPassword); err != nil {
-		c.Logout()
+		if err := c.Logout(); err != nil {
+			log.Printf("Ошибка: %v", err)
+		}
 		return nil, fmt.Errorf("failed to login to IMAP server: %v", err)
 	}
 
@@ -72,34 +75,74 @@ func (r *IMAPEmailReader) ReadRecentEmailWithSubjectAndSender(toEmail, subject, 
 	if err != nil {
 		return "", err
 	}
-	defer c.Logout()
+	defer func() {
+		if c != nil {
+			if err := c.Logout(); err != nil {
+				log.Printf("Ошибка: %v", err)
+			}
+		}
+	}()
 
-	mbox, err := c.Select("INBOX", false)
+	mbox, err := r.selectInbox(c)
 	if err != nil {
-		return "", fmt.Errorf("failed to select INBOX: %v", err)
+		return "", err
 	}
 
 	if mbox.Messages == 0 {
 		return "", fmt.Errorf("no messages in INBOX")
 	}
 
+	uids, err := r.searchEmails(c, subject, sender)
+	if err != nil {
+		return "", err
+	}
+
+	latestUID := r.findLatestUID(uids, subject)
+	if latestUID == 0 {
+		return "", fmt.Errorf("no emails found with subject '%s' in the last 5 minutes", subject)
+	}
+
+	emailBody, err := r.fetchEmailContent(c, latestUID)
+	if err != nil {
+		return "", err
+	}
+
+	return emailBody, nil
+}
+
+// selectInbox selects the INBOX folder
+func (r *IMAPEmailReader) selectInbox(c *client.Client) (*imap.MailboxStatus, error) {
+	mbox, err := c.Select("INBOX", false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select INBOX: %v", err)
+	}
+	return mbox, nil
+}
+
+// searchEmails searches for emails with the given subject and optional sender
+func (r *IMAPEmailReader) searchEmails(c *client.Client, subject, sender string) ([]uint32, error) {
 	criteria := imap.NewSearchCriteria()
 	criteria.Since = time.Now().Add(-5 * time.Minute)
-	
+
 	criteria.Header = make(map[string][]string)
 	criteria.Header["SUBJECT"] = []string{subject}
-	
+
 	if sender != "" {
 		criteria.Header["FROM"] = []string{sender}
 	}
 
 	uids, err := c.UidSearch(criteria)
 	if err != nil {
-		return "", fmt.Errorf("failed to search emails: %v", err)
+		return nil, fmt.Errorf("failed to search emails: %v", err)
 	}
 
+	return uids, nil
+}
+
+// findLatestUID finds the most recent UID from the search results
+func (r *IMAPEmailReader) findLatestUID(uids []uint32, subject string) uint32 {
 	if len(uids) == 0 {
-		return "", fmt.Errorf("no emails found with subject '%s' in the last 5 minutes", subject)
+		return 0
 	}
 
 	latestUID := uids[0]
@@ -109,6 +152,11 @@ func (r *IMAPEmailReader) ReadRecentEmailWithSubjectAndSender(toEmail, subject, 
 		}
 	}
 
+	return latestUID
+}
+
+// fetchEmailContent retrieves the content of the email with the given UID
+func (r *IMAPEmailReader) fetchEmailContent(c *client.Client, latestUID uint32) (string, error) {
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(latestUID)
 
@@ -151,7 +199,7 @@ func (r *IMAPEmailReader) ReadRecentEmailWithSubjectAndSender(toEmail, subject, 
 func (r *IMAPEmailReader) Extract2FACode(emailBody string) (string, error) {
 	re := regexp.MustCompile(`\b\d{6}\b`)
 	matches := re.FindAllString(emailBody, -1)
-	
+
 	if len(matches) == 0 {
 		return "", fmt.Errorf("no 6-digit code found in email body")
 	}

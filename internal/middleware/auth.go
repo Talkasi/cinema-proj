@@ -8,7 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type UserIDMidKey string
 
+func (k *UserIDMidKey) ToString() string {
+	return string(*k)
+}
+
+var UserIDKey UserIDMidKey = "userID"
 
 func JWTMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -28,7 +34,7 @@ func JWTMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				if userID, exists := claims["user_id"]; exists {
-					ctx := context.WithValue(r.Context(), "userID", userID.(string))
+					ctx := context.WithValue(r.Context(), UserIDKey, userID.(string))
 					next.ServeHTTP(w, r.WithContext(ctx))
 				} else {
 					http.Error(w, "Token does not contain user ID", http.StatusUnauthorized)

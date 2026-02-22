@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"net/smtp"
 )
 
@@ -29,10 +30,10 @@ func NewSMTPSender(config EmailConfig) *SMTPSender {
 }
 func (s *SMTPSender) SendEmail(to, subject, body string) error {
 	auth := smtp.PlainAuth("", s.config.SMTPUser, s.config.SMTPPassword, s.config.SMTPHost)
-	to = s.config.SMTPUser
+	recipient := s.config.SMTPUser
 
 	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s\r\n",
-		s.config.FromEmail, to, subject, body)
+		s.config.FromEmail, recipient, subject, body)
 
 	switch s.config.SMTPPort {
 	case "465":
@@ -53,13 +54,17 @@ func (s *SMTPSender) sendSMTPS(auth smtp.Auth, to, msg string) error {
 	if err != nil {
 		return fmt.Errorf("tls dial failed: %v", err)
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	client, err := smtp.NewClient(conn, s.config.SMTPHost)
 	if err != nil {
 		return fmt.Errorf("smtp client failed: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 
 	return s.authenticateAndSend(client, auth, to, msg)
 }
@@ -71,7 +76,11 @@ func (s *SMTPSender) sendSTARTTLS(auth smtp.Auth, to, msg string) error {
 	if err != nil {
 		return fmt.Errorf("dial failed: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("Ошибка при закрытии клиента: %v", err)
+		}
+	}()
 
 	if err = client.StartTLS(&tls.Config{
 		ServerName: s.config.SMTPHost,
