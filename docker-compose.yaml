@@ -1,10 +1,16 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: postgres_db
+    container_name: "${POSTGRES_CONTAINER_NAME:-postgres_db}"
+    cpuset: "${POSTGRES_CPUSET:-3-7}"
+    mem_limit: 8g
     env_file: ".env"
+    environment:
+      POSTGRES_DB: cinema
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"
+      - "${HOST_POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/prod_db_init:/docker-entrypoint-initdb.d:Z
@@ -19,15 +25,28 @@ services:
 
   app:
     build: .
-    container_name: go_app
+    container_name: "${APP_CONTAINER_NAME:-go_app}"
     ports:
-      - "8080:8080"
+      - "${HOST_APP_PORT:-8080}:8080"
     depends_on:
       otel-collector:
         condition: service_started
       postgres:
         condition: service_healthy
+    cpuset: "${APP_CPUSET:-8-9}"
+    mem_limit: 4g
     env_file: ".env"
+    environment:
+      ADDR: :8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: cinema
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_SSL: disable
+      TEST_DB_NAME: cinema_test
+      JWT_SECRET: secret-key
+      TOKEN_DURATION: 24h
     networks:
       - app-net
   otel-collector:

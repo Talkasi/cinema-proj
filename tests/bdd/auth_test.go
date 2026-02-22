@@ -536,6 +536,126 @@ func (ctx *testContext) aUserWithValidCredentialsAnd2FAEnabledExists() error {
 	return nil
 }
 
+func (ctx *testContext) theUserIsAuthenticatedWithAValidJWTToken() error {
+	loginRequest := dto.LoginRequest{
+		Email:        ctx.userEmail,
+		PasswordHash: ctx.userPassword,
+	}
+
+	requestBody, _ := json.Marshal(loginRequest)
+	req := httptest.NewRequest("POST", "/auth/login", strings.NewReader(string(requestBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx.currentResponse = httptest.NewRecorder()
+
+	ctx.userHandler.Login(ctx.currentResponse, req)
+
+	if ctx.currentResponse.Code != http.StatusOK {
+		return fmt.Errorf("failed to authenticate user, status code: %d", ctx.currentResponse.Code)
+	}
+
+	var authResp dto.AuthResponse
+	err := json.Unmarshal(ctx.currentResponse.Body.Bytes(), &authResp)
+	if err != nil {
+		return fmt.Errorf("failed to parse authentication response: %v", err)
+	}
+
+	if authResp.Token == "" {
+		return fmt.Errorf("no JWT token received in response")
+	}
+
+	ctx.jwtToken = authResp.Token
+	return nil
+}
+
+func (ctx *testContext) theUserUpdatesTheirPasswordWithValidCurrentAndNewPasswords() error {
+	updatePasswordRequest := dto.UpdatePasswordRequest{
+		CurrentPassword: ctx.userPassword,
+		NewPassword:     "newpassword123",
+	}
+
+	requestBody, _ := json.Marshal(updatePasswordRequest)
+	req := httptest.NewRequest("PATCH", "/users/password", strings.NewReader(string(requestBody)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+ctx.jwtToken)
+
+	ctx.currentResponse = httptest.NewRecorder()
+
+	ctxWithUser := context.WithValue(req.Context(), "userID", ctx.userID)
+	req = req.WithContext(ctxWithUser)
+
+	ctx.userHandler.UpdatePassword(ctx.currentResponse, req)
+
+	return nil
+}
+
+func (ctx *testContext) thePasswordShouldBeChangedSuccessfully() error {
+	if ctx.currentResponse.Code != http.StatusOK {
+		return fmt.Errorf("expected password to be updated successfully, got status: %d", ctx.currentResponse.Code)
+	}
+
+	return nil
+}
+
+func (ctx *testContext) theUserShouldBeAbleToLoginWithTheNewPassword() error {
+	// Try to login with the new password
+	loginRequest := dto.LoginRequest{
+		Email:        ctx.userEmail,
+		PasswordHash: "newpassword123",
+	}
+
+	requestBody, _ := json.Marshal(loginRequest)
+	req := httptest.NewRequest("POST", "/auth/login", strings.NewReader(string(requestBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	ctx.currentResponse = httptest.NewRecorder()
+
+	ctx.userHandler.Login(ctx.currentResponse, req)
+
+	if ctx.currentResponse.Code != http.StatusOK {
+		return fmt.Errorf("failed to login with new password, status code: %d", ctx.currentResponse.Code)
+	}
+
+	return nil
+}
+
+func (ctx *testContext) theUserAttemptsToUpdateTheirPasswordWithInvalidCurrentPassword() error {
+	updatePasswordRequest := dto.UpdatePasswordRequest{
+		CurrentPassword: "invalidpassword",
+		NewPassword:     "anothernewpassword",
+	}
+
+	requestBody, _ := json.Marshal(updatePasswordRequest)
+	req := httptest.NewRequest("PATCH", "/users/password", strings.NewReader(string(requestBody)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+ctx.jwtToken)
+
+	ctx.currentResponse = httptest.NewRecorder()
+
+	ctxWithUser := context.WithValue(req.Context(), "userID", ctx.userID)
+	req = req.WithContext(ctxWithUser)
+
+	ctx.userHandler.UpdatePassword(ctx.currentResponse, req)
+
+	return nil
+}
+
+func (ctx *testContext) thePasswordChangeShouldBeRejected() error {
+	if ctx.currentResponse.Code == http.StatusOK {
+		return fmt.Errorf("expected password change to be rejected, but got success status: %d", ctx.currentResponse.Code)
+	}
+
+	return nil
+}
+
+func (ctx *testContext) theUserShouldReceiveAnErrorMessageAboutInvalidCurrentPassword() error {
+	if ctx.currentResponse.Code != http.StatusForbidden {
+		return fmt.Errorf("expected forbidden status for invalid current password, got %d", ctx.currentResponse.Code)
+	}
+
+	return nil
+}
+
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	testCtx := InitializeTestContext()
 
@@ -564,6 +684,13 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the user disables two-factor authentication$`, testCtx.theUserDisablesTwoFactorAuthentication)
 	ctx.Step(`^the 2FA should be disabled in the user's account$`, testCtx.the2FAShouldBeDisabledInTheUserAccount)
 	ctx.Step(`^a user with valid credentials and 2FA enabled exists$`, testCtx.aUserWithValidCredentialsAnd2FAEnabledExists)
+	ctx.Step(`^the user is authenticated with a valid JWT token$`, testCtx.theUserIsAuthenticatedWithAValidJWTToken)
+	ctx.Step(`^the user updates their password with valid current and new passwords$`, testCtx.theUserUpdatesTheirPasswordWithValidCurrentAndNewPasswords)
+	ctx.Step(`^the password should be changed successfully$`, testCtx.thePasswordShouldBeChangedSuccessfully)
+	ctx.Step(`^the user should be able to login with the new password$`, testCtx.theUserShouldBeAbleToLoginWithTheNewPassword)
+	ctx.Step(`^the user attempts to update their password with invalid current password$`, testCtx.theUserAttemptsToUpdateTheirPasswordWithInvalidCurrentPassword)
+	ctx.Step(`^the password change should be rejected$`, testCtx.thePasswordChangeShouldBeRejected)
+	ctx.Step(`^the user should receive an error message about invalid current password$`, testCtx.theUserShouldReceiveAnErrorMessageAboutInvalidCurrentPassword)
 }
 
 func TestFeatures(t *testing.T) {

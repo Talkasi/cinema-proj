@@ -50,3 +50,17 @@ Feature: Email 2FA Authentication
     Given a user with valid credentials and 2FA enabled exists
     When the user disables two-factor authentication
     Then the 2FA should be disabled in the user's account
+
+  Scenario: Change user password successfully
+    Given a user with valid credentials exists
+    And the user is authenticated with a valid JWT token
+    When the user updates their password with valid current and new passwords
+    Then the password should be changed successfully
+    And the user should be able to login with the new password
+
+  Scenario: Change user password with invalid current password
+    Given a user with valid credentials exists
+    And the user is authenticated with a valid JWT token
+    When the user attempts to update their password with invalid current password
+    Then the password change should be rejected
+    And the user should receive an error message about invalid current password

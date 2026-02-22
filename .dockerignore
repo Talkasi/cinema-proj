@@ -7,3 +7,12 @@ bin/
 tmp/
 Dockerfile
 docker-compose.yml
+docker-compose.yaml
+Makefile
+performance_analysis_notebook.ipynb
+continious_max_test_*/
+degradation_get_test_*/
+degradation_post_test_*/
+degradation_test_*/
+free_test_*/
+sql/tests.sql
