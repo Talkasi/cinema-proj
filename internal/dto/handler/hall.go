@@ -20,17 +20,17 @@ func NewHallHandler(hs *service.HallService) *HallHandler {
 	return &HallHandler{hallService: hs}
 }
 
-// @Summary Poluchit spisok zalov
-// @Description Vozvraschaet paginirovannyy spisok vsekh kinozalov s filtratsiey
-// @Tags Kinozaly
+// @Summary Get a list of halls
+// @Description Returns a paginated list of all halls with filtering
+// @Tags Halls
 // @Produce json
-// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
-// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
-// @Param name query string false "Poisk po nazvaniyu zala (registronezavisimyy poisk vkhozhdeniy)"
-// @Param screen_type_id query string false "Filtr po ID tipa ekrana"
-// @Param description query string false "Poisk po opisaniyu zala (registronezavisimyy poisk vkhozhdeniy)"
-// @Success 200 {object} dto.PaginatedHallResponse "Spisok zalov"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param limit query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param name query string false "Search by hall name (case-insensitive substring search)"
+// @Param screen_type_id query string false "Filter by screen type ID"
+// @Param description query string false "Search by hall description (case-insensitive substring search)"
+// @Success 200 {object} dto.PaginatedHallResponse "Hall list"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /halls [get]
 func (h *HallHandler) GetHalls(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -64,13 +64,13 @@ func (h *HallHandler) GetHalls(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Poluchit zal po ID
-// @Description Vozvraschaet informatsiyu o kinozale po ego identifikatoru
-// @Tags Kinozaly
+// @Summary Get a hall by ID
+// @Description Returns information about a hall by its identifier
+// @Tags Halls
 // @Produce json
-// @Param id path string true "UUID zala"
-// @Success 200 {object} dto.HallResponse "Informatsiya o zale"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Hall UUID"
+// @Success 200 {object} dto.HallResponse "Hall information"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /halls/{id} [get]
 func (h *HallHandler) GetHallByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -87,16 +87,16 @@ func (h *HallHandler) GetHallByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Sozdat zal
-// @Description Sozdaet novyy kinozal (tolko dlya administratorov)
-// @Tags Kinozaly
+// @Summary Create a hall
+// @Description Creates a new hall (administrators only)
+// @Tags Halls
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param hall body dto.CreateHallRequest true "Dannye zala"
-// @Success 201 {object} dto.CreateResponse "Zal sozdan"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Param hall body dto.CreateHallRequest true "Hall data"
+// @Success 201 {object} dto.CreateResponse "Hall created"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
 // @Router /halls [post]
 func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateHallRequest
@@ -121,18 +121,18 @@ func (h *HallHandler) CreateHall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Obnovit zal
-// @Description Obnovlyaet informatsiyu o kinozale (tolko dlya administratorov)
-// @Tags Kinozaly
+// @Summary Update a hall
+// @Description Updates information about a hall (administrators only)
+// @Tags Halls
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID zala"
-// @Param hall body dto.UpdateHallRequest true "Novye dannye zala"
-// @Success 200 "Zal obnovlen"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Hall UUID"
+// @Param hall body dto.UpdateHallRequest true "New hall data"
+// @Success 200 "Hall updated"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /halls/{id} [put]
 func (h *HallHandler) UpdateHall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -152,14 +152,14 @@ func (h *HallHandler) UpdateHall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Udalit zal
-// @Description Udalyaet kinozal po identifikatoru (tolko dlya administratorov)
-// @Tags Kinozaly
+// @Summary Delete a hall
+// @Description Deletes a hall by identifier (administrators only)
+// @Tags Halls
 // @Security BearerAuth
-// @Param id path string true "UUID zala"
-// @Success 204 "Zal udalen"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Hall UUID"
+// @Success 204 "Hall deleted"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /halls/{id} [delete]
 func (h *HallHandler) DeleteHall(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

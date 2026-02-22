@@ -1,7 +1,7 @@
 package dto
 
 type ScreenTypeFilters struct {
-	Name        string `form:"name" example:"imax"`
+	Name        string `form:"name" example:"Screen technology with enhanced resolution and improved sound"`
 	Description string `form:"description" example:"bolshoy ekran"`
 }
 

@@ -40,7 +40,7 @@ def convert_numeric_columns(df: pd.DataFrame, columns: Iterable[str]) -> pd.Data
 
 
 def print_dataframe_overview(df: pd.DataFrame) -> None:
-    print("\nDEBAG STRUKTURY DANNYKh:")
+    print("Analysis message")
     print(f"Vsego strok: {len(df)}")
     print(f"Kolonki: {list(df.columns)}")
     if not df.empty and "metric_name" in df.columns:

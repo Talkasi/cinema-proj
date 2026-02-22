@@ -100,7 +100,7 @@ jobs:
         LOG_OUTPUT: artifacts/observability/bdd-tests.log
       run: |
         cd tests/bdd
-        go test -v
+        go test -tags=bdd -v
 
     - name: Upload BDD observability artifacts
       uses: actions/upload-artifact@v4

@@ -13,9 +13,9 @@ import (
 	"cw/internal/observability"
 )
 
-// @title Kursovaya rabota po bazam dannykh - API upravleniya kinoteatrom
+// @title Database Course Project - Cinema Management API
 // @version 1.0
-// @description Razrabotka bazy dannykh dlya upravleniya kinoteatrom
+// @description Database development for cinema management
 // @host localhost:8080
 // @BasePath /api/v1
 // @securityDefinitions.apikey BearerAuth

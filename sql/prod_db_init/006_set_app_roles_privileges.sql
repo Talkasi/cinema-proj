@@ -13,8 +13,6 @@ GRANT SELECT ON
 TO cinema_guest;
 GRANT INSERT ON users TO cinema_guest;
 
--- Podumat naschet RLS
-
 GRANT cinema_guest TO cinema_user;
 GRANT UPDATE ON users TO cinema_user;
 GRANT UPDATE ON tickets TO cinema_user;

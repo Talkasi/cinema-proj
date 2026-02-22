@@ -25,7 +25,7 @@ export const options = {
 };
 
 export default function () {
-  // GET zapros: poluchenie spiska filmov (ne trebuet vneshnikh ID)
+  // Load test scenario comment.
   const randomPage = Math.floor(Math.random() * 8) + 1; // Generates a random number between 1 and 80
   const getMoviesRes = http.get(`${BASE_URL}/movies?limit=10&page=${randomPage}`);
   requestCount.add(1);
@@ -43,5 +43,5 @@ export default function () {
   responseTime.add(getMoviesRes.timings.duration);
 
   return 
-  // sleep(Math.random() * 2 + 1); // Nebolshaya zaderzhka mezhdu zaprosami
+  // Load test scenario comment.
 }

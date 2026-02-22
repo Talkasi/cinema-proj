@@ -1,7 +1,7 @@
 package dto
 
 type GenreFilters struct {
-	Name        string `form:"name" example:"drama"`
+	Name        string `form:"name" example:"Example value"`
 	Description string `form:"description" example:"emotsionalnyy"`
 }
 
@@ -22,6 +22,6 @@ type GenreResponse struct {
 }
 
 type GenreDataRequest struct {
-	Name        string `json:"name" validate:"required" example:"Drama"`
+	Name        string `json:"name" validate:"required" example:"Example value"`
 	Description string `json:"description" example:"Emotsionalnye filmy o chelovecheskikh otnosheniyakh"`
 }

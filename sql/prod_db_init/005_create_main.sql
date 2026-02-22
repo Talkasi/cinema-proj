@@ -104,7 +104,7 @@ BEGIN
              NEW.start_time + (SELECT duration FROM movies WHERE id = NEW.movie_id) + INTERVAL '10 minutes' > start_time)
         )
     ) THEN
-        RAISE EXCEPTION 'Nevozmozhno zaplanirovat pokaz, poskolku v eto vremya kinozal budet zanyat pokazom drugogo filma ili budet provoditsya uborka';
+        RAISE EXCEPTION 'Message';
     END IF;
 
     RETURN NEW;
@@ -165,13 +165,12 @@ CREATE TABLE IF NOT EXISTS tickets (
 CREATE OR REPLACE FUNCTION update_box_office_revenue()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Esli status bileta izmenilsya na "Kuplennyy"
+
     IF NEW.ticket_Status = 'Purchased' AND OLD.ticket_Status <> 'Purchased' THEN
         UPDATE movies
         SET box_office_revenue = box_office_revenue + NEW.price
         WHERE id = (SELECT movie_id FROM movie_shows WHERE id = NEW.movie_show_id);
-    
-    -- Esli status bileta izmenilsya s "Kuplennogo" na drugoy status
+
     ELSIF OLD.ticket_Status = 'Purchased' AND NEW.ticket_Status <> 'Purchased' THEN
         UPDATE movies
         SET box_office_revenue = box_office_revenue - OLD.price
@@ -235,7 +234,7 @@ BEGIN
     RETURN v_show_id;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE EXCEPTION 'Oshibka pri sozdanii seansa: %', SQLERRM;
+        RAISE EXCEPTION 'Message', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -249,7 +248,7 @@ CREATE OR REPLACE PROCEDURE update_movie(
     p_genre_ids UUID[]
 ) LANGUAGE plpgsql AS $$
 BEGIN
-    -- Obnovlyaem osnovnye dannye filma
+
     UPDATE movies 
     SET 
         title = p_title,
@@ -258,8 +257,7 @@ BEGIN
         age_limit = p_age_limit,
         release_date = p_release_date
     WHERE id = p_movie_id;
-    
-    -- Obnovlyaem zhanry
+
     DELETE FROM movies_genres 
     WHERE movie_id = p_movie_id 
     AND genre_id NOT IN (SELECT unnest(p_genre_ids));

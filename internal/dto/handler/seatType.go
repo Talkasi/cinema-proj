@@ -20,16 +20,16 @@ func NewSeatTypeHandler(sts *service.SeatTypeService) *SeatTypeHandler {
 	return &SeatTypeHandler{seatTypeService: sts}
 }
 
-// @Summary Poluchit spisok tipov mest
-// @Description Vozvraschaet paginirovannyy spisok vsekh tipov mest s filtratsiey
-// @Tags Tipy mest
+// @Summary Get a list of seat types
+// @Description Returns a paginated list of all seat types with filtering
+// @Tags Seat Types
 // @Produce json
-// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
-// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
-// @Param name query string false "Poisk po nazvaniyu tipa mesta (registronezavisimyy poisk vkhozhdeniy)"
-// @Param description query string false "Poisk po opisaniyu tipa mesta (registronezavisimyy poisk vkhozhdeniy)"
-// @Success 200 {object} dto.PaginatedSeatTypeResponse "Spisok tipov mest"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param limit query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param name query string false "Search by seat type name (case-insensitive substring search)"
+// @Param description query string false "Search by seat type description (case-insensitive substring search)"
+// @Success 200 {object} dto.PaginatedSeatTypeResponse "Seat type list"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seat-types [get]
 func (st *SeatTypeHandler) GetSeatTypes(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -62,13 +62,13 @@ func (st *SeatTypeHandler) GetSeatTypes(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// @Summary Poluchit tip mesta po ID
-// @Description Vozvraschaet informatsiyu o tipe mesta po ego identifikatoru
-// @Tags Tipy mest
+// @Summary Get a seat type by ID
+// @Description Returns information about a seat type by its identifier
+// @Tags Seat Types
 // @Produce json
-// @Param id path string true "UUID tipa mesta"
-// @Success 200 {object} dto.SeatTypeResponse "Informatsiya o tipe mesta"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Seat type UUID"
+// @Success 200 {object} dto.SeatTypeResponse "Seat type information"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seat-types/{id} [get]
 func (st *SeatTypeHandler) GetSeatTypeByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -85,16 +85,16 @@ func (st *SeatTypeHandler) GetSeatTypeByID(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// @Summary Sozdat tip mesta
-// @Description Sozdaet novyy tip mesta (tolko dlya administratorov)
-// @Tags Tipy mest
+// @Summary Create a seat type
+// @Description Creates a new seat type (administrators only)
+// @Tags Seat Types
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param seat_type body dto.CreateSeatTypeRequest true "Dannye tipa mesta"
-// @Success 201 {object} dto.CreateResponse "Tip mesta sozdan"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Param seat_type body dto.CreateSeatTypeRequest true "Seat type data"
+// @Success 201 {object} dto.CreateResponse "Seat type created"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
 // @Router /seat-types [post]
 func (st *SeatTypeHandler) CreateSeatType(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateSeatTypeRequest
@@ -119,18 +119,18 @@ func (st *SeatTypeHandler) CreateSeatType(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// @Summary Obnovit tip mesta
-// @Description Polnostyu obnovlyaet informatsiyu o tipe mesta (tolko dlya administratorov)
-// @Tags Tipy mest
+// @Summary Update a seat type
+// @Description Fully updates information about a seat type (administrators only)
+// @Tags Seat Types
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID tipa mesta"
-// @Param seat_type body dto.UpdateSeatTypeRequest true "Novye dannye tipa mesta"
-// @Success 200 "Tip mesta obnovlen"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Seat type UUID"
+// @Param seat_type body dto.UpdateSeatTypeRequest true "New seat type data"
+// @Success 200 "Seat type updated"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seat-types/{id} [put]
 func (st *SeatTypeHandler) UpdateSeatType(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -150,14 +150,14 @@ func (st *SeatTypeHandler) UpdateSeatType(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// @Summary Udalit tip mesta
-// @Description Udalyaet tip mesta po identifikatoru (tolko dlya administratorov)
-// @Tags Tipy mest
+// @Summary Delete a seat type
+// @Description Deletes a seat type by identifier (administrators only)
+// @Tags Seat Types
 // @Security BearerAuth
-// @Param id path string true "UUID tipa mesta"
-// @Success 204 "Tip mesta udalen"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Seat type UUID"
+// @Success 204 "Seat type deleted"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seat-types/{id} [delete]
 func (st *SeatTypeHandler) DeleteSeatType(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

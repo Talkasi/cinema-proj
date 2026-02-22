@@ -21,20 +21,20 @@ func NewMovieShowHandler(ms *service.MovieShowService) *MovieShowHandler {
 	return &MovieShowHandler{movieShowService: ms}
 }
 
-// @Summary Poluchit spisok kinoseansov
-// @Description Vozvraschaet paginirovannyy spisok vsekh kinoseansov s filtratsiey
-// @Tags Kinoseansy
+// @Summary Get a list of movie shows
+// @Description Returns a paginated list of all movie shows with filtering
+// @Tags Movie Shows
 // @Produce json
-// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
-// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
-// @Param movie_id query string false "Filtr po ID filma (mozhno ukazat neskolko cherez zapyatuyu)"
-// @Param hall_id query string false "Filtr po ID zala (mozhno ukazat neskolko cherez zapyatuyu)"
-// @Param language query string false "Filtr po yazykam pokaza (mozhno ukazat neskolko cherez zapyatuyu)"
-// @Param date query string false "Filtr po date (YYYY-MM-DD)"
-// @Param start_time_from query string false "Filtr po vremeni nachala (ot)"
-// @Param start_time_to query string false "Filtr po vremeni nachala (do)"
-// @Success 200 {object} dto.PaginatedMovieShowResponse "Spisok kinoseansov"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param limit query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param movie_id query string false "Filter by movie ID (multiple comma-separated values allowed)"
+// @Param hall_id query string false "Filter by hall ID (multiple comma-separated values allowed)"
+// @Param language query string false "Filter by screening languages (multiple comma-separated values allowed)"
+// @Param date query string false "Filter by date (YYYY-MM-DD)"
+// @Param start_time_from query string false "Filter by start time (from)"
+// @Param start_time_to query string false "Filter by start time (to)"
+// @Success 200 {object} dto.PaginatedMovieShowResponse "Movie show list"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movie-shows [get]
 func (ms *MovieShowHandler) GetMovieShows(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -71,13 +71,13 @@ func (ms *MovieShowHandler) GetMovieShows(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// @Summary Poluchit kinoseans po ID
-// @Description Vozvraschaet informatsiyu o kinoseanse po ego identifikatoru
-// @Tags Kinoseansy
+// @Summary Get a movie show by ID
+// @Description Returns information about a movie show by its identifier
+// @Tags Movie Shows
 // @Produce json
-// @Param id path string true "UUID kinoseansa"
-// @Success 200 {object} dto.MovieShowResponse "Informatsiya o kinoseanse"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Movie show UUID"
+// @Success 200 {object} dto.MovieShowResponse "Movie show information"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movie-shows/{id} [get]
 func (ms *MovieShowHandler) GetMovieShowByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -94,16 +94,16 @@ func (ms *MovieShowHandler) GetMovieShowByID(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// @Summary Sozdat kinoseans
-// @Description Sozdaet novyy kinoseans (tolko dlya administratorov)
-// @Tags Kinoseansy
+// @Summary Create a movie show
+// @Description Creates a new movie show (administrators only)
+// @Tags Movie Shows
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param movie_show body dto.CreateMovieShowRequest true "Dannye kinoseansa"
-// @Success 201 {object} dto.CreateResponse "Kinoseans sozdan"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Param movie_show body dto.CreateMovieShowRequest true "Movie show data"
+// @Success 201 {object} dto.CreateResponse "Movie show created"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
 // @Router /movie-shows [post]
 func (ms *MovieShowHandler) CreateMovieShow(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateMovieShowRequest
@@ -128,18 +128,18 @@ func (ms *MovieShowHandler) CreateMovieShow(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// @Summary Obnovit kinoseans
-// @Description Obnovlyaet informatsiyu o kinoseanse (tolko dlya administratorov)
-// @Tags Kinoseansy
+// @Summary Update a movie show
+// @Description Updates information about a movie show (administrators only)
+// @Tags Movie Shows
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID kinoseansa"
-// @Param movie_show body dto.UpdateMovieShowRequest true "Novye dannye kinoseansa"
-// @Success 200 "Kinoseans obnovlen"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Movie show UUID"
+// @Param movie_show body dto.UpdateMovieShowRequest true "New movie show data"
+// @Success 200 "Movie show updated"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movie-shows/{id} [put]
 func (ms *MovieShowHandler) UpdateMovieShow(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -159,14 +159,14 @@ func (ms *MovieShowHandler) UpdateMovieShow(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// @Summary Udalit kinoseans
-// @Description Udalyaet kinoseans po identifikatoru (tolko dlya administratorov)
-// @Tags Kinoseansy
+// @Summary Delete a movie show
+// @Description Deletes a movie show by identifier (administrators only)
+// @Tags Movie Shows
 // @Security BearerAuth
-// @Param id path string true "UUID kinoseansa"
-// @Success 204 "Kinoseans udalen"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Movie show UUID"
+// @Success 204 "Movie show deleted"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movie-shows/{id} [delete]
 func (ms *MovieShowHandler) DeleteMovieShow(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

@@ -20,20 +20,20 @@ func NewSeatHandler(st *service.SeatService) *SeatHandler {
 	return &SeatHandler{seatService: st}
 }
 
-// @Summary Poluchit mesta v zale
-// @Description Vozvraschaet paginirovannyy spisok mest v ukazannom zale s filtratsiey
-// @Tags Mesta
+// @Summary Get seats in a hall
+// @Description Returns a paginated list of seats in the specified hall with filtering
+// @Tags Seats
 // @Produce json
-// @Param hall_id path string true "UUID zala"
-// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
-// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
-// @Param seat_type_id query string false "Filtr po ID tipa mesta"
-// @Param row_number_min query int false "Minimalnyy nomer ryada" minimum(1)
-// @Param row_number_max query int false "Maksimalnyy nomer ryada" minimum(1)
-// @Param seat_number_min query int false "Minimalnyy nomer mesta" minimum(1)
-// @Param seat_number_max query int false "Maksimalnyy nomer mesta" minimum(1)
-// @Success 200 {object} dto.PaginatedSeatResponse "Spisok mest"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param hall_id path string true "Hall UUID"
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param limit query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param seat_type_id query string false "Filter by seat type ID"
+// @Param row_number_min query int false "Minimum row number" minimum(1)
+// @Param row_number_max query int false "Maximum row number" minimum(1)
+// @Param seat_number_min query int false "Minimum seat number" minimum(1)
+// @Param seat_number_max query int false "Maximum seat number" minimum(1)
+// @Success 200 {object} dto.PaginatedSeatResponse "Seat list"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /halls/{hall_id}/seats [get]
 func (s *SeatHandler) GetSeatsByHall(w http.ResponseWriter, r *http.Request) {
 	hallId := chi.URLParam(r, "hall_id")
@@ -99,13 +99,13 @@ func (s *SeatHandler) parseIntParam(r *http.Request, paramName string) int {
 	return 0
 }
 
-// @Summary Poluchit mesto po ID
-// @Description Vozvraschaet informatsiyu o meste po ego identifikatoru
-// @Tags Mesta
+// @Summary Get a seat by ID
+// @Description Returns information about a seat by its identifier
+// @Tags Seats
 // @Produce json
-// @Param seat_id path string true "UUID mesta"
-// @Success 200 {object} dto.SeatResponse "Informatsiya o meste"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param seat_id path string true "Seat UUID"
+// @Success 200 {object} dto.SeatResponse "Seat information"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seats/{seat_id} [get]
 func (s *SeatHandler) GetSeatByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "seat_id")
@@ -122,17 +122,17 @@ func (s *SeatHandler) GetSeatByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Sozdat mesto
-// @Description Sozdaet novoe mesto (tolko dlya administratorov)
-// @Tags Mesta
+// @Summary Create a seat
+// @Description Creates a new seat (administrators only)
+// @Tags Seats
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param hall_id path string true "UUID zala"
-// @Param seat body dto.CreateSeatRequest true "Dannye mesta"
-// @Success 201 {object} dto.CreateResponse "Mesto sozdano"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Param hall_id path string true "Hall UUID"
+// @Param seat body dto.CreateSeatRequest true "Seat data"
+// @Success 201 {object} dto.CreateResponse "Seat created"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
 // @Router /halls/{hall_id}/seats [post]
 func (s *SeatHandler) CreateSeat(w http.ResponseWriter, r *http.Request) {
 	hallID := chi.URLParam(r, "hall_id")
@@ -161,18 +161,18 @@ func (s *SeatHandler) CreateSeat(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Obnovit mesto
-// @Description Polnostyu obnovlyaet informatsiyu o meste (tolko dlya administratorov)
-// @Tags Mesta
+// @Summary Update a seat
+// @Description Fully updates information about a seat (administrators only)
+// @Tags Seats
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param seat_id path string true "UUID mesta"
-// @Param seat body dto.UpdateSeatRequest true "Novye dannye mesta"
-// @Success 200 "Mesto obnovleno"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param seat_id path string true "Seat UUID"
+// @Param seat body dto.UpdateSeatRequest true "New seat data"
+// @Success 200 "Seat updated"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seats/{seat_id} [put]
 func (s *SeatHandler) UpdateSeat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "seat_id")
@@ -192,14 +192,14 @@ func (s *SeatHandler) UpdateSeat(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Udalit mesto
-// @Description Udalyaet mesto po identifikatoru (tolko dlya administratorov)
-// @Tags Mesta
+// @Summary Delete a seat
+// @Description Deletes a seat by identifier (administrators only)
+// @Tags Seats
 // @Security BearerAuth
-// @Param seat_id path string true "UUID mesta"
-// @Success 204 "Mesto udaleno"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param seat_id path string true "Seat UUID"
+// @Success 204 "Seat deleted"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /seats/{seat_id} [delete]
 func (s *SeatHandler) DeleteSeat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "seat_id")

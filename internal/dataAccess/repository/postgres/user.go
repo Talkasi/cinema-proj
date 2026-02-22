@@ -235,7 +235,7 @@ func (r *UserRepository) VerifyCurrentPassword(ctx context.Context, id string, c
 	}
 
 	if storedPasswordHash != currentPassword {
-		return utils.NewForbidden("Tekuschiy parol neveren", nil)
+		return utils.NewForbidden("Current password is incorrect", nil)
 	}
 
 	return nil

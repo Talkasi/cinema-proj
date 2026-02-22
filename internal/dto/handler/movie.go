@@ -20,16 +20,16 @@ func NewMovieHandler(ms *service.MovieService) *MovieHandler {
 	return &MovieHandler{movieService: ms}
 }
 
-// @Summary Poluchit spisok filmov
-// @Description Vozvraschaet paginirovannyy spisok vsekh filmov
-// @Tags Filmy
+// @Summary Get a list of movies
+// @Description Returns a paginated list of all movies
+// @Tags Movies
 // @Produce json
-// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
-// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
-// @Param genre query string false "Filtr po zhanru"
-// @Param title query string false "Poisk po nazvaniyu"
-// @Success 200 {object} dto.PaginatedMovieResponse "Spisok filmov"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param limit query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param genre query string false "Filter by genre"
+// @Param title query string false "Search by name"
+// @Success 200 {object} dto.PaginatedMovieResponse "Movie list"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movies [get]
 func (m *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -62,13 +62,13 @@ func (m *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Poluchit film po ID
-// @Description Vozvraschaet informatsiyu o filme po ego identifikatoru
-// @Tags Filmy
+// @Summary Get a movie by ID
+// @Description Returns information about a movie by its identifier
+// @Tags Movies
 // @Produce json
-// @Param id path string true "UUID filma"
-// @Success 200 {object} dto.MovieResponse "Informatsiya o filme"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Movie UUID"
+// @Success 200 {object} dto.MovieResponse "Movie information"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movies/{id} [get]
 func (m *MovieHandler) GetMovieByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -85,16 +85,16 @@ func (m *MovieHandler) GetMovieByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Sozdat novyy film
-// @Description Sozdaet novyy film (tolko dlya administratorov)
-// @Tags Filmy
+// @Summary Create a new movie
+// @Description Creates a new movie (administrators only)
+// @Tags Movies
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param movie body dto.CreateMovieRequest true "Dannye filma"
-// @Success 201 {object} dto.CreateResponse "Film sozdan"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Param movie body dto.CreateMovieRequest true "Movie data"
+// @Success 201 {object} dto.CreateResponse "Movie created"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
 // @Router /movies [post]
 func (m *MovieHandler) CreateMovie(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateMovieRequest
@@ -119,18 +119,18 @@ func (m *MovieHandler) CreateMovie(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Obnovit film
-// @Description Polnostyu obnovlyaet informatsiyu o filme (tolko dlya administratorov)
-// @Tags Filmy
+// @Summary Update a movie
+// @Description Fully updates information about a movie (administrators only)
+// @Tags Movies
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID filma"
-// @Param movie body dto.UpdateMovieRequest true "Novye dannye filma"
-// @Success 200 "Film obnovlen"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Movie UUID"
+// @Param movie body dto.UpdateMovieRequest true "New movie data"
+// @Success 200 "Movie updated"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movies/{id} [put]
 func (m *MovieHandler) UpdateMovie(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -150,14 +150,14 @@ func (m *MovieHandler) UpdateMovie(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Udalit film
-// @Description Udalyaet film po identifikatoru (tolko dlya administratorov)
-// @Tags Filmy
+// @Summary Delete a movie
+// @Description Deletes a movie by identifier (administrators only)
+// @Tags Movies
 // @Security BearerAuth
-// @Param id path string true "UUID filma"
-// @Success 204 "Film udalen"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Movie UUID"
+// @Success 204 "Movie deleted"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /movies/{id} [delete]
 func (m *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

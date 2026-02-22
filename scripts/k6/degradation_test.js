@@ -17,7 +17,7 @@ const BASE_URL = 'http://app:8080/api/v1';
 const USER_PASSWORD = 'superSecurePassword123';
 
 export function setup() {
-  console.log('Setup: podgotovka testovykh dannykh...');
+  console.log('Preparing test data...');
   
   const testEmail = `admin_user_${Date.now()}@example.com`;
   const registerPayload = JSON.stringify({
@@ -29,7 +29,7 @@ export function setup() {
 
   const headers = { 'Content-Type': 'application/json' };
   
-  // Registratsiya
+  // Registration
   const regRes = http.post(`${BASE_URL}/auth/register`, registerPayload, { headers });
   console.log('Register status:', regRes.status, 'Body:', regRes.body);
   
@@ -53,7 +53,7 @@ export function setup() {
   let token = null;
   try {
     const loginData = JSON.parse(loginRes.body);
-    // Ischem token v raznykh vozmozhnykh polyakh
+    // Try common token field names
     token = loginData.Token || loginData.token || loginData.access_token || loginData.accessToken;
     console.log('Token found:', token ? 'YES' : 'NO');
     if (token) {
@@ -91,7 +91,7 @@ export default function (data) {
     'Authorization': `Bearer ${authToken}`,
   } : { 'Content-Type': 'application/json' };
 
-  // STsENARIY 1: Prosmotr filmov (vsegda rabotaet bez avtorizatsii)
+  // Load test scenario comment.
   group('Movie Browsing Flow', function () {
     const getMoviesRes = http.get(`${BASE_URL}/movies?limit=10`);
     check(getMoviesRes, { 
@@ -105,7 +105,7 @@ export default function (data) {
     if (movies && movies.length > 0) {
       const randomMovie = randomItem(movies);
       
-      // Detali filma
+      // Scenario note.
       const getMovieDetailRes = http.get(`${BASE_URL}/movies/${randomMovie.id}`);
       check(getMovieDetailRes, { 'GET /movies/{id} status is 200': (r) => r.status === 200 });
       trends.getMovieDetails.add(getMovieDetailRes.timings.duration);
@@ -119,7 +119,7 @@ export default function (data) {
     sleep(Math.random() * 2 + 1);
   });
 
-  // STsENARIY 2: Napisanie otzyva (tolko esli est token)
+  // Load test scenario comment.
   if (authToken && Math.random() < 0.3) {
     group('Review Writing Flow', function () {
       const getMoviesRes = http.get(`${BASE_URL}/movies?limit=5`);
@@ -130,7 +130,7 @@ export default function (data) {
         const reviewPayload = JSON.stringify({
           movie_id: movieToReview.id,
           rating: Math.floor(Math.random() * 10) + 1,
-          comment: `Testovyy otzyv pod nagruzkoy. VU: ${__VU}, Iter: ${__ITER}`
+          comment: `Load test review comment`
         });
         
         const postReviewRes = http.post(`${BASE_URL}/movies/${movieToReview.id}/reviews`, reviewPayload, { 
@@ -147,7 +147,7 @@ export default function (data) {
     });
   }
 
-  // STsENARIY 3: Registratsiya i login novykh polzovateley
+  // Load test scenario comment.
   if (Math.random() < 0.1) {
     group('Authentication Flow', function () {
       const userEmail = `stress_user_${__VU}_${__ITER}_${Date.now()}@test.com`;

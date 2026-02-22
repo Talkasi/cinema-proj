@@ -25,7 +25,7 @@ export const options = {
 };
 
 export default function () {
-  // POST zapros: registratsiya novogo polzovatelya (ne trebuet vneshnikh ID)
+  // Load test scenario comment.
   const timestamp = Date.now();
   const testEmail = `degradation_test_user_${timestamp}_${__VU}_${__ITER}@example.com`;
   const registerPayload = JSON.stringify({
@@ -52,5 +52,5 @@ export default function () {
   
   responseTime.add(postRegisterRes.timings.duration);
 
-  sleep(Math.random() * 2 + 1); // Nebolshaya zaderzhka mezhdu zaprosami
+  sleep(Math.random() * 2 + 1); // Scenario note.
 }

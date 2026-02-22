@@ -8,7 +8,7 @@ type MovieFilters struct {
 type MovieResponse struct {
 	ID               string          `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Title            string          `json:"title" example:"Interstellar"`
-	Description      string          `json:"description" example:"Fantasticheskiy epos o puteshestvii cherez chervotochinu v poiskakh novogo doma dlya chelovechestva"`
+	Description      string          `json:"description" example:"Example value"`
 	Duration         string          `json:"duration" example:"02:49:00"`
 	AgeLimit         int             `json:"age_limit" example:"12"`
 	Rating           float64         `json:"rating" example:"8.6"`

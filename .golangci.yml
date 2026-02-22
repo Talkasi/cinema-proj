@@ -3,9 +3,9 @@
 #   enable:
 #     - gocyclo        # Tsiklomaticheskaya slozhnost
 #     - gocognit       # Slozhnost po Kholstedu (kognitivnaya slozhnost)
-#     - staticcheck    # Staticheskiy analiz
+#     - staticcheck    # Static analysis
 #     - unused         # Neispolzuemyy kod
-#     - errcheck       # Proverka oshibok
+#     - errcheck       # Error checks
 #     - ineffassign    # Neeffektivnye prisvaivaniya
 #     - gocritic       # Kritika koda
 #     - misspell       # Orfografiya

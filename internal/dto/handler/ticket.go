@@ -19,20 +19,20 @@ func NewTicketHandler(ts *service.TicketService) *TicketHandler {
 	return &TicketHandler{ticketService: ts}
 }
 
-// @Summary Poluchit bilety
-// @Description Vozvraschaet paginirovannyy spisok biletov s filtratsiey
-// @Tags Bilety
+// @Summary Get tickets
+// @Description Returns a paginated list of tickets with filtering
+// @Tags Tickets
 // @Produce json
-// @Param page query int false "Nomer stranitsy" default(1) minimum(1)
-// @Param limit query int false "Kolichestvo elementov na stranitse" default(20) minimum(1) maximum(100)
-// @Param ticket_Status query string false "Filtr po statusu bileta (mozhno ukazat neskolko cherez zapyatuyu)"
-// @Param movie_show_id query string false "UUID seansa"
-// @Param price_min query number false "Minimalnaya tsena bileta"
-// @Param price_max query number false "Maksimalnaya tsena bileta"
-// @Param seat_id query string false "Filtr po ID mesta (mozhno ukazat neskolko cherez zapyatuyu)"
-// @Param user_id query string false "Filtr po ID polzovatelya (mozhno ukazat neskolko cherez zapyatuyu)"
-// @Success 200 {object} dto.PaginatedTicketResponse "Spisok biletov"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param limit query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param ticket_Status query string false "Filter by ticket status (multiple comma-separated values allowed)"
+// @Param movie_show_id query string false "Movie show UUID"
+// @Param price_min query number false "Minimum ticket price"
+// @Param price_max query number false "Maximum ticket price"
+// @Param seat_id query string false "Filter by seat ID (multiple comma-separated values allowed)"
+// @Param user_id query string false "Filter by user ID (multiple comma-separated values allowed)"
+// @Success 200 {object} dto.PaginatedTicketResponse "Ticket list"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /tickets [get]
 func (th *TicketHandler) GetTickets(w http.ResponseWriter, r *http.Request) {
 	page, limit := parsePaginationParams(r)
@@ -70,13 +70,13 @@ func (th *TicketHandler) GetTickets(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Poluchit bilet po ID
-// @Description Vozvraschaet informatsiyu o bilete po ego identifikatoru
-// @Tags Bilety
+// @Summary Get a ticket by ID
+// @Description Returns information about a ticket by its identifier
+// @Tags Tickets
 // @Produce json
-// @Param id path string true "UUID bileta"
-// @Success 200 {object} dto.TicketResponse "Informatsiya o bilete"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Ticket UUID"
+// @Success 200 {object} dto.TicketResponse "Ticket information"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /tickets/{id} [get]
 func (th *TicketHandler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -92,17 +92,17 @@ func (th *TicketHandler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Sozdat bilet na seans
-// @Description Sozdaet novyy bilet dlya ukazannogo kinoseansa (tolko dlya avtorizovannykh polzovateley)
-// @Tags Bilety
+// @Summary Create a ticket for a movie show
+// @Description Creates a new ticket for the specified movie show (authorized users only)
+// @Tags Tickets
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param movie_show_id path string true "UUID kinoseansa"
-// @Param ticket body dto.CreateTicketRequest true "Dannye bileta"
-// @Success 201 {object} dto.CreateResponse "Bilet sozdan"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
+// @Param movie_show_id path string true "Movie show UUID"
+// @Param ticket body dto.CreateTicketRequest true "Ticket data"
+// @Success 201 {object} dto.CreateResponse "Ticket created"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
 // @Router /movie-shows/{movie_show_id}/tickets [post]
 func (th *TicketHandler) CreateTicketForMovieShow(w http.ResponseWriter, r *http.Request) {
 	movieShowID := chi.URLParam(r, "movie_show_id")
@@ -127,18 +127,18 @@ func (th *TicketHandler) CreateTicketForMovieShow(w http.ResponseWriter, r *http
 	}
 }
 
-// @Summary Obnovit status bileta
-// @Description Obnovlyaet status bileta (bronirovanie/pokupka)
-// @Tags Bilety
+// @Summary Update ticket status
+// @Description Updates ticket status (reservation/purchase)
+// @Tags Tickets
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "UUID bileta"
-// @Param Status body dto.UpdateStatusRequest true "Dannye statusa bileta"
-// @Success 200 "Status bileta obnovlen"
-// @Failure 400 {object} dto.ErrorResponse "Nevernyy zapros"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Ticket UUID"
+// @Param Status body dto.UpdateStatusRequest true "Ticket status data"
+// @Success 200 "Ticket status updated"
+// @Failure 400 {object} dto.ErrorResponse "Bad request"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /tickets/{id} [patch]
 func (th *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -158,14 +158,14 @@ func (th *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary Udalit bilet
-// @Description Udalyaet bilet po identifikatoru (tolko dlya administratorov ili vladeltsa)
-// @Tags Bilety
+// @Summary Delete a ticket
+// @Description Deletes a ticket by identifier (administrators only or owner)
+// @Tags Tickets
 // @Security BearerAuth
-// @Param id path string true "UUID bileta"
-// @Success 204 "Bilet udalen"
-// @Failure 403 {object} dto.ErrorResponse "Dostup zapreschen"
-// @Failure 404 {object} dto.ErrorResponse "Resurs ne nayden"
+// @Param id path string true "Ticket UUID"
+// @Success 204 "Ticket deleted"
+// @Failure 403 {object} dto.ErrorResponse "Forbidden"
+// @Failure 404 {object} dto.ErrorResponse "Resource not found"
 // @Router /tickets/{id} [delete]
 func (th *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
