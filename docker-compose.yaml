@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: "${POSTGRES_CONTAINER_NAME:-postgres_db}"
+    cpuset: "${POSTGRES_CPUSET:-3-7}"
+    mem_limit: 8g
+    environment:
+      POSTGRES_DB: cinema
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${HOST_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cinema"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build: .
+    container_name: "${APP_CONTAINER_NAME:-go_app}"
+    ports:
+      - "${HOST_APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpuset: "${APP_CPUSET:-8-9}"
+    mem_limit: 4g
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: cinema
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_SSL: disable
+      TEST_DB_NAME: cinema_test
+      JWT_SECRET: secret-key
+      TOKEN_DURATION: 24h
+    networks:
+      - app-net
+
+  # k6:
+  #   image: grafana/k6:latest
+  #   container_name: k6_runner
+  #   cpuset: "8-9"
+  #   mem_limit: 4g
+  #   user: root
+  #   volumes:
+  #     - ./scripts:/scripts
+  #   networks:
+  #     - app-net
+  #   depends_on:
+  #     - app
+
+volumes:
+  postgres_data:
+
+networks:
+  app-net:
+    driver: bridge
