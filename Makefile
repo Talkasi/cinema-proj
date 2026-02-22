@@ -1,10 +1,23 @@
 export PGCLIENTENCODING = UTF-8
 
+# Настройки подключения к основной БД
+DB_NAME = cinema
+DB_USER = postgres
+DB_PASS = postgres
+DB_HOST = localhost
+DB_PORT = 5432
+DB_SSL = disable
+
+# Настройки тестовой БД
+TEST_DB_NAME = cinema_test
+TEST_DB_USER = postgres
+TEST_DB_PASS = postgres
+
 # Параметры подключения
 PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASS) dbname=$(DB_NAME) sslmode=$(DB_SSL)"
 TEST_PSQL_CONN = psql "host=$(DB_HOST) port=$(DB_PORT) user=$(TEST_DB_USER) password=$(TEST_DB_PASS) dbname=$(TEST_DB_NAME) sslmode=$(DB_SSL)"
 
-.PHONY: db-init db-clean test-init test-clean run test test-v swagger cover
+.PHONY: db-init db-clean test-init test-clean run test test-v swagger cover docker-up docker-down ci-docker
 
 # Инициализация основной БД
 db-init: db-clean
@@ -42,18 +55,51 @@ run: swagger
 	@echo "Запуск приложения..."
 	@go run ./cmd/api/main.go
 
-docker-up: docker-down
-	@docker compose up
-
-docker-down:
-	@docker compose down -v
-	@docker image rm cinema-proj-app || true
-
 # Обновление документации Swagger
 swagger:
 	@echo "Обновление документации Swagger..."
-	@which swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
-	$$(go env GOPATH)/bin/swag init -g cmd/api/main.go --output docs
+	@go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/api/main.go
+
+# Сборка и запуск в Docker
+docker-up:
+	@echo "Сборка и запуск контейнеров..."
+	@docker compose up --build -d
+
+# Остановка Docker окружения
+docker-down:
+	@echo "Остановка контейнеров..."
+	@docker compose down -v
+
+# CI: генерирует Swagger и проверяет запуск приложения в Docker
+ci-docker: swagger
+	@echo "Проверка запуска приложения в Docker..."
+	@set -eu; \
+	tmp_env_created=0; \
+	if [ ! -f .env ]; then : > .env; tmp_env_created=1; fi; \
+	export COMPOSE_PROJECT_NAME=ci-check; \
+	export POSTGRES_CPUSET=0-1 APP_CPUSET=2-3; \
+	export HOST_POSTGRES_PORT=15433 HOST_APP_PORT=18080; \
+	export POSTGRES_CONTAINER_NAME=ci_postgres_db APP_CONTAINER_NAME=ci_go_app; \
+	trap 'docker compose logs --no-color --tail=200 app postgres >/dev/null 2>&1 || true; docker compose down -v --remove-orphans >/dev/null 2>&1 || true; if [ "$$tmp_env_created" -eq 1 ]; then rm -f .env; fi' EXIT; \
+	docker compose down -v --remove-orphans >/dev/null 2>&1 || true; \
+	docker rm -f ci_postgres_db ci_go_app >/dev/null 2>&1 || true; \
+	docker compose up --build -d; \
+	docker compose ps; \
+	ok=0; \
+	for i in $$(seq 1 30); do \
+		if curl --fail --silent --show-error http://localhost:18080/metrics >/dev/null; then \
+			ok=1; \
+			break; \
+		fi; \
+		sleep 2; \
+	done; \
+	if [ "$$ok" -ne 1 ]; then \
+		echo "Приложение не стало доступно по /metrics"; \
+		docker compose ps; \
+		docker compose logs --no-color --tail=200 app postgres; \
+		exit 1; \
+	fi; \
+	echo "Приложение доступно по /metrics"
 
 # Анализ покрытия тестами
 cover:
@@ -121,6 +167,9 @@ help:
 	@echo "  test-v  - Запуск тестов с детальным выводом"
 	@echo "  bdd-test - Запуск BDD тестов"
 	@echo "  swagger - Обновление Swagger документации"
+	@echo "  docker-up - Сборка и запуск Docker окружения"
+	@echo "  docker-down - Остановка Docker окружения"
+	@echo "  ci-docker - Swagger + проверка запуска в Docker (для CI)"
 	@echo "  cover   - Анализ покрытия тестами"
 	@echo "  build   - Сборка приложения"
 	@echo "  clean   - Очистка билдов"
